@@ -51,6 +51,11 @@ impl ModelGateway {
         let token = token.to_string();
         let token_for_closure = token.clone();
         let rc = Arc::clone(&request_count);
+        // M2: optional upstream passthrough (real model). When
+        // NEXUS_UPSTREAM_MODEL_URL + NEXUS_UPSTREAM_MODEL_KEY are set, the
+        // gateway forwards requests to a real OpenAI-compatible endpoint and
+        // relays the response. Otherwise it falls back to the mock payload.
+        let upstream = Upstream::from_env();
 
         let handle = thread::Builder::new()
             .name("model-gateway".into())
@@ -63,8 +68,9 @@ impl ModelGateway {
                         Ok(s) => {
                             let token = token_for_closure.clone();
                             let rc = Arc::clone(&rc);
+                            let upstream = upstream.clone();
                             // Handle on the same thread — PoC, one request at a time.
-                            handle_request(s, &token, &rc);
+                            handle_request(s, &token, &rc, &upstream);
                         }
                         Err(e) => {
                             eprintln!("[model-gateway] accept error: {e}");
@@ -104,7 +110,7 @@ impl Drop for ModelGateway {
 }
 
 /// Handle a single HTTP request.
-fn handle_request(stream: TcpStream, expected_token: &str, request_count: &AtomicU64) {
+fn handle_request(stream: TcpStream, expected_token: &str, request_count: &AtomicU64, upstream: &Option<Upstream>) {
     let stream_clone = match stream.try_clone() {
         Ok(s) => s,
         Err(e) => {
@@ -141,11 +147,14 @@ fn handle_request(stream: TcpStream, expected_token: &str, request_count: &Atomi
         }
     }
 
-    // Consume the body (we don't need it for the PoC).
-    if content_length > 0 {
+    // Capture the body (needed for upstream passthrough).
+    let body_bytes = if content_length > 0 {
         let mut body = vec![0u8; content_length];
         let _ = std::io::Read::read_exact(&mut reader, &mut body);
-    }
+        body
+    } else {
+        Vec::new()
+    };
 
     request_count.fetch_add(1, Ordering::Relaxed);
 
@@ -167,7 +176,13 @@ fn handle_request(stream: TcpStream, expected_token: &str, request_count: &Atomi
 
     eprintln!("[model-gateway] request #{} accepted", request_count.load(Ordering::Relaxed));
 
-    // Return a minimal OpenAI Responses API payload.
+    // M2: if an upstream is configured, forward + relay (real model).
+    if let Some(resp) = upstream.as_ref().and_then(|u| u.forward(&body_bytes)) {
+        write_http_response(&mut writer, resp.status, &resp.content_type, &resp.body);
+        return;
+    }
+
+    // Otherwise return the mock payload (M0 behavior).
     // The app-server expects a `response` with at least an `id`, `model`,
     // and `output` containing message items.
     let body = serde_json::json!({
@@ -216,6 +231,101 @@ fn write_http_response(writer: &mut impl Write, status: u16, content_type: &str,
     );
     let _ = writer.write_all(response.as_bytes());
     let _ = writer.flush();
+}
+
+// ---------------------------------------------------------------------------
+// M2: optional upstream passthrough (real model proxy).
+// ---------------------------------------------------------------------------
+
+/// Configuration for forwarding model requests to a real upstream endpoint.
+/// Populated from env when both `NEXUS_UPSTREAM_MODEL_URL` and
+/// `NEXUS_UPSTREAM_MODEL_KEY` are set; `None` otherwise (mock fallback).
+#[derive(Clone)]
+pub struct Upstream {
+    host: String,
+    port: u16,
+    path: String,
+    key: String,
+}
+
+/// A relayed upstream response.
+struct UpstreamResponse {
+    status: u16,
+    content_type: String,
+    body: String,
+}
+
+impl Upstream {
+    /// Build from env, or return a sentinel that always falls back to mock.
+    fn from_env() -> Option<Self> {
+        let url = std::env::var("NEXUS_UPSTREAM_MODEL_URL").ok()?;
+        let key = std::env::var("NEXUS_UPSTREAM_MODEL_KEY").ok()?;
+        Self::parse_url(&url, key)
+    }
+
+    /// Parse `http://host[:port][/path]` into an `Upstream`.
+    fn parse_url(url: &str, key: String) -> Option<Self> {
+        let rest = url.strip_prefix("http://").or_else(|| url.strip_prefix("https://"))?;
+        let (hostport, path) = match rest.split_once('/') {
+            Some((h, p)) => (h, format!("/{p}")),
+            None => (rest, "/".into()),
+        };
+        let (host, port) = match hostport.rsplit_once(':') {
+            Some((h, p)) => (h.to_string(), p.parse().unwrap_or(80)),
+            None => (hostport.to_string(), 80),
+        };
+        Some(Self { host, port, path, key })
+    }
+
+    /// Forward the request body to the upstream and relay the response.
+    /// Returns `None` on connection failure (caller falls back to mock).
+    fn forward(&self, body: &[u8]) -> Option<UpstreamResponse> {
+        use std::io::{Read, Write};
+        use std::net::TcpStream;
+        use std::time::Duration;
+
+        let ip: std::net::IpAddr = self.host.parse().ok()?;
+        let mut stream = TcpStream::connect_timeout(
+            &std::net::SocketAddr::new(ip, self.port),
+            Duration::from_secs(10),
+        )
+        .ok()?;
+        stream.set_read_timeout(Some(Duration::from_secs(60))).ok();
+        let request = format!(
+            "POST {path} HTTP/1.1\r\n\
+             Host: {host}:{port}\r\n\
+             Authorization: Bearer {key}\r\n\
+             Content-Type: application/json\r\n\
+             Content-Length: {clen}\r\n\
+             Connection: close\r\n\
+             \r\n",
+            path = self.path, host = self.host, port = self.port,
+            key = self.key, clen = body.len()
+        );
+        stream.write_all(request.as_bytes()).ok()?;
+        stream.write_all(body).ok()?;
+        stream.flush().ok()?;
+        let mut resp = String::new();
+        stream.read_to_string(&mut resp).ok()?;
+        let status: u16 = resp
+            .lines()
+            .next()
+            .and_then(|l| l.split_whitespace().nth(1))
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(502);
+        let content_type = resp
+            .lines()
+            .find(|l| l.to_ascii_lowercase().starts_with("content-type:"))
+            .and_then(|l| l.split(':').nth(1))
+            .map(|s| s.trim().to_string())
+            .unwrap_or_else(|| "application/json".into());
+        let body_start = resp.find("\r\n\r\n").map(|i| i + 4).unwrap_or(0);
+        Some(UpstreamResponse {
+            status,
+            content_type,
+            body: resp[body_start..].to_string(),
+        })
+    }
 }
 
 // ---------------------------------------------------------------------------
