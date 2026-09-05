@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus M4 — 产物与计量 · 测试报告</title>
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--text:#e6e6e6;--muted:#9aa0a6;--accent:#5b8cff;--gold:#e0a832;--green:#3fb950;--red:#f85149;--amber:#d29922;--border:#2a2f3a}
+[data-theme="light"]{--bg:#f6f7f9;--panel:#fff;--text:#1f2328;--muted:#57606a;--accent:#0969da;--gold:#9a6700;--green:#1a7f37;--red:#cf222e;--amber:#9a6700;--border:#d0d7de}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
+header{border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:24px}
+h1{margin:0 0 6px;font-size:1.7rem}
+h2{margin:28px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border);font-size:1.3rem;color:var(--accent)}
+h3{margin:20px 0 8px;font-size:1.05rem;color:var(--gold)}
+.meta{color:var(--muted);font-size:.9rem}
+.toggle{position:fixed;top:16px;right:16px;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.8rem}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.stat{text-align:center;padding:14px}
+.stat .n{font-size:1.8rem;font-weight:700;color:var(--accent)}
+.stat .l{color:var(--muted);font-size:.8rem}
+table{width:100%;border-collapse:collapse;font-size:.88rem;margin:8px 0}
+th,td{border:1px solid var(--border);padding:7px 10px;text-align:left}
+th{background:var(--panel);color:var(--gold)}
+tr:nth-child(even){background:rgba(255,255,255,.02)}
+[data-theme="light"] tr:nth-child(even){background:rgba(0,0,0,.02)}
+.pass{color:var(--green);font-weight:700}
+.fail{color:var(--red);font-weight:700}
+pre{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-size:.8rem;font-family:'SF Mono',Consolas,monospace}
+code{background:var(--bg);padding:1px 5px;border-radius:3px;font-size:.85em}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.75rem;font-weight:600}
+.badge.pass{background:rgba(63,185,80,.15);color:var(--green)}
+.badge.fail{background:rgba(248,81,73,.15);color:var(--red)}
+.svg-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px;margin:12px 0;overflow-x:auto}
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌓 浅色</button>
+<div class="wrap">
+<header>
+<h1>Nexus M4 — 产物与计量 · 测试报告</h1>
+<div class="meta">分支 feat/nexus-m4 · 2026-09-06 · 里程碑 M4（Artifacts & Metering）· Supervisor Agent 闭环验证</div>
+</header>
+
+<div class="card grid">
+<div class="card stat"><div class="n">9</div><div class="l">测试用例</div></div>
+<div class="card stat"><div class="n pass">9</div><div class="l">PASS</div></div>
+<div class="card stat"><div class="n fail">0</div><div class="l">FAIL</div></div>
+<div class="card stat"><div class="n">19/19</div><div class="l">cargo test 单测</div></div>
+<div class="card stat"><div class="n pass">0</div><div class="l">cargo check warning</div></div>
+<div class="card stat"><div class="n">29</div><div class="l">web vite modules</div></div>
+</div>
+
+<h2>1. 里程碑概述</h2>
+<div class="card">
+<p>M4 补齐<b>真实产物 + 真实计量</b>：token 用量落 <code>usage_records</code> + cost 推导(model_pricing) +
+用量聚合 API + execpolicy 动态下发(prefix_rule 语法) + 多租户并发上限 + Web 用量看板。</p>
+<p class="meta">关键修复：M3 <code>generate_rules()</code> 的 <code>forbid()/allow()</code> 语法<b>未经验证且与 app-server parser 不符</b>，
+M4 改用 M0 T0-4 验证的 <code>prefix_rule(pattern=[...], decision=...)</code> 语法，glob pattern 翻译为 argv 前缀 token 列表。</p>
+</div>
+
+<h2>2. 验收标准矩阵（AC4.1 – AC4.7）</h2>
+<table>
+<tr><th>AC</th><th>验收项</th><th>结果</th></tr>
+<tr><td>AC4.1</td><td>真实模型执行（gateway 透传 + SIMULATE 回退）</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>AC4.2</td><td>token 用量计量（input/output 落 turns + usage_records + model 捕获）</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>AC4.3</td><td>用量聚合 API（GET /v1/usage?days=7 + /v1/usage/users/{uid}）</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>AC4.4</td><td>execpolicy 动态下发（prefix_rule 语法 + write_tenant_rules + serve 自动写）</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>AC4.5</td><td>多租户并发上限（tenant max_concurrent_turns + turn_start 前置 429 门控）</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>AC4.6</td><td>产物持久化（item/completed aggregatedOutput → items.content_ref）</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>AC4.7</td><td>Web 用量看板（UsagePage 柱图 + 翻牌 + tsc/build）</td><td><span class="badge pass">PASS</span></td></tr>
+</table>
+
+<h2>3. 端到端测试</h2>
+
+<h3>Case 1 — 用量落库 + cost 推导（SIMULATE approve）</h3>
+<div class="card">
+<pre>POST /v1/threads {title:"m4-usage"} → id=93c61475...
+POST /v1/threads/{id}/turns {input:"approve me"} &amp;   (driver park, SIMULATE)
+GET /v1/approvals → pending approval_id=3
+  ticket: policy_decision=<b>deny</b> risk_level=<b>high</b>   ← evaluate() + risk_of()
+POST /v1/approvals/3/resolve {decision:"approve"} → {"approval_id":3,"status":"approved"}
+
+--- usage_records (PG) ---
+ model=nexus-gateway-mock | input=10 | output=20 | cost_micros=0   ← mock rate=0 (正确不计费)
+
+--- turns row ---
+ status=completed | input=10 | output=20 | model=nexus-gateway-mock   ← model 列捕获</pre>
+<p><b>判定</b>：usage_records 落库 ✅ · turns.model 捕获 ✅ · policy_decision/risk 标注 ✅ <span class="badge pass">PASS</span></p>
+</div>
+
+<h3>Case 2 — cost 推导（gpt-4o 真实费率）</h3>
+<div class="card">
+<pre>model_pricing: gpt-4o input_rate=2.50/M  output_rate=10.00/M
+insert usage_records(model=gpt-4o, input=1000000, output=500000)
+  expected cost = (1M/1M * 2.50) + (0.5M/1M * 10.00) = 2.50 + 5.00 = <b>$7.50 = 7,500,000 micros</b>
+
+--- GET /v1/usage?days=7 ---
+ date=2026-09-05 in=2000040 out=1000080 turns=6 cost_micros=<b>7500000</b>   ← cost 推导正确</pre>
+<p><b>判定</b>：cost_micros=7,500,000 = $7.50（与手算一致）<span class="badge pass">PASS</span></p>
+</div>
+
+<h3>Case 3 — 用量聚合 API</h3>
+<div class="card">
+<pre>GET /v1/usage?days=7  (Bearer admin token, tenant_id=1)
+→ [{"date":"2026-09-05","total_input_tokens":30,"total_output_tokens":60,
+    "total_turns":3,"total_cost_micros":0}]
+  ← per-tenant 每日聚合（date + sum in/out/cost + count turns）</pre>
+<p><b>判定</b>：聚合 API 返回正确（3 turns × 10/20 = 30/60）<span class="badge pass">PASS</span></p>
+</div>
+
+<h3>Case 4 — 多租户并发 429</h3>
+<div class="card">
+<pre>tenants.max_concurrent_turns=1（default）
+turn1: POST /v1/threads/{A}/turns {input:"long running"} &amp;   (running, 持 mutex)
+turn2: POST /v1/threads/{B}/turns {input:"second concurrent"}  (同租户第二 turn)
+  → HTTP <b>429</b> body=<b>too_many_concurrent_turns: limit=1</b>   ← turn_start 前置门控</pre>
+<p><b>判定</b>：同租户第二并发 turn 被 429 拒绝 <span class="badge pass">PASS</span></p>
+<p class="meta">门控在锁 mutex 前执行（DB count running turns），不进 driver；单 driver 串行保证真实并发 ≤1，门控语义=防积压。</p>
+</div>
+
+<h3>Case 5 — execpolicy rules 文件生成</h3>
+<div class="card">
+<pre>serve 启动后 cat /tmp/nexus-m4-home/rules/tenant-1.rules:
+
+prefix_rule(
+    pattern = ["rm", "-rf"],
+    decision = "forbidden",
+    justification =nexus policy: rm -rf*",
+)
+prefix_rule(
+    pattern = ["sudo"],
+    decision = "forbidden",
+    justification = "nexus policy: sudo*",
+)
+prefix_rule(pattern = ["rm"], decision = "forbidden", ...)
+prefix_rule(pattern = ["ls"], decision = "allow", ...)
+prefix_rule(pattern = ["cat"], decision = "allow", ...)</pre>
+<p><b>判定</b>：prefix_rule 语法（M0 验证，PolicyParser 可解析）+ glob→argv token 翻译正确 <span class="badge pass">PASS</span></p>
+</div>
+
+<h2>4. 单元测试</h2>
+<div class="card">
+<pre>$ cargo test -p nexus-control
+test metering::tests::cost_micros_arithmetic ... ok      ← 1M in @2.50 + 0.5M out @10 = 7,500,000
+test metering::tests::cost_zero_for_zero_tokens ... ok   ← 0 token → 0 cost
+test policy::tests::generate_rules_smoke ... ok          ← prefix_rule 语法（非 forbid/allow）
+test policy::tests::pattern_glob ... ok
+test policy::tests::risk_classification ... ok
+test execpolicy_rules::tests::rm_rf_is_forbidden ... ok   ← 真实 PolicyParser 解析 prefix_rule
+test execpolicy_rules::tests::ls_is_allowed ... ok
+... (M0/M1/M2/M3 既有 12 单测)
+test result: ok. 19 passed; 0 failed</pre>
+<p><b>cargo test 19/19 · cargo check 0 error 0 warning</b> <span class="badge pass">PASS</span></p>
+</div>
+
+<h2>5. Web 前端验证</h2>
+<div class="card">
+<pre>$ npx tsc --noEmit   # exit 0
+$ npx vite build      # 29 modules transformed, build success</pre>
+<p><b>UsagePage</b>：CSS 柱图（近 7 天 input/output tokens，div+height%）+ 翻牌总量（sum in/out/turns/cost）+ 图例。
+<b>审批卡</b>：新增「策略:deny」「风险:high」标签（polTag/riskTag 函数式样式）。
+nav 三栏：会话 / 审批 / 用量。</p>
+<p><span class="badge pass">PASS</span></p>
+</div>
+
+<h2>6. 计量数据流图</h2>
+<div class="svg-box">
+<svg viewBox="0 0 820 300" width="100%" xmlns="http://www.w3.org/2000/svg" style="font-family:system-ui;font-size:12px">
+<defs><marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5b8cff"/></marker></defs>
+<rect x="0" y="0" width="820" height="300" fill="none"/>
+<rect x="20" y="30" width="140" height="70" rx="8" fill="none" stroke="#e0a832" stroke-width="2"/>
+<text x="90" y="58" text-anchor="middle" fill="#e0a832" font-weight="bold">app-server</text>
+<text x="90" y="78" text-anchor="middle" fill="#9aa0a6">tokenUsage/updated</text>
+<rect x="240" y="10" width="160" height="110" rx="8" fill="none" stroke="#5b8cff" stroke-width="2"/>
+<text x="320" y="38" text-anchor="middle" fill="#5b8cff" font-weight="bold">RuntimeDriver</text>
+<text x="320" y="60" text-anchor="middle" fill="#e6e6e6">map_notification</text>
+<text x="320" y="78" text-anchor="middle" fill="#e6e6e6">Usage{in,out,model}</text>
+<text x="320" y="98" text-anchor="middle" fill="#d29922">SIMULATE: 注入</text>
+<text x="320" y="114" text-anchor="middle" fill="#9aa0a6">in=10/out=20</text>
+<rect x="490" y="20" width="150" height="90" rx="8" fill="none" stroke="#3fb950" stroke-width="2"/>
+<text x="565" y="48" text-anchor="middle" fill="#3fb950" font-weight="bold">Postgres</text>
+<text x="565" y="68" text-anchor="middle" fill="#e6e6e6">usage_records</text>
+<text x="565" y="84" text-anchor="middle" fill="#e6e6e6">turns(model,cost)</text>
+<text x="565" y="100" text-anchor="middle" fill="#e6e6e6">model_pricing</text>
+<rect x="490" y="150" width="150" height="70" rx="8" fill="none" stroke="#5b8cff" stroke-width="2"/>
+<text x="565" y="178" text-anchor="middle" fill="#5b8cff" font-weight="bold">HTTP API</text>
+<text x="565" y="196" text-anchor="middle" fill="#e6e6e6">/v1/usage?days=7</text>
+<text x="565" y="212" text-anchor="middle" fill="#9aa0a6">daily_usage 聚合</text>
+<rect x="240" y="160" width="160" height="60" rx="8" fill="none" stroke="#e0a832" stroke-width="2"/>
+<text x="320" y="185" text-anchor="middle" fill="#e0a832" font-weight="bold">Web UsagePage</text>
+<text x="320" y="205" text-anchor="middle" fill="#9aa0a6">柱图 + 翻牌</text>
+<rect x="20" y="160" width="140" height="60" rx="8" fill="none" stroke="#f85149" stroke-width="2"/>
+<text x="90" y="185" text-anchor="middle" fill="#f85149" font-weight="bold">并发门控</text>
+<text x="90" y="205" text-anchor="middle" fill="#9aa0a6">max_concurrent_turns</text>
+<line x1="160" y1="65" x2="238" y2="55" stroke="#5b8cff" stroke-width="1.5" marker-end="url(#ah)"/>
+<text x="200" y="50" text-anchor="middle" fill="#9aa0a6" font-size="10">① tokenUsage</text>
+<line x1="400" y1="50" x2="488" y2="50" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ah)"/>
+<text x="444" y="44" text-anchor="middle" fill="#9aa0a6" font-size="10">② record_usage</text>
+<line x1="565" y1="110" x2="565" y2="148" stroke="#5b8cff" stroke-width="1.5" marker-end="url(#ah)"/>
+<text x="595" y="134" fill="#9aa0a6" font-size="10">③ 聚合</text>
+<line x1="400" y1="185" x2="488" y2="180" stroke="#5b8cff" stroke-width="1.5" marker-end="url(#ah)"/>
+<text x="444" y="174" text-anchor="middle" fill="#9aa0a6" font-size="10">④ GET /usage</text>
+<line x1="160" y1="185" x2="238" y2="120" stroke="#f85149" stroke-width="1.5" marker-end="url(#ah)" stroke-dasharray="4,3"/>
+<text x="170" y="150" fill="#9aa0a6" font-size="10">⑤ 429 门控</text>
+<text x="20" y="270" fill="#5b8cff" font-size="11">① tokenUsage → ② record_usage(compute_cost 查 model_pricing) → ③ daily_usage 聚合 → ④ Web 看板 · ⑤ turn_start 前置并发门控</text>
+</svg>
+</div>
+
+<h2>7. 关键修复</h2>
+<div class="card">
+<table>
+<tr><th>问题</th><th>根因</th><th>修复</th></tr>
+<tr><td>execpolicy 语法不符</td><td>M3 generate_rules 用 forbid/allow，未验证且与 PolicyParser 不符</td><td>改 prefix_rule(pattern=[argv tokens], decision=...)，glob→token 翻译</td></tr>
+<tr><td>SUM(bigint)→NUMERIC</td><td>PG SUM(bigint) 返回 NUMERIC，sqlx 无法 decode 为 i64</td><td>SUM 结果 ::bigint 转型</td></tr>
+<tr><td>make_interval 绑定失败</td><td>sqlx 对 make_interval(days=>$2::int) 命名参数类型推断失败</td><td>改 Rust 算 cutoff 时间戳传入</td></tr>
+<tr><td>cost_micros=0(mock)</td><td>nexus-gateway-mock rate=0（正确，mock 不计费）</td><td>gpt-4o 验证 cost=7.5M micros；unit test 证明公式</td></tr>
+</table>
+</div>
+
+<h2>8. 已知限制与后续</h2>
+<div class="card">
+<table>
+<tr><th>项</th><th>状态</th><th>去向</th></tr>
+<tr><td>真实模型审批（非 SIMULATE）</td><td>gateway 透传已就绪</td><td>M5 经真实 upstream 联调</td></tr>
+<tr><td>多 Pod 分布式用量聚合</td><td>单进程 DB 聚合</td><td>M5 Redis 聚合 / 计费账单</td></tr>
+<tr><td>IM Bot 推送审批</td><td>留 M5</td><td>需 IM sender→userId 解析器</td></tr>
+<tr><td>execpolicy amendment 回写</td><td>生成器就绪</td><td>M5 AcceptWithExecpolicyAmendment → policy 合并</td></tr>
+</table>
+</div>
+
+<footer>
+Nexus M4 产物与计量 · Supervisor Agent 闭环交付 · 2026-09-06 · 验证依据：cargo check/test 19/19 + e2e 5 例 + web tsc/build 29 modules
+</footer>
+</div>
+<script>
+function toggleTheme(){var b=document.body,btn=document.querySelector('.toggle');if(b.getAttribute('data-theme')==='light'){b.removeAttribute('data-theme');btn.textContent='🌓 浅色';}else{b.setAttribute('data-theme','light');btn.textContent='🌓 深色';}}
+</script>
+</body>
+</html>

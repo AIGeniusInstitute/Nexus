@@ -812,7 +812,7 @@ fn run_serve(
     codex_bin: &std::path::Path,
     codex_home: &std::path::Path,
 ) -> Result<()> {
-    println!("=== Nexus M2: serve ===");
+    println!("=== Nexus M4: serve ===");
     let rt = rt()?;
     rt.block_on(async move {
         let pool = nexus_control::db::connect(database_url).await?;
@@ -836,6 +836,17 @@ fn run_serve(
             &format!("{gateway_url}/v1"),
             &gateway_token,
         )?;
+
+        // M4: 下发 per-tenant execpolicy rules（prefix_rule 语法，M0 验证）。
+        // app-server 每-turn 自动加载 <CODEX_HOME>/rules/*.rules。
+        let tenant_rules = nexus_control::policy::generate_rules(&pool, 1).await
+            .unwrap_or_else(|e| { eprintln!("generate_rules failed: {e}"); String::new() });
+        if !tenant_rules.is_empty() {
+            match nexus_control::policy::write_tenant_rules(1, codex_home, &tenant_rules) {
+                Ok(p) => println!("tenant rules written: {}", p.display()),
+                Err(e) => eprintln!("write_tenant_rules failed: {e}"),
+            }
+        }
 
         // M2: spawn the runtime driver thread (owns app-server process).
         // M3: the handle is SPLIT — cmd_tx (Clone, lock-free) goes straight

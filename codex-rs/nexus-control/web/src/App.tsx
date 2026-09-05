@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, getToken, openThreadStream, setToken, type Approval, type Item, type Thread } from "./api";
+import { api, getToken, openThreadStream, setToken, type Approval, type DailyUsage, type Item, type Thread } from "./api";
 
 export default function App() {
   const token = getToken();
@@ -45,7 +45,7 @@ function Login() {
 function Dashboard() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [active, setActive] = useState<Thread | null>(null);
-  const [view, setView] = useState<"threads" | "approvals">("threads");
+  const [view, setView] = useState<"threads" | "approvals" | "usage">("threads");
 
   useEffect(() => {
     api.listThreads().then(setThreads).catch(() => {});
@@ -65,10 +65,11 @@ function Dashboard() {
   return (
     <div style={s.dash}>
       <aside style={s.sidebar}>
-        <h2>Nexus M3</h2>
+        <h2>Nexus M4</h2>
         <div style={s.nav}>
           <button onClick={() => setView("threads")} style={view === "threads" ? s.navActive : s.navBtn}>会话</button>
           <button onClick={() => setView("approvals")} style={view === "approvals" ? s.navActive : s.navBtn}>审批</button>
+          <button onClick={() => setView("usage")} style={view === "usage" ? s.navActive : s.navBtn}>用量</button>
         </div>
         {view === "threads" && (
           <>
@@ -88,7 +89,7 @@ function Dashboard() {
         )}
       </aside>
       <main style={s.main}>
-        {view === "approvals" ? <ApprovalsPage /> : (active ? <Timeline thread={active} /> : <Empty />)}
+        {view === "approvals" ? <ApprovalsPage /> : (view === "usage" ? <UsagePage /> : (active ? <Timeline thread={active} /> : <Empty />))}
       </main>
     </div>
   );
@@ -125,7 +126,10 @@ function ApprovalsPage() {
         {approvals.length === 0 && <div style={s.muted}>暂无待审批工单</div>}
         {approvals.map((a) => (
           <div key={a.id} style={s.apprCard}>
-            <div><b>#{a.id}</b> · {a.kind ?? "?"} · <span style={s.pendingTag}>{a.status}</span></div>
+            <div><b>#{a.id}</b> · {a.kind ?? "?"} · <span style={s.pendingTag}>{a.status}</span>
+              {a.policy_decision && <span style={polTag(a.policy_decision)}>策略:{a.policy_decision}</span>}
+              {a.risk_level && <span style={riskTag(a.risk_level)}>风险:{a.risk_level}</span>}
+            </div>
             <div style={s.cmdLine}><code>{a.command ?? "(no command)"}</code></div>
             {a.cwd && <div style={s.muted}>cwd: {a.cwd}</div>}
             {a.reason && <div style={s.muted}>reason: {a.reason}</div>}
@@ -137,6 +141,53 @@ function ApprovalsPage() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function UsagePage() {
+  const [data, setData] = useState<DailyUsage[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.getUsage(7).then(setData).catch((e) => setErr(String(e)));
+  }, []);
+
+  const maxTok = Math.max(1, ...data.map((d) => d.total_input_tokens + d.total_output_tokens));
+  const sumIn = data.reduce((m, d) => m + d.total_input_tokens, 0);
+  const sumOut = data.reduce((m, d) => m + d.total_output_tokens, 0);
+  const sumTurns = data.reduce((m, d) => m + d.total_turns, 0);
+  const sumCost = data.reduce((m, d) => m + d.total_cost_micros, 0);
+
+  return (
+    <div style={s.timeline}>
+      <h2>用量统计 <span style={s.muted}>· 近 7 天</span></h2>
+      {err && <div style={s.err}>{err}</div>}
+      <div style={s.statGrid}>
+        <div style={s.statBox}><div style={s.statN}>{sumIn.toLocaleString()}</div><div style={s.muted}>输入 tokens</div></div>
+        <div style={s.statBox}><div style={s.statN}>{sumOut.toLocaleString()}</div><div style={s.muted}>输出 tokens</div></div>
+        <div style={s.statBox}><div style={s.statN}>{sumTurns}</div><div style={s.muted}>turns</div></div>
+        <div style={s.statBox}><div style={s.statN}>${(sumCost / 1_000_000).toFixed(4)}</div><div style={s.muted}>cost (USD)</div></div>
+      </div>
+      <div style={s.barChart}>
+        {data.length === 0 && <div style={s.muted}>暂无用量数据</div>}
+        {data.map((d) => {
+          const total = d.total_input_tokens + d.total_output_tokens;
+          const inH = (d.total_input_tokens / maxTok) * 100;
+          const outH = (d.total_output_tokens / maxTok) * 100;
+          return (
+            <div key={d.date} style={s.barCol}>
+              <div style={s.barStack}>
+                <div style={{ ...s.barOut, height: `${outH}%` }} title={`out: ${d.total_output_tokens}`} />
+                <div style={{ ...s.barIn, height: `${inH}%` }} title={`in: ${d.total_input_tokens}`} />
+              </div>
+              <div style={s.barLabel}>{d.date.slice(5)}</div>
+              <div style={s.muted}>{total.toLocaleString()}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={s.muted}><span style={s.barIn}>■</span> 输入 · <span style={s.barOut}>■</span> 输出</div>
     </div>
   );
 }
@@ -236,4 +287,22 @@ const s: Record<string, React.CSSProperties> = {
   apprBtns: { display: "flex", gap: 8, marginTop: 8 },
   approveBtn: { padding: "6px 14px", border: "none", borderRadius: 6, background: "#2a7", color: "#fff", cursor: "pointer" },
   denyBtn: { padding: "6px 14px", border: "none", borderRadius: 6, background: "#c33", color: "#fff", cursor: "pointer" },
+  statGrid: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, margin: "12px 0" },
+  statBox: { padding: 10, border: "1px solid #eee", borderRadius: 6, textAlign: "center" },
+  statN: { fontSize: "1.2rem", fontWeight: 700, color: "#336" },
+  barChart: { display: "flex", gap: 6, alignItems: "flex-end", height: 180, padding: "12px 0", borderBottom: "1px solid #eee" },
+  barCol: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 },
+  barStack: { width: "60%", height: 140, display: "flex", flexDirection: "column-reverse", borderRadius: 4, overflow: "hidden" },
+  barIn: { background: "#5b8cff", width: "100%" },
+  barOut: { background: "#e0a832", width: "100%" },
+  barLabel: { fontSize: 11, color: "#666" },
 };
+
+function polTag(v: string): React.CSSProperties {
+  return { display: "inline-block", marginLeft: 6, padding: "1px 6px", borderRadius: 4, fontSize: 11,
+    background: v === "deny" ? "#fdd" : v === "allow" ? "#dfd" : "#ffd", color: "#333" };
+}
+function riskTag(v: string): React.CSSProperties {
+  return { display: "inline-block", marginLeft: 6, padding: "1px 6px", borderRadius: 4, fontSize: 11,
+    background: v === "high" ? "#fbb" : v === "medium" ? "#fec" : "#eef", color: "#333" };
+}

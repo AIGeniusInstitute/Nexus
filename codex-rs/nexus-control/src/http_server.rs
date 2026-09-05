@@ -23,6 +23,8 @@ use tokio::sync::{broadcast, Mutex};
 use uuid::Uuid;
 
 use crate::auth::{AuthProvider, AuthUser, JwtIssuer};
+use crate::metering;
+use crate::policy;
 use crate::runtime::{self, DriverCommand, TurnEvent};
 
 #[derive(Clone)]
@@ -67,6 +69,8 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/threads/{id}/approvals", get(thread_approvals))
         .route("/v1/approvals", get(approvals_list))
         .route("/v1/approvals/{aid}/resolve", post(approval_resolve))
+        .route("/v1/usage", get(usage_summary))
+        .route("/v1/usage/users/{uid}", get(usage_user))
         .route("/v1/ws/threads/{id}/events", get(crate::ws::ws_handler))
         .layer(middleware::from_fn_with_state(state.clone(), idempotency_layer))
         .layer(middleware::from_fn_with_state(state.clone(), user_rate_limit))
@@ -184,6 +188,21 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
         None => return Err((StatusCode::NOT_FOUND, "thread not found".into())),
     };
 
+    // M4: 多租户并发上限（锁 mutex 前置门控，防同租户请求积压）。
+    let running: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM turns t JOIN threads th ON th.id=t.thread_id
+         WHERE th.tenant_id=$1 AND t.status='running'",
+    )
+    .bind(c.tid).fetch_one(&st.pool).await
+    .unwrap_or(0);
+    let limit: i32 = sqlx::query_scalar("SELECT max_concurrent_turns FROM tenants WHERE id=$1")
+        .bind(c.tid).fetch_one(&st.pool).await
+        .unwrap_or(1);
+    if running >= limit as i64 {
+        return Err((StatusCode::TOO_MANY_REQUESTS,
+            format!("too_many_concurrent_turns: limit={limit}")));
+    }
+
     // Create the turn row (status running).
     let trow: (i64,) = sqlx::query_as(
         "INSERT INTO turns (thread_id, status, started_at) VALUES ($1, 'running', NOW()) RETURNING id",
@@ -237,12 +256,20 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
                     runtime::ApprovalKind::CommandExecution => "command_execution",
                     runtime::ApprovalKind::FileChange => "file_change",
                 };
+                // M4: 策略推荐（evaluate）+ 风险标注（risk_of）。人仍最终决策。
+                let cmd = ap.command.as_deref().unwrap_or("");
+                let pol = policy::evaluate(&st.pool, c.tid, "admin", "command_execution", cmd)
+                    .await.unwrap_or(policy::PolicyDecision::Prompt);
+                let pol_str = match pol { policy::PolicyDecision::Allow => "allow",
+                    policy::PolicyDecision::Deny => "deny", policy::PolicyDecision::Prompt => "prompt" };
+                let risk = policy::risk_of(cmd);
                 // 先落库再回写（R3：Pod 崩溃后 pending ticket 不丢）。
                 let _ = sqlx::query(
                     "INSERT INTO approval_tickets
                        (id, thread_id, turn_id, tenant_id, kind, status, item_id,
-                        jsonrpc_id, command, cwd, reason, raw_params, created_at)
-                     VALUES ($1,$2,$3,$4,$5,'pending',$6,$7,$8,$9,$10,$11,NOW())
+                        jsonrpc_id, command, cwd, reason, raw_params,
+                        policy_decision, risk_level, created_at)
+                     VALUES ($1,$2,$3,$4,$5,'pending',$6,$7,$8,$9,$10,$11,$12,$13,NOW())
                      ON CONFLICT (id) DO NOTHING",
                 )
                 .bind(ap.approval_id).bind(id).bind(turn_db_id).bind(c.tid)
@@ -250,6 +277,7 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
                 .bind(ev.raw_json.clone())  // jsonrpc_id stored as raw event (sim) — see note
                 .bind(ap.command.as_deref()).bind(ap.cwd.as_deref())
                 .bind(ap.reason.as_deref()).bind(&ap.raw_params)
+                .bind(pol_str).bind(risk)
                 .execute(&st.pool).await;
                 let _ = sqlx::query(
                     "INSERT INTO approval_audit (approval_id, actor_user_id, action, params_digest)
@@ -337,12 +365,18 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
         .bind(turn_db_id).execute(&st.pool).await;
         "interrupted"
     } else if let Some(u) = &last_usage {
+        // M4: 推导 cost + 写 usage_records（per-tenant 计量）+ 写 turns.model。
+        let model = u.model.clone().unwrap_or_else(|| "nexus-gateway".into());
+        let cost = metering::record_usage(
+            &st.pool, c.tid, c.uid, id, turn_db_id,
+            &model, u.input_tokens, u.output_tokens,
+        ).await.unwrap_or(0);
         let _ = sqlx::query(
             "UPDATE turns SET status='completed', completed_at=NOW(),
-                 input_tokens=$1, output_tokens=$2, cost_micros=$3
-             WHERE id=$4",
+                 input_tokens=$1, output_tokens=$2, cost_micros=$3, model=$4
+             WHERE id=$5",
         )
-        .bind(u.input_tokens).bind(u.output_tokens).bind(u.cost_micros)
+        .bind(u.input_tokens).bind(u.output_tokens).bind(cost).bind(&model)
         .bind(turn_db_id).execute(&st.pool).await;
         "completed"
     } else {
@@ -444,12 +478,15 @@ struct ApprovalRow {
     command: Option<String>,
     cwd: Option<String>,
     reason: Option<String>,
+    policy_decision: Option<String>,
+    risk_level: Option<String>,
     created_at: DateTime<Utc>,
 }
 
 async fn approvals_list(AuthUser(c): AuthUser, State(st): State<AppState>) -> Result<Json<Vec<ApprovalRow>>, (StatusCode, String)> {
     let rows = sqlx::query_as::<_, ApprovalRow>(
-        "SELECT id, thread_id, turn_id, kind, status, command, cwd, reason, created_at
+        "SELECT id, thread_id, turn_id, kind, status, command, cwd, reason,
+                policy_decision, risk_level, created_at
          FROM approval_tickets WHERE tenant_id=$1 AND status='pending'
          ORDER BY created_at DESC LIMIT 100",
     )
@@ -467,11 +504,40 @@ async fn thread_approvals(AuthUser(c): AuthUser, State(st): State<AppState>, Pat
         return Err((StatusCode::NOT_FOUND, "thread not found".into()));
     }
     let rows = sqlx::query_as::<_, ApprovalRow>(
-        "SELECT id, thread_id, turn_id, kind, status, command, cwd, reason, created_at
+        "SELECT id, thread_id, turn_id, kind, status, command, cwd, reason,
+                policy_decision, risk_level, created_at
          FROM approval_tickets WHERE thread_id=$1 ORDER BY created_at DESC LIMIT 200",
     )
     .bind(id).fetch_all(&st.pool).await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+// ---------- M4: Usage metering ----------
+#[derive(Deserialize, Default)]
+struct UsageQuery { days: Option<i32> }
+
+async fn usage_summary(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Query(q): Query<UsageQuery>,
+) -> Result<Json<Vec<metering::DailyUsage>>, (StatusCode, String)> {
+    let days = q.days.unwrap_or(7).clamp(1, 365);
+    let rows = metering::daily_usage(&st.pool, c.tid, days).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn usage_user(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+    Path(uid): Path<i64>, Query(q): Query<UsageQuery>,
+) -> Result<Json<Vec<metering::DailyUsage>>, (StatusCode, String)> {
+    // 仅 admin（*:* 权限）可查任意用户；普通用户只能查自己。
+    let is_admin = c.perms.iter().any(|p| p == "*:*");
+    if !is_admin && uid != c.uid {
+        return Err((StatusCode::FORBIDDEN, "not allowed".into()));
+    }
+    let days = q.days.unwrap_or(7).clamp(1, 365);
+    let rows = metering::daily_usage_user(&st.pool, c.tid, uid, days).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(rows))
 }
 
