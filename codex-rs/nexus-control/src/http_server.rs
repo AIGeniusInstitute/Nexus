@@ -1,9 +1,12 @@
 //! HTTP API gateway: axum router + handlers + idempotency/rate-limit middleware (T1-2/T1-3).
 //! M2: turn_start drives the real app-server runtime; interrupt endpoint added.
 //! M3: HITL approval — turn_start persists approval tickets and broadcasts
-//! `approval/requested`; new `/v1/approvals` resolve/list endpoints. The
-//! runtime handle is SPLIT: `runtime_cmd` (lock-free, Clone) for sending
-//! commands, `runtime_events` (mutex-guarded) for the single turn_start drain.
+//! `approval/requested`; new `/v1/approvals` resolve/list endpoints.
+//! M5: the single global-mutex event receiver is replaced by a `DriverPool`
+//! — `turn_start` `acquire()`s a free slot, drains its `event_rx`
+//! exclusively (no shared mutex → N-way concurrent turns), and `release()`s
+//! on turn end. resolve/interrupt route to the slot holding the in-flight
+//! turn via the `turn_slots` map (turn_db_id → slot idx).
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -18,27 +21,25 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::PgPool;
-use std::sync::mpsc::Sender;
 use tokio::sync::{broadcast, Mutex};
 use uuid::Uuid;
 
 use crate::auth::{AuthProvider, AuthUser, JwtIssuer};
 use crate::metering;
 use crate::policy;
-use crate::runtime::{self, DriverCommand, TurnEvent};
+use crate::runtime::{self, DriverCommand};
 
 #[derive(Clone)]
 pub struct AppState {
     pub pool: PgPool,
     pub jwt: Arc<JwtIssuer>,
     pub auth: Arc<dyn AuthProvider>,
-    /// M3: lock-free command channel (Clone). Resolve / interrupt handlers
-    /// send through this WITHOUT locking — breaks the deadlock with turn_start
-    /// (which holds `runtime_events` for the whole turn).
-    pub runtime_cmd: Sender<DriverCommand>,
-    /// M3: single event receiver, guarded by a mutex. Only `turn_start` reads
-    /// it; holding the lock for the whole turn serializes turns (M2 semantics).
-    pub runtime_events: Arc<Mutex<tokio::sync::mpsc::UnboundedReceiver<TurnEvent>>>,
+    /// M5: driver pool — N independent app-server driver threads. turn_start
+    /// `acquire()`s a free slot and drains its event_rx exclusively.
+    pub driver_pool: Arc<runtime::DriverPool>,
+    /// M5: routing map turn_db_id → slot idx, so approval resolve / interrupt
+    /// handlers can dispatch to the driver actually running that turn.
+    pub turn_slots: Arc<Mutex<HashMap<i64, usize>>>,
     /// Per-thread broadcast channels for live WS push.
     pub broadcast: Arc<Mutex<HashMap<Uuid, broadcast::Sender<Value>>>>,
 }
@@ -220,9 +221,23 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
 
     let input = req.input.unwrap_or_else(|| "(empty turn)".into());
 
-    // Dispatch to the runtime driver.
-    if st.runtime_cmd
-        .send(runtime::DriverCommand::RunTurn {
+    let bcast = thread_broadcast(&st, id).await;
+
+    // M5: acquire a free driver slot from the pool. Each slot drains its OWN
+    // event_rx exclusively — no global mutex, so N turns can run concurrently.
+    let mut guard = match st.driver_pool.acquire().await {
+        Some(g) => g,
+        None => {
+            return Err((StatusCode::SERVICE_UNAVAILABLE, "driver pool exhausted".into()));
+        }
+    };
+    // Record turn→slot routing so resolve/interrupt can reach this driver.
+    st.turn_slots.lock().await.insert(turn_db_id, guard.idx);
+
+    // Dispatch RunTurn to this slot's driver thread.
+    if guard
+        .cmd_tx()
+        .send(DriverCommand::RunTurn {
             thread_id: id,
             codex_thread_id: codex_thread_id.clone(),
             turn_db_id,
@@ -231,131 +246,136 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
         })
         .is_err()
     {
+        st.turn_slots.lock().await.remove(&turn_db_id);
         return Err((StatusCode::INTERNAL_SERVER_ERROR, "runtime driver gone".into()));
     }
 
-    let bcast = thread_broadcast(&st, id).await;
-    // Hold the event-receiver lock for the whole turn (serializes turns).
-    let mut rx = st.runtime_events.lock().await;
     let mut last_usage: Option<runtime::Usage> = None;
     let mut resolved_codex_thread_id: Option<String> = codex_thread_id.clone();
     let mut final_status = "completed".to_string();
-    while let Some(ev) = rx.recv().await {
-        // Persist codex_thread_id on first resolve.
-        if let Some(cid) = &ev.codex_thread_id {
-            resolved_codex_thread_id = Some(cid.clone());
-            let _ = sqlx::query("UPDATE threads SET codex_thread_id=$1 WHERE id=$2")
-                .bind(cid).bind(id).execute(&st.pool).await;
-        }
+    // Drain this slot's event stream exclusively (scoped so the borrow ends
+    // before the guard is dropped).
+    {
+        let rx = guard.event_rx_mut();
+        while let Some(ev) = rx.recv().await {
+            // Persist codex_thread_id on first resolve.
+            if let Some(cid) = &ev.codex_thread_id {
+                resolved_codex_thread_id = Some(cid.clone());
+                let _ = sqlx::query("UPDATE threads SET codex_thread_id=$1 WHERE id=$2")
+                    .bind(cid).bind(id).execute(&st.pool).await;
+            }
 
-        // M3: approval/requested — persist a pending ticket, audit, broadcast;
-        // then keep draining (driver is parked, no more events until resolve).
-        if ev.item_type == "approval/requested" {
-            if let Some(ap) = &ev.approval {
-                let kind_str = match ap.kind {
-                    runtime::ApprovalKind::CommandExecution => "command_execution",
-                    runtime::ApprovalKind::FileChange => "file_change",
-                };
-                // M4: 策略推荐（evaluate）+ 风险标注（risk_of）。人仍最终决策。
-                let cmd = ap.command.as_deref().unwrap_or("");
-                let pol = policy::evaluate(&st.pool, c.tid, "admin", "command_execution", cmd)
-                    .await.unwrap_or(policy::PolicyDecision::Prompt);
-                let pol_str = match pol { policy::PolicyDecision::Allow => "allow",
-                    policy::PolicyDecision::Deny => "deny", policy::PolicyDecision::Prompt => "prompt" };
-                let risk = policy::risk_of(cmd);
-                // 先落库再回写（R3：Pod 崩溃后 pending ticket 不丢）。
+            // M3: approval/requested — persist a pending ticket, audit, broadcast;
+            // then keep draining (driver is parked, no more events until resolve).
+            if ev.item_type == "approval/requested" {
+                if let Some(ap) = &ev.approval {
+                    let kind_str = match ap.kind {
+                        runtime::ApprovalKind::CommandExecution => "command_execution",
+                        runtime::ApprovalKind::FileChange => "file_change",
+                    };
+                    // M4: 策略推荐（evaluate）+ 风险标注（risk_of）。人仍最终决策。
+                    let cmd = ap.command.as_deref().unwrap_or("");
+                    let pol = policy::evaluate(&st.pool, c.tid, "admin", "command_execution", cmd)
+                        .await.unwrap_or(policy::PolicyDecision::Prompt);
+                    let pol_str = match pol { policy::PolicyDecision::Allow => "allow",
+                        policy::PolicyDecision::Deny => "deny", policy::PolicyDecision::Prompt => "prompt" };
+                    let risk = policy::risk_of(cmd);
+                    // 先落库再回写（R3：Pod 崩溃后 pending ticket 不丢）。
+                    let _ = sqlx::query(
+                        "INSERT INTO approval_tickets
+                           (id, thread_id, turn_id, tenant_id, kind, status, item_id,
+                            jsonrpc_id, command, cwd, reason, raw_params,
+                            policy_decision, risk_level, created_at)
+                         VALUES ($1,$2,$3,$4,$5,'pending',$6,$7,$8,$9,$10,$11,$12,$13,NOW())
+                         ON CONFLICT (id) DO NOTHING",
+                    )
+                    .bind(ap.approval_id).bind(id).bind(turn_db_id).bind(c.tid)
+                    .bind(kind_str).bind(ev.codex_item_id.as_deref())
+                    .bind(ev.raw_json.clone())  // jsonrpc_id stored as raw event (sim) — see note
+                    .bind(ap.command.as_deref()).bind(ap.cwd.as_deref())
+                    .bind(ap.reason.as_deref()).bind(&ap.raw_params)
+                    .bind(pol_str).bind(risk)
+                    .execute(&st.pool).await;
+                    let _ = sqlx::query(
+                        "INSERT INTO approval_audit (approval_id, actor_user_id, action, params_digest)
+                         VALUES ($1,$2,'created',$3)",
+                    )
+                    .bind(ap.approval_id).bind(c.uid).bind(ap.command.as_deref())
+                    .execute(&st.pool).await;
+                }
+                let frame = serde_json::json!({
+                    "thread_id": id, "seq": ev.seq, "type": ev.item_type,
+                    "content": ev.content_ref,
+                    "approval_id": ev.approval.as_ref().map(|a| a.approval_id),
+                    "command": ev.approval.as_ref().and_then(|a| a.command.clone()),
+                });
+                let _ = bcast.send(frame);
+                continue;
+            }
+
+            if ev.item_type == "approval/interrupted" {
+                final_status = "interrupted".to_string();
+                // Mark any pending tickets for this thread as interrupted.
                 let _ = sqlx::query(
-                    "INSERT INTO approval_tickets
-                       (id, thread_id, turn_id, tenant_id, kind, status, item_id,
-                        jsonrpc_id, command, cwd, reason, raw_params,
-                        policy_decision, risk_level, created_at)
-                     VALUES ($1,$2,$3,$4,$5,'pending',$6,$7,$8,$9,$10,$11,$12,$13,NOW())
-                     ON CONFLICT (id) DO NOTHING",
+                    "UPDATE approval_tickets SET status='interrupted'
+                     WHERE thread_id=$1 AND status='pending'",
                 )
-                .bind(ap.approval_id).bind(id).bind(turn_db_id).bind(c.tid)
-                .bind(kind_str).bind(ev.codex_item_id.as_deref())
-                .bind(ev.raw_json.clone())  // jsonrpc_id stored as raw event (sim) — see note
-                .bind(ap.command.as_deref()).bind(ap.cwd.as_deref())
-                .bind(ap.reason.as_deref()).bind(&ap.raw_params)
-                .bind(pol_str).bind(risk)
-                .execute(&st.pool).await;
+                .bind(id).execute(&st.pool).await;
                 let _ = sqlx::query(
-                    "INSERT INTO approval_audit (approval_id, actor_user_id, action, params_digest)
-                     VALUES ($1,$2,'created',$3)",
+                    "INSERT INTO approval_audit (approval_id, actor_user_id, action, decision)
+                     SELECT id, $2, 'interrupted', 'cancelled' FROM approval_tickets
+                     WHERE thread_id=$1 AND status='interrupted'
+                     ON CONFLICT DO NOTHING",
                 )
-                .bind(ap.approval_id).bind(c.uid).bind(ap.command.as_deref())
+                .bind(id).bind(c.uid).execute(&st.pool).await;
+                let _ = bcast.send(serde_json::json!({
+                    "thread_id": id, "seq": ev.seq, "type": ev.item_type,
+                }));
+                if ev.is_turn_completed { break; }
+                continue;
+            }
+
+            // app_server_events: raw event log (idempotent on thread+seq).
+            let _ = sqlx::query(
+                "INSERT INTO app_server_events (thread_id, turn_id, seq, event_json)
+                 VALUES ($1, $2, $3, $4) ON CONFLICT (thread_id, seq) DO NOTHING",
+            )
+            .bind(id).bind(turn_db_id).bind(ev.seq).bind(&ev.raw_json)
+            .execute(&st.pool).await;
+
+            // items: only item/* notifications carry a codex_item_id.
+            if let Some(cid) = &ev.codex_item_id {
+                let _ = sqlx::query(
+                    "INSERT INTO items (thread_id, turn_id, seq, item_type, content_ref, codex_item_id)
+                     VALUES ($1, $2, $3, $4, $5, $6)
+                     ON CONFLICT (codex_item_id) WHERE codex_item_id IS NOT NULL DO UPDATE
+                       SET content_ref = EXCLUDED.content_ref, item_type = EXCLUDED.item_type",
+                )
+                .bind(id).bind(turn_db_id).bind(ev.seq).bind(&ev.item_type)
+                .bind(ev.content_ref.as_deref()).bind(cid)
                 .execute(&st.pool).await;
             }
+
+            // Accumulate usage.
+            if let Some(u) = &ev.usage {
+                last_usage = Some(u.clone());
+            }
+
+            // Broadcast to WS subscribers.
             let frame = serde_json::json!({
                 "thread_id": id, "seq": ev.seq, "type": ev.item_type,
-                "content": ev.content_ref,
-                "approval_id": ev.approval.as_ref().map(|a| a.approval_id),
-                "command": ev.approval.as_ref().and_then(|a| a.command.clone()),
+                "content": ev.content_ref, "item_id": ev.codex_item_id,
             });
             let _ = bcast.send(frame);
-            continue;
-        }
 
-        if ev.item_type == "approval/interrupted" {
-            final_status = "interrupted".to_string();
-            // Mark any pending tickets for this thread as interrupted.
-            let _ = sqlx::query(
-                "UPDATE approval_tickets SET status='interrupted'
-                 WHERE thread_id=$1 AND status='pending'",
-            )
-            .bind(id).execute(&st.pool).await;
-            let _ = sqlx::query(
-                "INSERT INTO approval_audit (approval_id, actor_user_id, action, decision)
-                 SELECT id, $2, 'interrupted', 'cancelled' FROM approval_tickets
-                 WHERE thread_id=$1 AND status='interrupted'
-                 ON CONFLICT DO NOTHING",
-            )
-            .bind(id).bind(c.uid).execute(&st.pool).await;
-            let _ = bcast.send(serde_json::json!({
-                "thread_id": id, "seq": ev.seq, "type": ev.item_type,
-            }));
-            if ev.is_turn_completed { break; }
-            continue;
-        }
-
-        // app_server_events: raw event log (idempotent on thread+seq).
-        let _ = sqlx::query(
-            "INSERT INTO app_server_events (thread_id, turn_id, seq, event_json)
-             VALUES ($1, $2, $3, $4) ON CONFLICT (thread_id, seq) DO NOTHING",
-        )
-        .bind(id).bind(turn_db_id).bind(ev.seq).bind(&ev.raw_json)
-        .execute(&st.pool).await;
-
-        // items: only item/* notifications carry a codex_item_id.
-        if let Some(cid) = &ev.codex_item_id {
-            let _ = sqlx::query(
-                "INSERT INTO items (thread_id, turn_id, seq, item_type, content_ref, codex_item_id)
-                 VALUES ($1, $2, $3, $4, $5, $6)
-                 ON CONFLICT (codex_item_id) WHERE codex_item_id IS NOT NULL DO UPDATE
-                   SET content_ref = EXCLUDED.content_ref, item_type = EXCLUDED.item_type",
-            )
-            .bind(id).bind(turn_db_id).bind(ev.seq).bind(&ev.item_type)
-            .bind(ev.content_ref.as_deref()).bind(cid)
-            .execute(&st.pool).await;
-        }
-
-        // Accumulate usage.
-        if let Some(u) = &ev.usage {
-            last_usage = Some(u.clone());
-        }
-
-        // Broadcast to WS subscribers.
-        let frame = serde_json::json!({
-            "thread_id": id, "seq": ev.seq, "type": ev.item_type,
-            "content": ev.content_ref, "item_id": ev.codex_item_id,
-        });
-        let _ = bcast.send(frame);
-
-        if ev.is_turn_completed {
-            break;
+            if ev.is_turn_completed {
+                break;
+            }
         }
     }
-    drop(rx);
+    // Release the slot back to the pool + clear turn→slot routing.
+    st.turn_slots.lock().await.remove(&turn_db_id);
+    drop(guard);
 
     // Finalize the turn.
     let status = if final_status == "interrupted" {
@@ -408,8 +428,15 @@ async fn turn_interrupt(
     if owned.is_none() {
         return Err((StatusCode::NOT_FOUND, "turn not found".into()));
     }
-    // M3: lock-free send (no contention with turn_start's event_rx lock).
-    let _ = st.runtime_cmd.send(runtime::DriverCommand::Interrupt);
+    // M5: route the interrupt to the slot actually running this turn (if it
+    // is still in-flight). If the turn already completed, there is no driver
+    // to interrupt — the DB update below still records the final state.
+    let slot_idx = st.turn_slots.lock().await.get(&turn_id).copied();
+    if let Some(idx) = slot_idx {
+        if let Some(tx) = st.driver_pool.cmd_tx(idx) {
+            let _ = tx.send(DriverCommand::Interrupt);
+        }
+    }
     let _ = sqlx::query("UPDATE turns SET status='interrupted', completed_at=NOW() WHERE id=$1")
         .bind(turn_id).execute(&st.pool).await;
     Ok(Json(serde_json::json!({ "turn_id": turn_id, "status": "interrupted" })))
@@ -425,14 +452,15 @@ async fn approval_resolve(
     Path(aid): Path<i64>,
     Json(req): Json<ResolveReq>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    // Load ticket, verify tenant + pending.
-    let row: Option<(String,)> = sqlx::query_as(
-        "SELECT status FROM approval_tickets WHERE id=$1 AND tenant_id=$2",
+    // Load ticket status + turn_id (M5: need turn_id to route the resolve to
+    // the driver actually running that turn). Verify tenant + pending.
+    let row: Option<(String, i64)> = sqlx::query_as(
+        "SELECT status, turn_id FROM approval_tickets WHERE id=$1 AND tenant_id=$2",
     )
     .bind(aid).bind(c.tid).fetch_optional(&st.pool).await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let status = match row {
-        Some((s,)) => s,
+    let (status, turn_id) = match row {
+        Some((s, t)) => (s, t),
         None => return Err((StatusCode::NOT_FOUND, "approval not found".into())),
     };
     if status != "pending" {
@@ -458,12 +486,22 @@ async fn approval_resolve(
          VALUES ($1,$2,'resolved',$3)",
     )
     .bind(aid).bind(c.uid).bind(new_status).execute(&st.pool).await;
-    // Lock-free dispatch to the parked driver.
-    if st.runtime_cmd
-        .send(runtime::DriverCommand::ResolveApproval { approval_id: aid, decision })
-        .is_err()
-    {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, "runtime driver gone".into()));
+    // M5: dispatch the resolve to the driver slot running this turn. If the
+    // turn already completed (no slot mapping), the ticket is already marked
+    // resolved above — a late resolve is a benign no-op (matches M4's
+    // "stale ResolveApproval — ignore" semantics on the driver side).
+    let slot_idx = st.turn_slots.lock().await.get(&turn_id).copied();
+    if let Some(idx) = slot_idx {
+        if let Some(tx) = st.driver_pool.cmd_tx(idx) {
+            if tx
+                .send(DriverCommand::ResolveApproval { approval_id: aid, decision })
+                .is_err()
+            {
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, "runtime driver gone".into()));
+            }
+        }
+    } else {
+        tracing::warn!(aid, turn_id, "approval resolve: turn not in-flight (already completed?)");
     }
     Ok(Json(serde_json::json!({ "approval_id": aid, "status": new_status })))
 }

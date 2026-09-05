@@ -123,9 +123,30 @@ async fn run(mut socket: WebSocket, st: AppState, thread_id: Uuid, claims: Claim
                 // M3 AC3.4: membership revoked mid-approval — close WS AND
                 // interrupt any in-flight turn on this thread (the driver
                 // writes Cancel for a parked approval, ticket → interrupted).
-                let _ = st
-                    .runtime_cmd
-                    .send(crate::runtime::DriverCommand::Interrupt);
+                // M5: route the interrupt to the slot running this thread's
+                // in-flight turn (find the running turn → turn_slots → slot).
+                let running_turn: Option<(i64,)> = sqlx::query_as(
+                    "SELECT id FROM turns WHERE thread_id=$1 AND status='running'
+                     ORDER BY id DESC LIMIT 1",
+                )
+                .bind(thread_id)
+                .fetch_optional(&st.pool)
+                .await
+                .ok()
+                .flatten();
+                if let Some((turn_id,)) = running_turn {
+                    let slot_idx = st
+                        .turn_slots
+                        .lock()
+                        .await
+                        .get(&turn_id)
+                        .copied();
+                    if let Some(idx) = slot_idx {
+                        if let Some(tx) = st.driver_pool.cmd_tx(idx) {
+                            let _ = tx.send(crate::runtime::DriverCommand::Interrupt);
+                        }
+                    }
+                }
                 let _ = socket
                     .send(Message::Text(r#"{"event":"revoked"}"#.into()))
                     .await;

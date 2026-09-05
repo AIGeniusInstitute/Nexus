@@ -812,7 +812,7 @@ fn run_serve(
     codex_bin: &std::path::Path,
     codex_home: &std::path::Path,
 ) -> Result<()> {
-    println!("=== Nexus M4: serve ===");
+    println!("=== Nexus M5: serve ===");
     let rt = rt()?;
     rt.block_on(async move {
         let pool = nexus_control::db::connect(database_url).await?;
@@ -848,24 +848,31 @@ fn run_serve(
             }
         }
 
-        // M2: spawn the runtime driver thread (owns app-server process).
-        // M3: the handle is SPLIT — cmd_tx (Clone, lock-free) goes straight
-        // into AppState; event_rx lives behind a mutex (only turn_start reads).
-        // Seed the approval-id counter from DB max so driver-generated ids
-        // never collide with existing rows across restarts.
+        // M5: spawn a POOL of driver threads (each owns an app-server process).
+        // NEXUS_POOL_SIZE (default 4) controls the max concurrent in-flight
+        // turns. The global approval-id counter is seeded from DB max so
+        // driver-generated ids never collide across slots or restarts.
         let start_approval_id: i64 = sqlx::query_scalar(
             "SELECT COALESCE(MAX(id), 0) + 1 FROM approval_tickets",
         )
         .fetch_one(&pool)
         .await
         .unwrap_or(1);
-        let runtime_handle = nexus_control::runtime::spawn(
+        let pool_size: usize = std::env::var("NEXUS_POOL_SIZE")
+            .ok()
+            .and_then(|s| s.parse::<usize>().ok())
+            .unwrap_or(4);
+        let driver_pool = nexus_control::runtime::spawn_pool(
             codex_bin.to_path_buf(),
             codex_home.to_path_buf(),
+            pool_size,
             start_approval_id,
         );
-        println!("runtime driver spawned (codex_bin={}, codex_home={})",
-            codex_bin.display(), codex_home.display());
+        println!(
+            "driver pool spawned: {pool_size} slots (codex_bin={}, codex_home={})",
+            codex_bin.display(),
+            codex_home.display()
+        );
 
         let jwt = std::sync::Arc::new(nexus_control::auth::JwtIssuer::new(jwt_secret, 24 * 3600));
         let auth: std::sync::Arc<dyn nexus_control::auth::AuthProvider> =
@@ -877,8 +884,10 @@ fn run_serve(
             pool,
             jwt,
             auth,
-            runtime_cmd: runtime_handle.cmd_tx,
-            runtime_events: std::sync::Arc::new(tokio::sync::Mutex::new(runtime_handle.event_rx)),
+            driver_pool,
+            turn_slots: std::sync::Arc::new(tokio::sync::Mutex::new(
+                std::collections::HashMap::new(),
+            )),
             broadcast: std::sync::Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
         };
         let app = nexus_control::http_server::router(state);
