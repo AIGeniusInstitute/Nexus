@@ -225,6 +225,11 @@ impl AppServerProcess {
         Some(self.child.id())
     }
 
+    /// Is the child process still running? (false if it has exited.)
+    pub fn is_alive(&mut self) -> bool {
+        matches!(self.child.try_wait(), Ok(None))
+    }
+
     // -- internals --
 
     fn request_id(&self) -> RequestId {

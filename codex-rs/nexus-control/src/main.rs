@@ -116,7 +116,7 @@ enum CliCommand {
     Serve {
         #[arg(long, env = "DATABASE_URL", default_value = "postgres://nexus:nexus@localhost:5432/nexus")]
         database_url: String,
-        #[arg(long, default_value = "0.0.0.0:8080")]
+        #[arg(long, default_value = "0.0.0.0:8765")]
         addr: String,
         #[arg(long, env = "NEXUS_JWT_SECRET", default_value = "nexus-m1-dev-secret-change-me")]
         jwt_secret: String,
@@ -124,6 +124,12 @@ enum CliCommand {
         admin_email: Option<String>,
         #[arg(long)]
         admin_password: Option<String>,
+        /// Path to the `codex` CLI binary (M2 runtime).
+        #[arg(long, env = "NEXUS_CODEX_BIN", default_value = "codex")]
+        codex_bin: PathBuf,
+        /// CODEX_HOME directory for the app-server (M2 runtime).
+        #[arg(long, env = "NEXUS_CODEX_HOME", default_value = ".nexus-control/codex-home")]
+        codex_home: PathBuf,
     },
 
     /// M1: CLI login — obtain a JWT and store it locally.
@@ -190,7 +196,9 @@ fn main() -> Result<()> {
             jwt_secret,
             admin_email,
             admin_password,
-        } => run_serve(&database_url, &addr, &jwt_secret, admin_email, admin_password),
+            codex_bin,
+            codex_home,
+        } => run_serve(&database_url, &addr, &jwt_secret, admin_email, admin_password, &codex_bin, &codex_home),
         CliCommand::Login { server, email, password } => run_login(&server, &email, &password),
         CliCommand::Threads { server } => run_threads(&server),
         CliCommand::Run { server, thread, input } => run_run(&server, &thread, &input),
@@ -801,16 +809,42 @@ fn run_serve(
     jwt_secret: &str,
     admin_email: Option<String>,
     admin_password: Option<String>,
+    codex_bin: &std::path::Path,
+    codex_home: &std::path::Path,
 ) -> Result<()> {
-    println!("=== Nexus M1: serve ===");
+    println!("=== Nexus M2: serve ===");
     let rt = rt()?;
-    rt.block_on(async {
+    rt.block_on(async move {
         let pool = nexus_control::db::connect(database_url).await?;
         nexus_control::db::run_migrations(&pool).await?;
         if let (Some(email), Some(pw)) = (admin_email, admin_password) {
             nexus_control::db::seed_admin(&pool, &email, &pw).await?;
             println!("admin user seeded: {email}");
         }
+
+        // M2: start the model gateway (mock or upstream passthrough).
+        let gateway_token = format!("nexus-gateway-{}", uuid::Uuid::new_v4().simple());
+        let _gateway = nexus_control::model_gateway::ModelGateway::start(&gateway_token)?;
+        let gateway_url = _gateway.base_url();
+        println!("model gateway on {gateway_url} (upstream passthrough: {})",
+            if std::env::var("NEXUS_UPSTREAM_MODEL_URL").is_ok() { "on" } else { "off/mock" });
+
+        // M2: write config.toml pointing the app-server at the gateway.
+        std::fs::create_dir_all(codex_home).ok();
+        let _config_path = nexus_control::execpolicy_rules::write_config_toml(
+            codex_home,
+            &format!("{gateway_url}/v1"),
+            &gateway_token,
+        )?;
+
+        // M2: spawn the runtime driver thread (owns app-server process).
+        let runtime_handle = nexus_control::runtime::spawn(
+            codex_bin.to_path_buf(),
+            codex_home.to_path_buf(),
+        );
+        println!("runtime driver spawned (codex_bin={}, codex_home={})",
+            codex_bin.display(), codex_home.display());
+
         let jwt = std::sync::Arc::new(nexus_control::auth::JwtIssuer::new(jwt_secret, 24 * 3600));
         let auth: std::sync::Arc<dyn nexus_control::auth::AuthProvider> =
             std::sync::Arc::new(nexus_control::auth::LocalProvider::new(
@@ -821,6 +855,8 @@ fn run_serve(
             pool,
             jwt,
             auth,
+            runtime: std::sync::Arc::new(tokio::sync::Mutex::new(runtime_handle)),
+            broadcast: std::sync::Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
         };
         let app = nexus_control::http_server::router(state);
         let listener = tokio::net::TcpListener::bind(addr)
