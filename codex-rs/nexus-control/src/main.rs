@@ -105,6 +105,52 @@ enum CliCommand {
         #[arg(long, default_value = "Say hello.")]
         message: String,
     },
+
+    /// M1: apply Postgres migrations (idempotent).
+    Migrate {
+        #[arg(long, env = "DATABASE_URL")]
+        database_url: String,
+    },
+
+    /// M1: start the HTTP + WS gateway server.
+    Serve {
+        #[arg(long, env = "DATABASE_URL", default_value = "postgres://nexus:nexus@localhost:5432/nexus")]
+        database_url: String,
+        #[arg(long, default_value = "0.0.0.0:8080")]
+        addr: String,
+        #[arg(long, env = "NEXUS_JWT_SECRET", default_value = "nexus-m1-dev-secret-change-me")]
+        jwt_secret: String,
+        #[arg(long)]
+        admin_email: Option<String>,
+        #[arg(long)]
+        admin_password: Option<String>,
+    },
+
+    /// M1: CLI login — obtain a JWT and store it locally.
+    Login {
+        #[arg(long)]
+        server: String,
+        #[arg(long)]
+        email: String,
+        #[arg(long)]
+        password: String,
+    },
+
+    /// M1: list threads.
+    Threads {
+        #[arg(long)]
+        server: String,
+    },
+
+    /// M1: submit a turn to a thread.
+    Run {
+        #[arg(long)]
+        server: String,
+        #[arg(long)]
+        thread: String,
+        #[arg(long, default_value = "hello")]
+        input: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -137,6 +183,17 @@ fn main() -> Result<()> {
             token,
             message,
         } => run_gateway_poc(&codex_bin, &codex_home, token, &message),
+        CliCommand::Migrate { database_url } => run_migrate(&database_url),
+        CliCommand::Serve {
+            database_url,
+            addr,
+            jwt_secret,
+            admin_email,
+            admin_password,
+        } => run_serve(&database_url, &addr, &jwt_secret, admin_email, admin_password),
+        CliCommand::Login { server, email, password } => run_login(&server, &email, &password),
+        CliCommand::Threads { server } => run_threads(&server),
+        CliCommand::Run { server, thread, input } => run_run(&server, &thread, &input),
     }
 }
 
@@ -714,4 +771,156 @@ fn run_gateway_poc(
 
     println!("\n=== T0-7 PoC complete ===");
     Ok(())
+}
+
+// ===========================================================================
+// M1: migrate / serve / login / threads / run
+// ===========================================================================
+
+fn rt() -> Result<tokio::runtime::Runtime> {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .context("build tokio runtime")
+}
+
+fn run_migrate(database_url: &str) -> Result<()> {
+    println!("=== Nexus M1: migrate ===");
+    let rt = rt()?;
+    rt.block_on(async {
+        let pool = nexus_control::db::connect(database_url).await?;
+        nexus_control::db::run_migrations(&pool).await?;
+        println!("migrations applied to {database_url}");
+        Ok::<_, anyhow::Error>(())
+    })
+}
+
+fn run_serve(
+    database_url: &str,
+    addr: &str,
+    jwt_secret: &str,
+    admin_email: Option<String>,
+    admin_password: Option<String>,
+) -> Result<()> {
+    println!("=== Nexus M1: serve ===");
+    let rt = rt()?;
+    rt.block_on(async {
+        let pool = nexus_control::db::connect(database_url).await?;
+        nexus_control::db::run_migrations(&pool).await?;
+        if let (Some(email), Some(pw)) = (admin_email, admin_password) {
+            nexus_control::db::seed_admin(&pool, &email, &pw).await?;
+            println!("admin user seeded: {email}");
+        }
+        let jwt = std::sync::Arc::new(nexus_control::auth::JwtIssuer::new(jwt_secret, 24 * 3600));
+        let auth: std::sync::Arc<dyn nexus_control::auth::AuthProvider> =
+            std::sync::Arc::new(nexus_control::auth::LocalProvider::new(
+                pool.clone(),
+                nexus_control::auth::JwtIssuer::new(jwt_secret, 24 * 3600),
+            ));
+        let state = nexus_control::http_server::AppState {
+            pool,
+            jwt,
+            auth,
+        };
+        let app = nexus_control::http_server::router(state);
+        let listener = tokio::net::TcpListener::bind(addr)
+            .await
+            .with_context(|| format!("bind {addr}"))?;
+        println!("nexus-control serving on http://{addr}");
+        axum::serve(listener, app).await?;
+        Ok::<_, anyhow::Error>(())
+    })
+}
+
+fn cred_store_path() -> Result<PathBuf> {
+    let home = std::env::var("HOME").context("HOME not set")?;
+    Ok(PathBuf::from(home).join(".nexus-control").join("credentials.json"))
+}
+
+fn load_creds() -> Result<(String, String)> {
+    let path = cred_store_path()?;
+    let text = std::fs::read_to_string(&path)
+        .with_context(|| format!("read credentials at {}", path.display()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)?;
+    let server = v["server"].as_str().context("missing server").map(str::to_string)?;
+    let token = v["token"].as_str().context("missing token").map(str::to_string)?;
+    Ok((server, token))
+}
+
+fn run_login(server: &str, email: &str, password: &str) -> Result<()> {
+    println!("=== Nexus M1: login ===");
+    let rt = rt()?;
+    rt.block_on(async {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(15))
+            .build()?;
+        let resp = client
+            .post(format!("{server}/v1/auth/login"))
+            .json(&serde_json::json!({ "email": email, "password": password }))
+            .send()
+            .await?;
+        if !resp.status().is_success() {
+            anyhow::bail!("login failed: HTTP {}", resp.status());
+        }
+        let body: serde_json::Value = resp.json().await?;
+        let token = body["token"]
+            .as_str()
+            .context("response missing token")?
+            .to_string();
+        let path = cred_store_path()?;
+        if let Some(p) = path.parent() {
+            std::fs::create_dir_all(p)?;
+        }
+        std::fs::write(
+            &path,
+            serde_json::json!({ "server": server, "token": token }).to_string(),
+        )?;
+        println!("logged in as {email}; token stored at {}", path.display());
+        Ok::<_, anyhow::Error>(())
+    })
+}
+
+fn run_threads(_server: &str) -> Result<()> {
+    println!("=== Nexus M1: threads ===");
+    let (server, token) = load_creds()?;
+    let rt = rt()?;
+    rt.block_on(async {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(15))
+            .build()?;
+        let resp = client
+            .get(format!("{server}/v1/threads"))
+            .header("Authorization", format!("Bearer {token}"))
+            .send()
+            .await?;
+        if !resp.status().is_success() {
+            anyhow::bail!("list failed: HTTP {}", resp.status());
+        }
+        let rows: serde_json::Value = resp.json().await?;
+        println!("{}", serde_json::to_string_pretty(&rows).unwrap_or_default());
+        Ok::<_, anyhow::Error>(())
+    })
+}
+
+fn run_run(_server: &str, thread_id: &str, input: &str) -> Result<()> {
+    println!("=== Nexus M1: run ===");
+    let (server, token) = load_creds()?;
+    let rt = rt()?;
+    rt.block_on(async {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .build()?;
+        let resp = client
+            .post(format!("{server}/v1/threads/{thread_id}/turns"))
+            .header("Authorization", format!("Bearer {token}"))
+            .json(&serde_json::json!({ "input": input }))
+            .send()
+            .await?;
+        if !resp.status().is_success() {
+            anyhow::bail!("turn failed: HTTP {}", resp.status());
+        }
+        let body: serde_json::Value = resp.json().await?;
+        println!("{body:#?}");
+        Ok::<_, anyhow::Error>(())
+    })
 }
