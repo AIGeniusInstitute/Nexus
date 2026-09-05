@@ -1,0 +1,219 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1180">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+<linearGradient id="gr" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#991b1b"/><stop offset="1" stop-color="#ef4444"/></linearGradient>
+<linearGradient id="gn" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#15803d"/><stop offset="1" stop-color="#22c55e"/></linearGradient>
+</defs>
+<rect width="1600" height="1180" fill="#0b141a"/>
+<text x="40" y="34" fill="#35c2b0" font-size="22" font-weight="700">Nexus 开发计划 · 阶段甘特图（M0–M12，约 13 个月）</text>
+<text x="40" y="58" fill="#9db8b4" font-size="13">四阶段：① PoC(M0,4周)  ② 单租户MVP(M1–M4)  ③ 多租户与隔离(M5–M7)  ④ 可靠性与治理(M8–M10)  ⑤ 规模化与生态(M11–M12+)</text>
+<rect x="320.0" y="80" width="90.76923076923077" height="980" fill="#22c55e" opacity="0.06"/>
+<rect x="320.0" y="80" width="90.76923076923077" height="26" fill="#22c55e" opacity="0.35" rx="4"/>
+<text x="365.38461538461536" y="98" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">PoC</text>
+<rect x="410.7692307692308" y="80" width="363.07692307692304" height="980" fill="#35c2b0" opacity="0.06"/>
+<rect x="410.7692307692308" y="80" width="363.07692307692304" height="26" fill="#35c2b0" opacity="0.35" rx="4"/>
+<text x="592.3076923076923" y="98" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">单租户 MVP</text>
+<rect x="773.8461538461538" y="80" width="272.3076923076924" height="980" fill="#e8b64c" opacity="0.06"/>
+<rect x="773.8461538461538" y="80" width="272.3076923076924" height="26" fill="#e8b64c" opacity="0.35" rx="4"/>
+<text x="910.0" y="98" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">多租户与隔离</text>
+<rect x="1046.1538461538462" y="80" width="272.3076923076924" height="980" fill="#a855f7" opacity="0.06"/>
+<rect x="1046.1538461538462" y="80" width="272.3076923076924" height="26" fill="#a855f7" opacity="0.35" rx="4"/>
+<text x="1182.3076923076924" y="98" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">可靠性与治理</text>
+<rect x="1318.4615384615386" y="80" width="181.53846153846143" height="980" fill="#3b82f6" opacity="0.06"/>
+<rect x="1318.4615384615386" y="80" width="181.53846153846143" height="26" fill="#3b82f6" opacity="0.35" rx="4"/>
+<text x="1409.2307692307693" y="98" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">规模化与生态</text>
+<text x="365.38461538461536" y="120" text-anchor="middle" fill="#9db8b4" font-size="11">M0</text>
+<line x1="320.0" y1="125" x2="320.0" y2="1080" stroke="#24414e" stroke-width="0.6" opacity="0.5"/>
+<text x="456.1538461538462" y="120" text-anchor="middle" fill="#9db8b4" font-size="11">M1</text>
+<line x1="410.7692307692308" y1="125" x2="410.7692307692308" y2="1080" stroke="#24414e" stroke-width="0.6" opacity="0.5"/>
+<text x="546.9230769230769" y="120" text-anchor="middle" fill="#9db8b4" font-size="11">M2</text>
+<line x1="501.53846153846155" y1="125" x2="501.53846153846155" y2="1080" stroke="#24414e" stroke-width="0.6" opacity="0.5"/>
+<text x="637.6923076923077" y="120" text-anchor="middle" fill="#9db8b4" font-size="11">M3</text>
+<line x1="592.3076923076924" y1="125" x2="592.3076923076924" y2="1080" stroke="#24414e" stroke-width="0.6" opacity="0.5"/>
+<text x="728.4615384615385" y="120" text-anchor="middle" fill="#9db8b4" font-size="11">M4</text>
+<line x1="683.0769230769231" y1="125" x2="683.0769230769231" y2="1080" stroke="#24414e" stroke-width="0.6" opacity="0.5"/>
+<text x="819.2307692307692" y="120" text-anchor="middle" fill="#9db8b4" font-size="11">M5</text>
+<line x1="773.8461538461538" y1="125" x2="773.8461538461538" y2="1080" stroke="#24414e" stroke-width="0.6" opacity="0.5"/>
+<text x="910.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="11">M6</text>
+<line x1="864.6153846153846" y1="125" x2="864.6153846153846" y2="1080" stroke="#24414e" stroke-width="0.6" opacity="0.5"/>
+<text x="1000.7692307692308" y="120" text-anchor="middle" fill="#9db8b4" font-size="11">M7</text>
+<line x1="955.3846153846155" y1="125" x2="955.3846153846155" y2="1080" stroke="#24414e" stroke-width="0.6" opacity="0.5"/>
+<text x="1091.5384615384617" y="120" text-anchor="middle" fill="#9db8b4" font-size="11">M8</text>
+<line x1="1046.1538461538462" y1="125" x2="1046.1538461538462" y2="1080" stroke="#24414e" stroke-width="0.6" opacity="0.5"/>
+<text x="1182.3076923076924" y="120" text-anchor="middle" fill="#9db8b4" font-size="11">M9</text>
+<line x1="1136.923076923077" y1="125" x2="1136.923076923077" y2="1080" stroke="#24414e" stroke-width="0.6" opacity="0.5"/>
+<text x="1273.076923076923" y="120" text-anchor="middle" fill="#9db8b4" font-size="11">M10</text>
+<line x1="1227.6923076923076" y1="125" x2="1227.6923076923076" y2="1080" stroke="#24414e" stroke-width="0.6" opacity="0.5"/>
+<text x="1363.846153846154" y="120" text-anchor="middle" fill="#9db8b4" font-size="11">M11</text>
+<line x1="1318.4615384615386" y1="125" x2="1318.4615384615386" y2="1080" stroke="#24414e" stroke-width="0.6" opacity="0.5"/>
+<text x="1454.6153846153848" y="120" text-anchor="middle" fill="#9db8b4" font-size="11">M12</text>
+<line x1="1409.2307692307693" y1="125" x2="1409.2307692307693" y2="1080" stroke="#24414e" stroke-width="0.6" opacity="0.5"/>
+<rect x="322.0" y="142" width="86.76923076923077" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="328.0" y="153" fill="#fff" font-size="9.5" font-weight="600">Agent Loop（core 复用）</text>
+<text x="312" y="153" text-anchor="end" fill="#e8f2f0" font-size="10">Agent Loop（core 复用）</text>
+<rect x="322.0" y="162" width="86.76923076923077" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="328.0" y="173" fill="#fff" font-size="9.5" font-weight="600">OS 沙箱（复用）</text>
+<text x="312" y="173" text-anchor="end" fill="#e8f2f0" font-size="10">OS 沙箱（复用）</text>
+<rect x="322.0" y="182" width="86.76923076923077" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="328.0" y="193" fill="#fff" font-size="9.5" font-weight="600">协议集成面 app-server</text>
+<text x="312" y="193" text-anchor="end" fill="#e8f2f0" font-size="10">协议集成面 app-server</text>
+<rect x="322.0" y="202" width="268.3076923076924" height="14" rx="3" fill="#ef4444" opacity="1.0"/>
+<text x="328.0" y="213" fill="#fff" font-size="9.5" font-weight="600">三层沙箱容器层</text>
+<text x="312" y="213" text-anchor="end" fill="#e8f2f0" font-size="10">三层沙箱容器层</text>
+<rect x="322.0" y="222" width="268.3076923076924" height="14" rx="3" fill="#ef4444" opacity="1.0"/>
+<text x="328.0" y="233" fill="#fff" font-size="9.5" font-weight="600">网络策略默认全禁</text>
+<text x="312" y="233" text-anchor="end" fill="#e8f2f0" font-size="10">网络策略默认全禁</text>
+<rect x="412.7692307692308" y="242" width="86.76923076923077" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="418.7692307692308" y="253" fill="#fff" font-size="9.5" font-weight="600">身份租户（单租户）</text>
+<text x="312" y="253" text-anchor="end" fill="#e8f2f0" font-size="10">身份租户（单租户）</text>
+<rect x="412.7692307692308" y="262" width="86.76923076923077" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="418.7692307692308" y="273" fill="#fff" font-size="9.5" font-weight="600">API Gateway</text>
+<text x="312" y="273" text-anchor="end" fill="#e8f2f0" font-size="10">API Gateway</text>
+<rect x="412.7692307692308" y="282" width="177.5384615384616" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="418.7692307692308" y="293" fill="#fff" font-size="9.5" font-weight="600">WS 网关</text>
+<text x="312" y="293" text-anchor="end" fill="#e8f2f0" font-size="10">WS 网关</text>
+<rect x="412.7692307692308" y="302" width="86.76923076923077" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="418.7692307692308" y="313" fill="#fff" font-size="9.5" font-weight="600">认证中间件 OIDC</text>
+<text x="312" y="313" text-anchor="end" fill="#e8f2f0" font-size="10">认证中间件 OIDC</text>
+<rect x="412.7692307692308" y="322" width="177.5384615384616" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="418.7692307692308" y="333" fill="#fff" font-size="9.5" font-weight="600">Web 门户骨架</text>
+<text x="312" y="333" text-anchor="end" fill="#e8f2f0" font-size="10">Web 门户骨架</text>
+<rect x="412.7692307692308" y="342" width="86.76923076923077" height="14" rx="3" fill="#e8b64c" opacity="0.75"/>
+<text x="418.7692307692308" y="353" fill="#fff" font-size="9.5" font-weight="600">CLI 登录层</text>
+<text x="312" y="353" text-anchor="end" fill="#e8f2f0" font-size="10">CLI 登录层</text>
+<rect x="503.53846153846155" y="362" width="86.76923076923083" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="509.53846153846155" y="373" fill="#fff" font-size="9.5" font-weight="600">Runtime 池调度</text>
+<text x="312" y="373" text-anchor="end" fill="#e8f2f0" font-size="10">Runtime 池调度</text>
+<rect x="503.53846153846155" y="382" width="86.76923076923083" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="509.53846153846155" y="393" fill="#fff" font-size="9.5" font-weight="600">Workspace 供给</text>
+<text x="312" y="393" text-anchor="end" fill="#e8f2f0" font-size="10">Workspace 供给</text>
+<rect x="503.53846153846155" y="402" width="86.76923076923083" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="509.53846153846155" y="413" fill="#fff" font-size="9.5" font-weight="600">任务编排 Temporal</text>
+<text x="312" y="413" text-anchor="end" fill="#e8f2f0" font-size="10">任务编排 Temporal</text>
+<rect x="503.53846153846155" y="422" width="86.76923076923083" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="509.53846153846155" y="433" fill="#fff" font-size="9.5" font-weight="600">OpenAPI+Webhook</text>
+<text x="312" y="433" text-anchor="end" fill="#e8f2f0" font-size="10">OpenAPI+Webhook</text>
+<rect x="503.53846153846155" y="442" width="86.76923076923083" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="509.53846153846155" y="453" fill="#fff" font-size="9.5" font-weight="600">Model Gateway</text>
+<text x="312" y="453" text-anchor="end" fill="#e8f2f0" font-size="10">Model Gateway</text>
+<rect x="503.53846153846155" y="462" width="86.76923076923083" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="509.53846153846155" y="473" fill="#fff" font-size="9.5" font-weight="600">Responses 代理</text>
+<text x="312" y="473" text-anchor="end" fill="#e8f2f0" font-size="10">Responses 代理</text>
+<rect x="503.53846153846155" y="482" width="86.76923076923083" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="509.53846153846155" y="493" fill="#fff" font-size="9.5" font-weight="600">对象存储（按租户前缀）</text>
+<text x="312" y="493" text-anchor="end" fill="#e8f2f0" font-size="10">对象存储（按租户前缀）</text>
+<rect x="503.53846153846155" y="502" width="86.76923076923083" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="509.53846153846155" y="513" fill="#fff" font-size="9.5" font-weight="600">配额预扣</text>
+<text x="312" y="513" text-anchor="end" fill="#e8f2f0" font-size="10">配额预扣</text>
+<rect x="412.7692307692308" y="522" width="86.76923076923077" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="418.7692307692308" y="533" fill="#fff" font-size="9.5" font-weight="600">Postgres 主库</text>
+<text x="312" y="533" text-anchor="end" fill="#e8f2f0" font-size="10">Postgres 主库</text>
+<rect x="594.3076923076924" y="542" width="86.76923076923072" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="600.3076923076924" y="553" fill="#fff" font-size="9.5" font-weight="600">审批中心 HITL</text>
+<text x="312" y="553" text-anchor="end" fill="#e8f2f0" font-size="10">审批中心 HITL</text>
+<rect x="594.3076923076924" y="562" width="86.76923076923072" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="600.3076923076924" y="573" fill="#fff" font-size="9.5" font-weight="600">策略中心 execpolicy 下发</text>
+<text x="312" y="573" text-anchor="end" fill="#e8f2f0" font-size="10">策略中心 execpolicy 下发</text>
+<rect x="594.3076923076924" y="582" width="86.76923076923072" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="600.3076923076924" y="593" fill="#fff" font-size="9.5" font-weight="600">IM Bot 飞书/钉钉</text>
+<text x="312" y="593" text-anchor="end" fill="#e8f2f0" font-size="10">IM Bot 飞书/钉钉</text>
+<rect x="685.0769230769231" y="602" width="86.76923076923072" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="691.0769230769231" y="613" fill="#fff" font-size="9.5" font-weight="600">配额计费（单租户）</text>
+<text x="312" y="613" text-anchor="end" fill="#e8f2f0" font-size="10">配额计费（单租户）</text>
+<rect x="685.0769230769231" y="622" width="86.76923076923072" height="14" rx="3" fill="#e8b64c" opacity="0.75"/>
+<text x="691.0769230769231" y="633" fill="#fff" font-size="9.5" font-weight="600">OTel 基础</text>
+<text x="312" y="633" text-anchor="end" fill="#e8f2f0" font-size="10">OTel 基础</text>
+<rect x="685.0769230769231" y="642" width="86.76923076923072" height="14" rx="3" fill="#e8b64c" opacity="0.75"/>
+<text x="691.0769230769231" y="653" fill="#fff" font-size="9.5" font-weight="600">IDE 插件</text>
+<text x="312" y="653" text-anchor="end" fill="#e8f2f0" font-size="10">IDE 插件</text>
+<rect x="685.0769230769231" y="662" width="86.76923076923072" height="14" rx="3" fill="#e8b64c" opacity="0.75"/>
+<text x="691.0769230769231" y="673" fill="#fff" font-size="9.5" font-weight="600">Skills/Hooks</text>
+<text x="312" y="673" text-anchor="end" fill="#e8f2f0" font-size="10">Skills/Hooks</text>
+<rect x="775.8461538461538" y="682" width="86.76923076923083" height="14" rx="3" fill="#e8b64c" opacity="1.0"/>
+<text x="781.8461538461538" y="693" fill="#fff" font-size="9.5" font-weight="600">身份租户（多租户RBAC+ABAC）</text>
+<text x="312" y="693" text-anchor="end" fill="#e8f2f0" font-size="10">身份租户（多租户RBAC+ABAC）</text>
+<rect x="775.8461538461538" y="702" width="86.76923076923083" height="14" rx="3" fill="#ef4444" opacity="1.0"/>
+<text x="781.8461538461538" y="713" fill="#fff" font-size="9.5" font-weight="600">四重隔离取证</text>
+<text x="312" y="713" text-anchor="end" fill="#e8f2f0" font-size="10">四重隔离取证</text>
+<rect x="775.8461538461538" y="722" width="86.76923076923083" height="14" rx="3" fill="#e8b64c" opacity="0.75"/>
+<text x="781.8461538461538" y="733" fill="#fff" font-size="9.5" font-weight="600">KMS 按租户 CMK</text>
+<text x="312" y="733" text-anchor="end" fill="#e8f2f0" font-size="10">KMS 按租户 CMK</text>
+<rect x="775.8461538461538" y="742" width="86.76923076923083" height="14" rx="3" fill="#ef4444" opacity="1.0"/>
+<text x="781.8461538461538" y="753" fill="#fff" font-size="9.5" font-weight="600">Postgres RLS 策略</text>
+<text x="312" y="753" text-anchor="end" fill="#e8f2f0" font-size="10">Postgres RLS 策略</text>
+<rect x="866.6153846153846" y="762" width="86.76923076923083" height="14" rx="3" fill="#e8b64c" opacity="1.0"/>
+<text x="872.6153846153846" y="773" fill="#fff" font-size="9.5" font-weight="600">配额计费（多租户归因）</text>
+<text x="312" y="773" text-anchor="end" fill="#e8f2f0" font-size="10">配额计费（多租户归因）</text>
+<rect x="957.3846153846155" y="782" width="86.76923076923072" height="14" rx="3" fill="#e8b64c" opacity="0.75"/>
+<text x="963.3846153846155" y="793" fill="#fff" font-size="9.5" font-weight="600">MCP Gateway 侧车</text>
+<text x="312" y="793" text-anchor="end" fill="#e8f2f0" font-size="10">MCP Gateway 侧车</text>
+<rect x="957.3846153846155" y="802" width="86.76923076923072" height="14" rx="3" fill="#e8b64c" opacity="0.75"/>
+<text x="963.3846153846155" y="813" fill="#fff" font-size="9.5" font-weight="600">连接器治理</text>
+<text x="312" y="813" text-anchor="end" fill="#e8f2f0" font-size="10">连接器治理</text>
+<rect x="957.3846153846155" y="822" width="86.76923076923072" height="14" rx="3" fill="#e8b64c" opacity="0.75"/>
+<text x="963.3846153846155" y="833" fill="#fff" font-size="9.5" font-weight="600">凭据代理 短期令牌</text>
+<text x="312" y="833" text-anchor="end" fill="#e8f2f0" font-size="10">凭据代理 短期令牌</text>
+<rect x="1048.1538461538462" y="842" width="86.76923076923072" height="14" rx="3" fill="#e8b64c" opacity="0.75"/>
+<text x="1054.1538461538462" y="853" fill="#fff" font-size="9.5" font-weight="600">评测中心</text>
+<text x="312" y="853" text-anchor="end" fill="#e8f2f0" font-size="10">评测中心</text>
+<rect x="1138.923076923077" y="862" width="86.76923076923072" height="14" rx="3" fill="#e8b64c" opacity="0.75"/>
+<text x="1144.923076923077" y="873" fill="#fff" font-size="9.5" font-weight="600">多模型路由</text>
+<text x="312" y="873" text-anchor="end" fill="#e8f2f0" font-size="10">多模型路由</text>
+<rect x="1138.923076923077" y="882" width="86.76923076923072" height="14" rx="3" fill="#e8b64c" opacity="0.75"/>
+<text x="1144.923076923077" y="893" fill="#fff" font-size="9.5" font-weight="600">Prompt Caching</text>
+<text x="312" y="893" text-anchor="end" fill="#e8f2f0" font-size="10">Prompt Caching</text>
+<rect x="1138.923076923077" y="902" width="86.76923076923072" height="14" rx="3" fill="#35c2b0" opacity="1.0"/>
+<text x="1144.923076923077" y="913" fill="#fff" font-size="9.5" font-weight="600">故障转移</text>
+<text x="312" y="913" text-anchor="end" fill="#e8f2f0" font-size="10">故障转移</text>
+<rect x="1138.923076923077" y="922" width="86.76923076923072" height="14" rx="3" fill="#e8b64c" opacity="0.75"/>
+<text x="1144.923076923077" y="933" fill="#fff" font-size="9.5" font-weight="600">OTel 全链路</text>
+<text x="312" y="933" text-anchor="end" fill="#e8f2f0" font-size="10">OTel 全链路</text>
+<rect x="1229.6923076923076" y="942" width="86.76923076923094" height="14" rx="3" fill="#e8b64c" opacity="0.75"/>
+<text x="1235.6923076923076" y="953" fill="#fff" font-size="9.5" font-weight="600">审计日志 WORM</text>
+<text x="312" y="953" text-anchor="end" fill="#e8f2f0" font-size="10">审计日志 WORM</text>
+<rect x="1229.6923076923076" y="962" width="86.76923076923094" height="14" rx="3" fill="#ef4444" opacity="0.75"/>
+<text x="1235.6923076923076" y="973" fill="#fff" font-size="9.5" font-weight="600">内容安全 PII/注入防护</text>
+<text x="312" y="973" text-anchor="end" fill="#e8f2f0" font-size="10">内容安全 PII/注入防护</text>
+<rect x="1229.6923076923076" y="982" width="86.76923076923094" height="14" rx="3" fill="#ef4444" opacity="0.75"/>
+<text x="1235.6923076923076" y="993" fill="#fff" font-size="9.5" font-weight="600">红队演练（首次）</text>
+<text x="312" y="993" text-anchor="end" fill="#e8f2f0" font-size="10">红队演练（首次）</text>
+<rect x="1320.4615384615386" y="1002" width="86.76923076923072" height="14" rx="3" fill="#e8b64c" opacity="1.0"/>
+<text x="1326.4615384615386" y="1013" fill="#fff" font-size="9.5" font-weight="600">Runtime 池优化（冷启动＜5s）</text>
+<text x="312" y="1013" text-anchor="end" fill="#e8f2f0" font-size="10">Runtime 池优化（冷启动＜5s）</text>
+<rect x="1320.4615384615386" y="1022" width="86.76923076923072" height="14" rx="3" fill="#a855f7" opacity="0.55"/>
+<text x="1326.4615384615386" y="1033" fill="#fff" font-size="9.5" font-weight="600">知识库/RAG（ACL随索引）</text>
+<text x="312" y="1033" text-anchor="end" fill="#e8f2f0" font-size="10">知识库/RAG（ACL随索引）</text>
+<rect x="1320.4615384615386" y="1042" width="86.76923076923072" height="14" rx="3" fill="#a855f7" opacity="0.55"/>
+<text x="1326.4615384615386" y="1053" fill="#fff" font-size="9.5" font-weight="600">向量库 pgvector</text>
+<text x="312" y="1053" text-anchor="end" fill="#e8f2f0" font-size="10">向量库 pgvector</text>
+<rect x="1320.4615384615386" y="1062" width="177.53846153846143" height="14" rx="3" fill="#a855f7" opacity="0.55"/>
+<text x="1326.4615384615386" y="1073" fill="#fff" font-size="9.5" font-weight="600">协作编排 多Agent</text>
+<text x="312" y="1073" text-anchor="end" fill="#e8f2f0" font-size="10">协作编排 多Agent</text>
+<rect x="1411.2307692307693" y="1082" width="86.76923076923072" height="14" rx="3" fill="#a855f7" opacity="0.55"/>
+<text x="1417.2307692307693" y="1093" fill="#fff" font-size="9.5" font-weight="600">私有化部署 vLLM/Ollama</text>
+<text x="312" y="1093" text-anchor="end" fill="#e8f2f0" font-size="10">私有化部署 vLLM/Ollama</text>
+<path d="M 410.7692307692308 1060 l 10 12 l -10 12 l -10 -12 z" fill="#22c55e" stroke="#e8f2f0" stroke-width="0.8"/>
+<text x="410.7692307692308" y="1100" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="700">M0 PoC</text>
+<text x="410.7692307692308" y="1114" text-anchor="middle" fill="#9db8b4" font-size="9.5">三大假设验证</text>
+<path d="M 773.8461538461538 1060 l 10 12 l -10 12 l -10 -12 z" fill="#35c2b0" stroke="#e8f2f0" stroke-width="0.8"/>
+<text x="773.8461538461538" y="1100" text-anchor="middle" fill="#35c2b0" font-size="11" font-weight="700">M4 MVP</text>
+<text x="773.8461538461538" y="1114" text-anchor="middle" fill="#9db8b4" font-size="9.5">P0完成率≥70%</text>
+<path d="M 1046.1538461538462 1060 l 10 12 l -10 12 l -10 -12 z" fill="#e8b64c" stroke="#e8f2f0" stroke-width="0.8"/>
+<text x="1046.1538461538462" y="1100" text-anchor="middle" fill="#e8b64c" font-size="11" font-weight="700">M7 隔离</text>
+<text x="1046.1538461538462" y="1114" text-anchor="middle" fill="#9db8b4" font-size="9.5">跨租户越权0通过</text>
+<path d="M 1318.4615384615386 1060 l 10 12 l -10 12 l -10 -12 z" fill="#a855f7" stroke="#e8f2f0" stroke-width="0.8"/>
+<text x="1318.4615384615386" y="1100" text-anchor="middle" fill="#a855f7" font-size="11" font-weight="700">M10 治理</text>
+<text x="1318.4615384615386" y="1114" text-anchor="middle" fill="#9db8b4" font-size="9.5">任务成功率≥85%</text>
+<path d="M 1500.0 1060 l 10 12 l -10 12 l -10 -12 z" fill="#3b82f6" stroke="#e8f2f0" stroke-width="0.8"/>
+<text x="1500.0" y="1100" text-anchor="middle" fill="#3b82f6" font-size="11" font-weight="700">M12 GA</text>
+<text x="1500.0" y="1114" text-anchor="middle" fill="#9db8b4" font-size="9.5">100+并发稳定</text>
+<text x="40" y="1145" fill="#9db8b4" font-size="11">■ 不透明度=优先级：P0(实) P1(0.75) P2(0.55)  ·  颜色=所属层  ·  ◆ 里程碑验收门</text>
+<text x="40" y="1162" fill="#9db8b4" font-size="11.5">图 1 · Nexus 阶段甘特图（46 模块按 M0–M12 排布，5 大里程碑验收门）</text>
+</svg>

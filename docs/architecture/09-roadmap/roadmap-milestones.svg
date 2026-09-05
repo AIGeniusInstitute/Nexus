@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 560">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+<linearGradient id="gr" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#991b1b"/><stop offset="1" stop-color="#ef4444"/></linearGradient>
+<linearGradient id="gn" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#15803d"/><stop offset="1" stop-color="#22c55e"/></linearGradient>
+</defs>
+<rect width="1600" height="560" fill="#0b141a"/>
+<text x="40" y="34" fill="#35c2b0" font-size="22" font-weight="700">Nexus 里程碑路线图 · 五阶段五验收门</text>
+<text x="40" y="58" fill="#9db8b4" font-size="13">每阶段以可验证的退出条件为门禁，未达标不进入下一阶段</text>
+<line x1="100" y1="200" x2="1500" y2="200" stroke="#2e5a68" stroke-width="3"/>
+<circle cx="160" cy="200" r="22" fill="#0b141a" stroke="#22c55e" stroke-width="3"/>
+<text x="160" y="206" text-anchor="middle" fill="#22c55e" font-size="13" font-weight="700">M0</text>
+<rect x="80" y="100" width="160" height="50" rx="8" fill="#173341" stroke="#22c55e" stroke-width="1.2"/>
+<text x="160" y="122" text-anchor="middle" fill="#22c55e" font-size="14" font-weight="700">PoC</text>
+<text x="160" y="140" text-anchor="middle" fill="#9db8b4" font-size="11">周期 4周</text>
+<line x1="160" y1="150" x2="160" y2="178" stroke="#22c55e" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="160" y="246" text-anchor="middle" fill="#e8f2f0" font-size="11">三大假设验证</text>
+<text x="160" y="264" text-anchor="middle" fill="#e8f2f0" font-size="11">①app-server长会话可恢复</text>
+<text x="160" y="282" text-anchor="middle" fill="#e8f2f0" font-size="11">②execpolicy规则可下发</text>
+<text x="160" y="300" text-anchor="middle" fill="#e8f2f0" font-size="11">③三层沙箱生效</text>
+<circle cx="430" cy="200" r="22" fill="#0b141a" stroke="#35c2b0" stroke-width="3"/>
+<text x="430" y="206" text-anchor="middle" fill="#35c2b0" font-size="13" font-weight="700">M1-M4</text>
+<rect x="350" y="100" width="160" height="50" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.2"/>
+<text x="430" y="122" text-anchor="middle" fill="#35c2b0" font-size="14" font-weight="700">单租户 MVP</text>
+<text x="430" y="140" text-anchor="middle" fill="#9db8b4" font-size="11">周期 4个月</text>
+<line x1="430" y1="150" x2="430" y2="178" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="430" y="246" text-anchor="middle" fill="#e8f2f0" font-size="11">P0模块完成率≥70%</text>
+<text x="430" y="264" text-anchor="middle" fill="#e8f2f0" font-size="11">端到端任务跑通</text>
+<text x="430" y="282" text-anchor="middle" fill="#e8f2f0" font-size="11">会话落库可resume</text>
+<circle cx="700" cy="200" r="22" fill="#0b141a" stroke="#e8b64c" stroke-width="3"/>
+<text x="700" y="206" text-anchor="middle" fill="#e8b64c" font-size="13" font-weight="700">M5-M7</text>
+<rect x="620" y="100" width="160" height="50" rx="8" fill="#173341" stroke="#e8b64c" stroke-width="1.2"/>
+<text x="700" y="122" text-anchor="middle" fill="#e8b64c" font-size="14" font-weight="700">多租户隔离</text>
+<text x="700" y="140" text-anchor="middle" fill="#9db8b4" font-size="11">周期 3个月</text>
+<line x1="700" y1="150" x2="700" y2="178" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="700" y="246" text-anchor="middle" fill="#e8f2f0" font-size="11">四重隔离取证</text>
+<text x="700" y="264" text-anchor="middle" fill="#e8f2f0" font-size="11">跨租户越权0通过</text>
+<text x="700" y="282" text-anchor="middle" fill="#e8f2f0" font-size="11">KMS+RLS生效</text>
+<circle cx="970" cy="200" r="22" fill="#0b141a" stroke="#a855f7" stroke-width="3"/>
+<text x="970" y="206" text-anchor="middle" fill="#a855f7" font-size="13" font-weight="700">M8-M10</text>
+<rect x="890" y="100" width="160" height="50" rx="8" fill="#173341" stroke="#a855f7" stroke-width="1.2"/>
+<text x="970" y="122" text-anchor="middle" fill="#a855f7" font-size="14" font-weight="700">可靠性治理</text>
+<text x="970" y="140" text-anchor="middle" fill="#9db8b4" font-size="11">周期 3个月</text>
+<line x1="970" y1="150" x2="970" y2="178" stroke="#a855f7" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="970" y="246" text-anchor="middle" fill="#e8f2f0" font-size="11">任务成功率≥85%</text>
+<text x="970" y="264" text-anchor="middle" fill="#e8f2f0" font-size="11">评测CI门禁</text>
+<text x="970" y="282" text-anchor="middle" fill="#e8f2f0" font-size="11">审计WORM+红队</text>
+<circle cx="1240" cy="200" r="22" fill="#0b141a" stroke="#3b82f6" stroke-width="3"/>
+<text x="1240" y="206" text-anchor="middle" fill="#3b82f6" font-size="13" font-weight="700">M11-M12+</text>
+<rect x="1160" y="100" width="160" height="50" rx="8" fill="#173341" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="1240" y="122" text-anchor="middle" fill="#3b82f6" font-size="14" font-weight="700">规模化生态</text>
+<text x="1240" y="140" text-anchor="middle" fill="#9db8b4" font-size="11">周期 2个月+</text>
+<line x1="1240" y1="150" x2="1240" y2="178" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1240" y="246" text-anchor="middle" fill="#e8f2f0" font-size="11">100+并发稳定</text>
+<text x="1240" y="264" text-anchor="middle" fill="#e8f2f0" font-size="11">冷启动＜5s</text>
+<text x="1240" y="282" text-anchor="middle" fill="#e8f2f0" font-size="11">知识库/协作/私有化</text>
+<text x="160" y="340" text-anchor="middle" fill="#9db8b4" font-size="10.5">复用3模块</text>
+<text x="430" y="340" text-anchor="middle" fill="#9db8b4" font-size="10.5">+23 P0模块</text>
+<text x="700" y="340" text-anchor="middle" fill="#9db8b4" font-size="10.5">+10 P1模块</text>
+<text x="970" y="340" text-anchor="middle" fill="#9db8b4" font-size="10.5">+8 P1模块</text>
+<text x="1240" y="340" text-anchor="middle" fill="#9db8b4" font-size="10.5">+6 P2模块</text>
+<rect x="80" y="380" width="1440" height="120" rx="10" fill="#13242e" stroke="#2e5a68"/>
+<text x="100" y="405" fill="#e8b64c" font-size="12.5" font-weight="700">累计交付能力</text>
+<text x="110" y="425" fill="#35c2b0" font-size="11" font-weight="700">M0:</text>
+<text x="160" y="425" fill="#e8f2f0" font-size="11">app-server集成·沙箱·策略下发·模型代理</text>
+<text x="110" y="441" fill="#35c2b0" font-size="11" font-weight="700">M4:</text>
+<text x="160" y="441" fill="#e8f2f0" font-size="11">Web门户·审批HITL·配额·任务编排·会话云端持久化</text>
+<text x="110" y="457" fill="#35c2b0" font-size="11" font-weight="700">M7:</text>
+<text x="160" y="457" fill="#e8f2f0" font-size="11">多租户·四重隔离·KMS·MCP Gateway·凭据代理·连接器治理</text>
+<text x="110" y="473" fill="#35c2b0" font-size="11" font-weight="700">M10:</text>
+<text x="160" y="473" fill="#e8f2f0" font-size="11">评测中心·多模型路由·故障转移·审计WORM·内容安全·红队</text>
+<text x="110" y="489" fill="#35c2b0" font-size="11" font-weight="700">M12:</text>
+<text x="160" y="489" fill="#e8f2f0" font-size="11">冷启动＜5s·知识库RAG·多Agent协作·私有化部署·生态</text>
+<text x="40" y="530" fill="#9db8b4" font-size="11.5">图 2 · 五阶段里程碑路线（每阶段验收门未达标不进入下一阶段）</text>
+</svg>

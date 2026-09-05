@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 720">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+<linearGradient id="gr" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#991b1b"/><stop offset="1" stop-color="#ef4444"/></linearGradient>
+<linearGradient id="gn" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#15803d"/><stop offset="1" stop-color="#22c55e"/></linearGradient>
+</defs>
+<rect width="1600" height="720" fill="#0b141a"/>
+<text x="40" y="34" fill="#35c2b0" font-size="22" font-weight="700">Nexus 关键路径 · 从 PoC 到 MVP 的最长依赖链</text>
+<text x="40" y="58" fill="#9db8b4" font-size="13">红色路径=关键路径（决定 MVP 工期）；任何环节延期=MVP 延期</text>
+<rect x="25" y="174" width="190" height="52" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.6"/>
+<text x="120" y="194" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">app-server 协议集成</text>
+<text x="120" y="212" text-anchor="middle" fill="#9db8b4" font-size="9.5">L5·复用·M0</text>
+<rect x="265" y="174" width="190" height="52" rx="8" fill="#173341" stroke="#ef4444" stroke-width="1.6"/>
+<text x="360" y="194" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">三层沙箱+网络策略</text>
+<text x="360" y="212" text-anchor="middle" fill="#9db8b4" font-size="9.5">L4/L8·M0</text>
+<rect x="505" y="174" width="190" height="52" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.6"/>
+<text x="600" y="194" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">身份租户+认证</text>
+<text x="600" y="212" text-anchor="middle" fill="#9db8b4" font-size="9.5">L3/L2·M1</text>
+<rect x="745" y="174" width="190" height="52" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.6"/>
+<text x="840" y="194" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">Postgres+会话落库</text>
+<text x="840" y="212" text-anchor="middle" fill="#9db8b4" font-size="9.5">L7·M1-M2</text>
+<rect x="985" y="174" width="190" height="52" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.6"/>
+<text x="1080" y="194" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">Runtime池+Workspace</text>
+<text x="1080" y="212" text-anchor="middle" fill="#9db8b4" font-size="9.5">L4·M2</text>
+<rect x="1225" y="174" width="190" height="52" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.6"/>
+<text x="1320" y="194" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">任务编排 Temporal</text>
+<text x="1320" y="212" text-anchor="middle" fill="#9db8b4" font-size="9.5">L3·M2</text>
+<rect x="1225" y="334" width="190" height="52" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.6"/>
+<text x="1320" y="354" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">Model Gateway</text>
+<text x="1320" y="372" text-anchor="middle" fill="#9db8b4" font-size="9.5">L6·M2</text>
+<rect x="985" y="334" width="190" height="52" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.6"/>
+<text x="1080" y="354" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">审批中心 HITL</text>
+<text x="1080" y="372" text-anchor="middle" fill="#9db8b4" font-size="9.5">L3·M3</text>
+<rect x="745" y="334" width="190" height="52" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.6"/>
+<text x="840" y="354" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">策略中心下发</text>
+<text x="840" y="372" text-anchor="middle" fill="#9db8b4" font-size="9.5">L3·M3</text>
+<rect x="505" y="334" width="190" height="52" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.6"/>
+<text x="600" y="354" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">IM Bot</text>
+<text x="600" y="372" text-anchor="middle" fill="#9db8b4" font-size="9.5">L1·M3</text>
+<rect x="265" y="334" width="190" height="52" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.6"/>
+<text x="360" y="354" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">配额计费</text>
+<text x="360" y="372" text-anchor="middle" fill="#9db8b4" font-size="9.5">L3·M4</text>
+<rect x="25" y="334" width="190" height="52" rx="8" fill="#173341" stroke="#e8b64c" stroke-width="1.6"/>
+<text x="120" y="354" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">M4 MVP 验收</text>
+<text x="120" y="372" text-anchor="middle" fill="#9db8b4" font-size="9.5">P0≥70%</text>
+<path d="M 215 200 L 265 200" fill="none" stroke="#ef4444" stroke-width="2.6" marker-end="url(#ar)"/>
+<path d="M 455 200 L 505 200" fill="none" stroke="#ef4444" stroke-width="2.6" marker-end="url(#ar)"/>
+<path d="M 695 200 L 745 200" fill="none" stroke="#ef4444" stroke-width="2.6" marker-end="url(#ar)"/>
+<path d="M 935 200 L 985 200" fill="none" stroke="#ef4444" stroke-width="2.6" marker-end="url(#ar)"/>
+<path d="M 1175 200 L 1225 200" fill="none" stroke="#ef4444" stroke-width="2.6" marker-end="url(#ar)"/>
+<path d="M 1320 226 C 1320.0 260, 1320.0 300, 1320 334" fill="none" stroke="#e8b64c" stroke-width="1.4" stroke-dasharray="5,3" marker-end="url(#ag)"/>
+<path d="M 1415 360 L 985 360" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<path d="M 1175 360 L 745 360" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<path d="M 935 360 L 505 360" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<path d="M 695 360 L 265 360" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<path d="M 455 360 L 25 360" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<path d="M 1320 226 C 1200.0 260, 1200.0 300, 1080 334" fill="none" stroke="#e8b64c" stroke-width="1.4" stroke-dasharray="5,3" marker-end="url(#ag)"/>
+<path d="M 1080 374 C 800 500, 400 480, 120 386" fill="none" stroke="#e8b64c" stroke-width="1.4" stroke-dasharray="5,3" marker-end="url(#ag)"/>
+<rect x="80" y="610" width="1440" height="70" rx="8" fill="#13242e" stroke="#2e5a68"/>
+<line x1="110" y1="635" x2="170" y2="635" stroke="#ef4444" stroke-width="2.6" marker-end="url(#ar)"/>
+<text x="185" y="640" fill="#e8f2f0" font-size="11.5">关键路径（MVP 最长依赖链，延期=MVP 延期）</text>
+<line x1="560" y1="635" x2="620" y2="635" stroke="#e8b64c" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#ag)"/>
+<text x="635" y="640" fill="#e8f2f0" font-size="11.5">次要依赖（可并行，不阻塞关键路径）</text>
+<text x="110" y="662" fill="#9db8b4" font-size="10.5">关键路径长度 = M0(沙箱) + M1(身份/库) + M2(执行闭环) = 决定 MVP 最早完工时间；审批/策略/计费可并行于 M3-M4</text>
+<text x="40" y="700" fill="#9db8b4" font-size="11.5">图 3 · MVP 关键路径（红色链为最长依赖，决定工期下限）</text>
+</svg>

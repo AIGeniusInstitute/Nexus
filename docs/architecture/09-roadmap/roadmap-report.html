@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus 开发计划 RoadMap · 交互报告</title>
+<style>
+:root{--bg:#0b141a;--panel:#13242e;--panel2:#173341;--text:#e8f2f0;--muted:#9db8b4;--line:#24414e;--accent:#35c2b0;--gold:#e8b64c;--blue:#3b82f6;--red:#ef4444;--green:#22c55e;--purple:#a855f7;--code-bg:#0d1b20}
+[data-theme="light"]{--bg:#f6f8f9;--panel:#fff;--panel2:#eef2f4;--text:#16202a;--muted:#5a6b72;--line:#d4dde0;--accent:#028090;--gold:#b07d1a;--blue:#2563eb;--red:#dc2626;--green:#15803d;--purple:#7c3aed;--code-bg:#f1f3f4}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;font-size:15px}
+.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--gold));z-index:1000;width:0}
+header{padding:30px 40px 14px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:100}
+header h1{color:var(--accent);font-size:23px;margin-bottom:4px}
+header .sub{color:var(--muted);font-size:13px}
+.theme-btn{position:absolute;right:40px;top:28px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px}
+.layout{display:flex;max-width:1640px;margin:0 auto}
+nav.toc{width:230px;position:sticky;top:90px;height:calc(100vh-110px);overflow-y:auto;padding:20px 10px;flex-shrink:0}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;font-size:12.5px;padding:5px 12px;border-radius:6px;border-left:2px solid transparent}
+nav.toc a:hover,nav.toc a.active{color:var(--accent);background:var(--panel);border-left-color:var(--accent)}
+main{flex:1;padding:22px 40px;min-width:0}
+section{margin-bottom:42px;padding-bottom:14px;border-bottom:1px dashed var(--line)}
+section:last-child{border-bottom:none}
+h2{color:var(--accent);font-size:19px;margin-bottom:12px;padding-bottom:5px;border-bottom:2px solid var(--accent)}
+h3{color:var(--gold);font-size:15px;margin:16px 0 8px}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12.5px;background:var(--panel)}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--panel2);color:var(--accent);font-weight:600;position:sticky;top:0}
+img.diagram{width:100%;border:1px solid var(--line);border-radius:10px;margin:12px 0;background:var(--panel)}
+.cap{color:var(--muted);font-size:11px;text-align:center;margin-top:-4px;margin-bottom:12px}
+code{background:var(--code-bg);padding:2px 5px;border-radius:4px;font-family:Consolas,monospace;font-size:12px;color:var(--gold)}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto;margin:10px 0}
+pre code{background:none;padding:0;color:var(--text)}
+details{border:1px solid var(--line);border-radius:8px;margin:8px 0;background:var(--panel)}
+summary{cursor:pointer;padding:9px 14px;font-weight:600;color:var(--accent);user-select:none}
+details[open] summary{border-bottom:1px solid var(--line)}
+.detail-body{padding:10px 14px}
+.badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700}
+.b-p0{background:rgba(239,68,68,.2);color:var(--red)}
+.b-p1{background:rgba(232,182,76,.2);color:var(--gold)}
+.b-p2{background:rgba(168,85,247,.2);color:var(--purple)}
+.b-codex{background:rgba(53,194,176,.18);color:var(--accent)}
+.b-self{background:rgba(34,197,90,.18);color:var(--green)}
+.b-partial{background:rgba(59,130,246,.18);color:var(--blue)}
+.callout{border-left:4px solid var(--accent);background:var(--panel);padding:10px 14px;margin:12px 0;border-radius:0 8px 8px 0}
+.callout.gold{border-color:var(--gold)}
+.callout.red{border-color:var(--red)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0}
+.stat-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center}
+.stat-card .num{font-size:26px;font-weight:700;color:var(--accent)}
+.stat-card .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;align-items:center}
+.filter-bar select,.filter-bar input{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:12.5px}
+.filter-bar label{font-size:12px;color:var(--muted)}
+table.tasks th{cursor:pointer;user-select:none}
+table.tasks th:hover{background:var(--panel)}
+table.tasks tr:hover{background:var(--panel2)}
+@media(max-width:980px){.layout{flex-direction:column}nav.toc{position:static;width:auto;height:auto}}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<header>
+  <h1>Nexus 企业级 AI Agent 平台 · 开发计划 RoadMap</h1>
+  <div class="sub">5 阶段 · 13 里程碑(M0–M12+) · 70 项任务 · 基于八维度系统设计产物</div>
+  <button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+</header>
+<div class="layout">
+<nav class="toc" id="toc"></nav>
+<main>
+
+<section id="s0">
+<h2>0. 概览</h2>
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">5</div><div class="lbl">阶段</div></div>
+  <div class="stat-card"><div class="num">13</div><div class="lbl">里程碑 M0-M12+</div></div>
+  <div class="stat-card"><div class="num">70</div><div class="lbl">可执行任务</div></div>
+  <div class="stat-card"><div class="num">90.5</div><div class="lbl">总工时(pw)</div></div>
+  <div class="stat-card"><div class="num">~13</div><div class="lbl">总周期(月)</div></div>
+  <div class="stat-card"><div class="num">8-12</div><div class="lbl">核心团队(人)</div></div>
+</div>
+<div class="callout gold">核心约束：不改 Harness 内核 · 主集成面=app-server JSON-RPC · 控制面/执行面物理分离 · 会话真相在云端 · 默认最小权限</div>
+</section>
+
+<section id="s1">
+<h2>1. 五阶段路线与验收门</h2>
+<img class="diagram" src="roadmap-milestones.svg" alt="里程碑路线">
+<div class="cap">图 · 五阶段里程碑路线（每阶段验收门未达标不进入下一阶段）</div>
+<table>
+<tr><th>阶段</th><th>里程碑</th><th>周期</th><th>目标</th><th>验收门</th></tr>
+<tr><td><span class="badge b-p2">①</span> PoC</td><td>M0</td><td>4 周</td><td>验证三大假设</td><td>app-server 长会话可恢复；execpolicy 可下发；三层沙箱生效</td></tr>
+<tr><td><span class="badge b-p0">②</span> 单租户 MVP</td><td>M1-M4</td><td>4 月</td><td>P0 端到端跑通</td><td>P0 完成率≥70%；会话可 resume</td></tr>
+<tr><td><span class="badge b-p1">③</span> 多租户隔离</td><td>M5-M7</td><td>3 月</td><td>安全隔离</td><td>四重隔离取证；越权演练 0 通过</td></tr>
+<tr><td><span class="badge b-p1">④</span> 可靠性治理</td><td>M8-M10</td><td>3 月</td><td>稳定可观测合规</td><td>任务成功率≥85%；CI 门禁；审计 WORM</td></tr>
+<tr><td><span class="badge b-p2">⑤</span> 规模化生态</td><td>M11-M12+</td><td>2 月+</td><td>规模/知识库/协作/私有化</td><td>100+并发；冷启动＜5s</td></tr>
+</table>
+</section>
+
+<section id="s2">
+<h2>2. 阶段甘特图</h2>
+<img class="diagram" src="roadmap-gantt.svg" alt="甘特图">
+<div class="cap">图 · 46 模块按 M0-M12 排布，5 大里程碑验收门（◆）</div>
+</section>
+
+<section id="s3">
+<h2>3. 全量任务清单（70 项，可筛选）</h2>
+<div class="filter-bar">
+  <label>阶段<select id="f-phase" onchange="filterTasks()"><option value="">全部</option><option value="M0">M0 PoC</option><option value="M1">M1</option><option value="M2">M2</option><option value="M3">M3</option><option value="M4">M4</option><option value="M5">M5</option><option value="M6">M6</option><option value="M7">M7</option><option value="M8">M8</option><option value="M9">M9</option><option value="M10">M10</option><option value="M11">M11</option><option value="M12">M12</option></select></label>
+  <label>优先级<select id="f-prio" onchange="filterTasks()"><option value="">全部</option><option value="P0">P0</option><option value="P1">P1</option><option value="P2">P2</option></select></label>
+  <label>复用<select id="f-reuse" onchange="filterTasks()"><option value="">全部</option><option value="codex">复用Codex</option><option value="partial">部分复用</option><option value="self">自建</option></option></select></label>
+  <label>搜索<input type="text" id="f-search" placeholder="任务名/层..." oninput="filterTasks()"></label>
+  <span style="color:var(--muted);font-size:12px" id="f-count"></span>
+</div>
+<table class="tasks" id="task-table">
+<thead><tr><th>任务ID</th><th>任务名</th><th>层</th><th>阶段</th><th>优先级</th><th>复用</th><th>验收标准</th><th>工时</th></tr></thead>
+<tbody id="task-body"></tbody>
+</table>
+</section>
+
+<section id="s4">
+<h2>4. 关键路径</h2>
+<img class="diagram" src="roadmap-critical-path.svg" alt="关键路径">
+<div class="cap">图 · MVP 最长依赖链（红色，决定工期下限）</div>
+<div class="callout red"><strong>关键路径</strong>：app-server集成 → 事件落库 → resume验证 → 三层沙箱 → 身份租户 → Postgres → Runtime池 → 任务编排Temporal → 会话落库 → MVP验收。长度≈PoC(4周)+M1+M2。</div>
+<p><strong>可并行支线</strong>：审批HITL(M3)、策略中心(M3)、IM/Web(M3)、配额计费(M4) 均可与关键路径后期并行，不阻塞 MVP。</p>
+</section>
+
+<section id="s5">
+<h2>5. 风险登记册</h2>
+<table>
+<tr><th>#</th><th>风险</th><th>概率</th><th>影响</th><th>缓解</th></tr>
+<tr><td>R1</td><td>上游 Codex 破坏性 API 变更</td><td>中</td><td>高</td><td>锁定版本 + schema CI 漂移检测 + 不改内核</td></tr>
+<tr><td>R2</td><td>Linux 容器内 Landlock/seccomp 失效</td><td>中</td><td>高</td><td>容器层不可省 + 启动自检门控 + Kata/Firecracker 兜底</td></tr>
+<tr><td>R3</td><td>审批跨小时 Pod 重建状态丢失</td><td>中</td><td>高</td><td>ApprovalTicket 先落库再回写 + item_seq 去重</td></tr>
+<tr><td>R4</td><td>多租户 RLS 漏配</td><td>低</td><td>极高</td><td>RLS 全表兜底 + 季度红队 + 越权 CI 用例</td></tr>
+<tr><td>R5</td><td>模型成本失控</td><td>中</td><td>中</td><td>配额预扣 + 四维计量 + 硬阈值优雅暂停</td></tr>
+<tr><td>R6</td><td>MCP 连接器投毒</td><td>中</td><td>高</td><td>分级(社区默认禁用) + 质量分 + Gateway 审计脱敏</td></tr>
+<tr><td>R7</td><td>提示注入提权</td><td>中</td><td>极高</td><td>权限用代码策略非 LLM + 数据面≠控制面 + 对抗集</td></tr>
+<tr><td>R8</td><td>Postgres 大表性能</td><td>中</td><td>中</td><td>按 tenant+月分区 + 大字段外置 + 冷归档</td></tr>
+<tr><td>R9</td><td>评测集漂移</td><td>中</td><td>中</td><td>三类数据集 + CI 门禁 + 生产采样回流</td></tr>
+<tr><td>R10</td><td>团队 Rust 熟练度不足</td><td>中</td><td>中</td><td>PoC 2 名 Rust 工程师专攻 codex-rs</td></tr>
+</table>
+</section>
+
+<section id="s6">
+<h2>6. 团队配置</h2>
+<table>
+<tr><th>角色</th><th>人数</th><th>阶段重点</th><th>职责</th></tr>
+<tr><td>架构师</td><td>1</td><td>全程</td><td>控制面/执行面切分、app-server 集成面、技术决策</td></tr>
+<tr><td>Rust 工程师</td><td>2</td><td>全程</td><td>Harness 集成、execpolicy、沙箱、协议桥接</td></tr>
+<tr><td>后端工程师</td><td>3</td><td>M1+</td><td>身份/编排/审批/计费/策略</td></tr>
+<tr><td>前端工程师</td><td>2</td><td>M1+</td><td>Web 门户、审批抽屉、IDE 插件、评测看板</td></tr>
+<tr><td>DevOps/SRE</td><td>1</td><td>M0+</td><td>K8s、沙箱镜像、HPA、OTel、备份灾备</td></tr>
+<tr><td>安全工程师</td><td>1</td><td>M5+</td><td>RLS、KMS、四重隔离、红队、内容安全</td></tr>
+<tr><td>QA 工程师</td><td>1</td><td>M2+</td><td>评测中心、CI 门禁、对抗集、验收</td></tr>
+</table>
+<div class="callout gold">人力曲线：PoC 4 人 → M1-M4 峰值 10 人 → M5-M7 8 人 → M8-M10 7 人 → M11-M12 6 人</div>
+</section>
+
+<section id="s7">
+<h2>7. 与设计产物映射</h2>
+<table>
+<tr><th>RoadMap 章节</th><th>对应设计产物</th></tr>
+<tr><td>§1 五阶段</td><td><code>01-system-architecture</code> §5 实施路线</td></tr>
+<tr><td>§2 WBS 任务</td><td><code>06-module-functions</code> 46 模块 + <code>05-api-spec</code> API</td></tr>
+<tr><td>§4 关键路径</td><td><code>04-interaction-flow</code> 13 步生命周期</td></tr>
+<tr><td>§5 风险</td><td><code>01</code> §6 反模式 + <code>07-test-cases</code></td></tr>
+<tr><td>验收门</td><td><code>07-test-cases</code> 9 类测试 + 25 条 P0 + M0-M12 验收</td></tr>
+<tr><td>§6 团队/K8s</td><td><code>08-devops-k8s</code> K8s 拓扑</td></tr>
+</table>
+</section>
+
+</main>
+</div>
+<script>
+function toggleTheme(){const h=document.documentElement;h.dataset.theme=h.dataset.theme==='dark'?'light':'dark';localStorage.setItem('theme',h.dataset.theme)}
+(function(){const t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t})();
+// TOC
+const sections=[...document.querySelectorAll('main section')];
+const toc=document.getElementById('toc');
+sections.forEach(s=>{const h=s.querySelector('h2');if(!h)return;const a=document.createElement('a');a.href='#'+s.id;a.textContent=h.textContent.replace(/^\d+\.\s*/,'');toc.appendChild(a)});
+const prog=document.getElementById('progress');
+window.addEventListener('scroll',()=>{const st=window.scrollY;const dh=document.documentElement.scrollHeight-window.innerHeight;prog.style.width=(st/dh*100)+'%';let cur=sections[0];sections.forEach(s=>{if(s.offsetTop<=st+120)cur=s});toc.querySelectorAll('a').forEach(a=>a.classList.remove('active'));const a=toc.querySelector('a[href="#'+cur.id+'"]');if(a)a.classList.add('active')});
+// 任务数据
+const TASKS=[
+["T0-1","app-server 协议集成 PoC","L5","M0","P0","codex","stdio/unix-socket 起服务，thread/start+turn/start+事件流回吐","1.0"],
+["T0-2","事件流消费→本地库落库","L3/L7","M0","P0","self","ServerNotification 按 item_seq 幂等写入 Postgres","1.0"],
+["T0-3","thread/resume 跨进程恢复","L5","M0","P0","codex","杀进程→重启→resume→事件 seq 连续无丢失","0.5"],
+["T0-4","execpolicy 规则集下发","L3/L5","M0","P0","partial","注入.rules，rm -rf /被拦截、ls放行","0.5"],
+["T0-5","三层沙箱容器层搭建","L4","M0","P0","partial","K8s Pod+Seccomp/AppArmor；NetworkPolicy全禁","1.0"],
+["T0-6","沙箱启动自检脚本","L4/L8","M0","P0","self","Landlock/seccomp+出站白名单+无密钥 5项自检","0.5"],
+["T0-7","Model Gateway 代理验证","L6","M0","P0","partial","沙箱出站只到Gateway，令牌按任务绑定","0.5"],
+["T0-8","M0 PoC 集成验收","全","M0","P0","self","一任务端到端跑通：提交→采样→工具→产物→resume","1.0"],
+["T1-1","身份租户模型(单租户)","L3","M1","P0","self","Tenant/OrgUnit/User/Role/Membership+RBAC","1.5"],
+["T1-2","API Gateway 路由+限流+幂等","L2","M1","P0","self","REST路由、Idempotency-Key、三级限流","1.0"],
+["T1-3","认证中间件 OIDC","L2","M1","P0","self","Authorization Code+PKCE 对接 Keycloak","1.0"],
+["T1-4","WebSocket 网关","L2","M1","P0","self","权限驱动订阅，变更立即断连","1.0"],
+["T1-5","Web 门户骨架","L1","M1","P0","self","会话列表+任务时间线+WS增量","1.5"],
+["T1-6","CLI 登录层","L1","M1","P1","partial","企业登录+远端 thread 操作","0.5"],
+["T1-7","Postgres 主库 schema","L7","M1","P0","self","26实体DDL+索引(暂不含RLS)","1.0"],
+["T2-1","Runtime 池调度器","L4","M2","P0","self","一Turn一Pod，warm pool，队列等待","1.5"],
+["T2-2","Workspace 供给","L4","M2","P0","partial","git shallow clone/worktree隔离/AGENTS.md","1.0"],
+["T2-3","任务编排 Temporal Workflow","L3","M2","P0","self","两层循环，可恢复","2.0"],
+["T2-4","会话事件落库(事件即真相)","L3/L7","M2","P0","self","幂等写入+seq缺口补齐+rollout同步","1.5"],
+["T2-5","OpenAPI+Webhook","L1","M2","P0","self","POST /v1/threads；Webhook HMAC+幂等","1.0"],
+["T2-6","Model Gateway 生产化","L6","M2","P0","partial","路由/计量4维token/令牌绑定","1.0"],
+["T2-7","Responses 代理","L6","M2","P1","codex","OpenAI兼容API代理streaming","0.5"],
+["T2-8","对象存储集成","L7","M2","P0","self","rollout/产物按租户前缀上传","1.0"],
+["T2-9","配额预扣","L2","M2","P0","self","准入预扣token，防超卖","0.5"],
+["T2-10","沙箱启动自检门控","L4/L8","M2","P0","self","自检不过禁止调度生产任务","0.5"],
+["T3-1","审批中心 ApprovalTicket","L3","M3","P0","self","pending→decided全生命周期，先落库再回写","2.0"],
+["T3-2","HITL 跨进程桥接6边界","L3","M3","P0","self","崩溃/超时/权限撤销/改参/批量/审计测试过","1.5"],
+["T3-3","策略中心求值+下发","L3","M3","P0","partial","准入+高危前求值，config.toml+rules注入","1.5"],
+["T3-4","IM Bot 飞书/钉钉","L1","M3","P0","self","审批卡片三按钮，回调签名，分级推送","1.5"],
+["T3-5","Web 审批抽屉","L1","M3","P0","self","参数脱敏+Diff预览+风险等级+三按钮","1.0"],
+["T4-1","配额计费(单租户)","L3","M4","P0","self","四维计量+归因+预算软硬阈值+优雅暂停","2.0"],
+["T4-2","产物扫描+可见性门控","L7","M4","P0","self","产物经敏感/恶意扫描后才对用户可见","1.0"],
+["T4-3","OTel 基础埋点","L7","M4","P1","partial","用户→任务→工具→模型 trace span","1.0"],
+["T4-4","IDE 插件","L1","M4","P1","partial","远端Thread映射本地，Diff内联审批","1.5"],
+["T4-5","Skills/Hooks 接入","L5","M4","P1","codex","企业Skill注册+生命周期钩子触发","1.0"],
+["T4-6","M4 MVP 验收","全","M4","P0","self","P0完成率≥70%，端到端冒烟全过","1.0"],
+["T5-1","身份租户多租户化","L3","M5","P0","self","RBAC+ABAC四取交集，Agent权限=四交集","2.0"],
+["T5-2","Postgres RLS 策略","L7","M5","P0","self","全表RLS兜底，SQL注入不跨租户","1.5"],
+["T5-3","四重隔离取证","L8","M5","P0","self","逻辑+运行时+密钥+存储四层验证报告","1.0"],
+["T5-4","KMS 按租户CMK","L8","M5","P1","self","Vault/云KMS，禁用→不可解密","1.5"],
+["T5-5","三档矩阵(共享/专属/私有)","L4/L8","M5","P1","self","三档隔离+节点亲和+Kata/Firecracker","1.0"],
+["T6-1","配额计费多租户归因","L3","M6","P0","self","tenant→org→user→thread→turn→model归因链","1.5"],
+["T6-2","成本归因看板","L7","M6","P1","self","Grafana多维成本看板","1.0"],
+["T6-3","预算熔断+优雅暂停","L3","M6","P0","self","硬阈值保存rollout回收Pod，预算恢复可resume","1.0"],
+["T7-1","MCP Gateway 侧车","L4","M7","P1","self","凭据注入+白名单+审计脱敏+转发","2.0"],
+["T7-2","连接器治理","L3","M7","P1","self","分级+质量分+上下线","1.5"],
+["T7-3","凭据代理短期令牌","L4","M7","P1","self","JWT audience限定，TTL≤任务超时，即时吊销","1.5"],
+["T7-4","沙箱零长期密钥审计","L8","M7","P1","self","config.toml无真实密钥","0.5"],
+["T7-5","M7 隔离验收","全","M7","P0","self","跨租户越权演练0通过","1.0"],
+["T8-1","评测中心","L7","M8","P1","self","三类数据集+五评测平面+CI门禁","2.5"],
+["T8-2","黄金集+对抗集","L7","M8","P1","self","主路径+越权/注入/工具失败/数据缺失","1.5"],
+["T8-3","评测CI门禁接入","L7","M8","P1","self","模型/提示/工具/策略变更触发回归","1.0"],
+["T9-1","多模型路由","L6","M9","P1","self","分档路由，自有评测集校准","1.5"],
+["T9-2","Prompt Caching","L6","M9","P1","self","系统提示版本化提升命中率","0.5"],
+["T9-3","故障转移","L6","M9","P0","self","主模型超时→备模型→待重试","1.0"],
+["T9-4","OTel 全链路+Grafana","L7","M9","P1","partial","trace→Grafana，日志→ClickHouse","1.5"],
+["T9-5","容量与压测","L7","M9","P1","self","100并发压测，P95延迟基线","1.0"],
+["T10-1","审计日志WORM","L7","M10","P1","self","只追加+SIEM投递+应用层无DELETE","1.5"],
+["T10-2","内容安全PII/注入防护","L8","M10","P1","self","PII检测+提示注入+产物扫描","2.0"],
+["T10-3","红队首次演练","L8","M10","P1","self","越权/注入/供应链攻击，100%闭环","1.5"],
+["T10-4","M10 治理验收","全","M10","P0","self","任务成功率≥85%，CI门禁全绿","1.0"],
+["T11-1","Runtime池冷启动优化","L4","M11","P0","self","warm pool+快照，冷启动＜5s","1.5"],
+["T11-2","知识库/RAG","L3","M11","P2","self","ACL随索引写入+混合召回+rerank+溯源","2.5"],
+["T11-3","向量库pgvector","L7","M11","P2","self","HNSW索引，权限过滤先于召回","1.0"],
+["T11-4","多Agent协作编排","L5","M11","P2","codex","主从/流水线/专家路由+fork+Guardian","2.0"],
+["T11-5","100+并发稳定性","L4/L7","M11","P0","self","HPA+租户权重队列，100并发稳态","1.5"],
+["T12-1","私有化部署","L6","M12","P2","codex","数据不出域，vLLM/Ollama端点","1.5"],
+["T12-2","连接器生态市场","L3","M12","P2","self","社区贡献流程+质量分展示","1.5"],
+["T12-3","Skills市场","L1/L5","M12","P2","codex","企业Skill发布/版本/回滚","1.0"],
+["T12-4","M12 GA验收","全","M12","P0","self","100+并发稳定，全量场景通过","1.0"],
+];
+function renderTasks(rows){
+  const tb=document.getElementById('task-body');tb.innerHTML='';
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    const prioCls=r[4]==='P0'?'b-p0':r[4]==='P1'?'b-p1':'b-p2';
+    const reuseMap={codex:['b-codex','复用Codex'],partial:['b-partial','部分复用'],self:['b-self','自建']};
+    const rc=reuseMap[r[5]];
+    tr.innerHTML=`<td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><span class="badge ${prioCls}">${r[4]}</span></td><td><span class="badge ${rc[0]}">${rc[1]}</span></td><td>${r[6]}</td><td>${r[7]}</td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('f-count').textContent=`${rows.length} / ${TASKS.length} 项`;
+}
+function filterTasks(){
+  const ph=document.getElementById('f-phase').value;
+  const pr=document.getElementById('f-prio').value;
+  const ru=document.getElementById('f-reuse').value;
+  const kw=document.getElementById('f-search').value.toLowerCase();
+  const rows=TASKS.filter(r=>{
+    if(ph&&r[3]!==ph)return false;
+    if(pr&&r[4]!==pr)return false;
+    if(ru&&r[5]!==ru)return false;
+    if(kw&&!(r[0]+r[1]+r[2]).toLowerCase().includes(kw))return false;
+    return true;
+  });
+  renderTasks(rows);
+}
+renderTasks(TASKS);
+</script>
+</body>
+</html>
