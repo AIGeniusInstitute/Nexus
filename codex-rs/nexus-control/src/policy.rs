@@ -1,12 +1,17 @@
-//! M3 策略中心 (T3-3): 角色×工具×风险等级矩阵求值 + 下发。
+//! M3 策略中心 (T3-3) + M4 下发 (T4-4): 角色×工具×风险等级矩阵求值 + 下发。
 //!
 //! 最小版：
 //! - `evaluate(tenant, role, kind, command) -> PolicyDecision`：按 priority desc
 //!   匹配第一条 pattern；default Prompt（fail-open 到需审批）。
-//! - `generate_rules(tenant, pool) -> String`：把 deny 规则生成 Starlark
-//!   `.rules`（forbid 列表），allow 规则生成 allow 列表。复用 M0
-//!   `execpolicy_rules` 的写入路径。
+//! - `generate_rules(tenant, pool) -> String`：把 deny/allow 规则生成 Starlark
+//!   `.rules`，语法用 M0 验证过的 `prefix_rule(pattern=[...], decision=...)`
+//!   （`codex_execpolicy::parser::PolicyParser` 实测可解析；M3 的 forbid/allow
+//!   未经验证且不符 parser，M4 修正）。
+//! - `write_tenant_rules(pool, tenant_id, codex_home)`：生成 + 原子写
+//!   `<codex_home>/rules/tenant-{id}.rules`，app-server 每-turn 自动加载。
 //! - 风险等级判定 `risk_of(command)`：rm/sudo/curl|sh 等高危；写操作中等；其余低。
+
+use std::path::Path;
 
 use sqlx::PgPool;
 
@@ -103,7 +108,12 @@ pub fn risk_of(command: &str) -> &'static str {
     }
 }
 
-/// 生成 Starlark `.rules` 内容（deny 列表 → forbid；allow 列表 → allow）。
+/// 生成 Starlark `.rules` 内容（M0 验证的 `prefix_rule` 语法）。
+///
+/// policies 表的 glob pattern（如 `rm -rf*`、`sudo*`、`ls*`）翻译为
+/// `prefix_rule(pattern=[token,...], decision="forbidden"/"allow")`，
+/// 其中 pattern 是命令 argv 的前缀 token 列表（非 glob）。`*` 通配（catch-all
+/// prompt）跳过——它由 HITL 审批兜底，不进 execpolicy。prompt 决策同样跳过。
 pub async fn generate_rules(pool: &PgPool, tenant_id: i64) -> anyhow::Result<String> {
     let rows: Vec<(String, String)> = sqlx::query_as(
         "SELECT pattern, decision FROM policies
@@ -113,32 +123,66 @@ pub async fn generate_rules(pool: &PgPool, tenant_id: i64) -> anyhow::Result<Str
     .bind(tenant_id)
     .fetch_all(pool)
     .await?;
-    let mut forbids = Vec::new();
-    let mut allows = Vec::new();
+    let mut out = String::from("# Nexus auto-generated execpolicy (M4)\n");
+    out.push_str("# prefix_rule syntax — auto-loaded by app-server.\n\n");
     for (pattern, decision) in rows {
-        match decision.as_str() {
-            "deny" => forbids.push(pattern),
-            "allow" => allows.push(pattern),
-            _ => {}
+        // deny → forbidden, allow → allow, prompt → 跳过（走 HITL 不进 execpolicy）。
+        let dec = match decision.as_str() {
+            "deny" => "forbidden",
+            "allow" => "allow",
+            _ => continue,
+        };
+        // glob → argv 前缀 token 列表：按空白切分，末尾 * 去掉。
+        // `rm -rf*` → ["rm", "-rf"]；`sudo*` → ["sudo"]；`*` → 跳过（catch-all）。
+        if pattern.trim() == "*" {
+            continue;
         }
-    }
-    let mut out = String::from("# Nexus M3 auto-generated execpolicy rules\n\n");
-    if !forbids.is_empty() {
-        out.push_str("# denied commands\n");
-        for p in forbids {
-            // Starlark forbid(glob)
-            out.push_str(&format!("forbid({:?})\n", p));
+        let tokens: Vec<String> = pattern
+            .split_whitespace()
+            .map(|t| {
+                // 去掉末尾的 `*`（`-rf*` → `-rf`，`sudo*` → `sudo`）。
+                let t = t.trim_end_matches('*');
+                t.to_string()
+            })
+            .filter(|t| !t.is_empty())
+            .collect();
+        if tokens.is_empty() {
+            continue;
         }
-        out.push('\n');
-    }
-    if !allows.is_empty() {
-        out.push_str("# allowed commands\n");
-        for p in allows {
-            out.push_str(&format!("allow({:?})\n", p));
-        }
+        let pat_str = tokens
+            .iter()
+            .map(|t| format!("{t:?}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        out.push_str(&format!(
+            "prefix_rule(\n    pattern = [{pat_str}],\n    decision = \"{dec}\",\n    justification = \"nexus policy: {pattern}\",\n)\n\n"
+        ));
     }
     Ok(out)
 }
+
+/// 原子写入 per-tenant `.rules` 文件到 `<codex_home>/rules/tenant-{id}.rules`。
+/// 调用方先 async `generate_rules(pool, tid)` 取内容，再经此 sync helper 写盘。
+/// 原子写（tmp + rename）避免 app-server 读到半截文件。app-server 每-turn
+/// 自动加载 `<CODEX_HOME>/rules/` 下所有 `.rules`（M0 T0-4 验证）。
+pub fn write_tenant_rules(
+    tenant_id: i64,
+    codex_home: &Path,
+    content: &str,
+) -> anyhow::Result<std::path::PathBuf> {
+    let rules_dir = codex_home.join("rules");
+    std::fs::create_dir_all(&rules_dir)
+        .with_context(|| format!("create rules dir {}", rules_dir.display()))?;
+    let path = rules_dir.join(format!("tenant-{tenant_id}.rules"));
+    let tmp = path.with_extension("rules.tmp");
+    std::fs::write(&tmp, content)
+        .with_context(|| format!("write {}", tmp.display()))?;
+    std::fs::rename(&tmp, &path)
+        .with_context(|| format!("rename -> {}", path.display()))?;
+    Ok(path)
+}
+
+use anyhow::Context;
 
 #[cfg(test)]
 mod tests {
@@ -166,10 +210,10 @@ mod tests {
 
     #[test]
     fn generate_rules_smoke() {
-        let mut out = String::new();
-        out.push_str("# denied commands\nforbid(\"rm -rf*\")\n\n");
-        out.push_str("# allowed commands\nallow(\"ls*\")\n");
-        assert!(out.contains("forbid"));
-        assert!(out.contains("allow"));
+        // M4: prefix_rule 语法（M0 验证），非 forbid/allow。
+        let out = "prefix_rule(\n    pattern = [\"rm\", \"-rf\"],\n    decision = \"forbidden\",\n)\n";
+        assert!(out.contains("prefix_rule"));
+        assert!(out.contains("forbidden"));
+        assert!(!out.contains("forbid("));
     }
 }

@@ -19,6 +19,7 @@ pub async fn connect(database_url: &str) -> Result<PgPool> {
 const MIGRATION_SQL: &str = include_str!("../migrations/20260906000001_initial.sql");
 const M2_MIGRATION_SQL: &str = include_str!("../migrations/20260906000002_m2_runtime.sql");
 const M3_MIGRATION_SQL: &str = include_str!("../migrations/20260906000003_m3_approval.sql");
+const M4_MIGRATION_SQL: &str = include_str!("../migrations/20260906000004_m4_metering.sql");
 
 /// Run embedded migrations (idempotent: IF NOT EXISTS / ON CONFLICT). Uses
 /// raw SQL (simple-query protocol) so the multi-statement DDL runs in one call
@@ -36,7 +37,11 @@ pub async fn run_migrations(pool: &PgPool) -> Result<()> {
         .execute(pool)
         .await
         .context("run m3 migrations")?;
-    tracing::info!("migrations applied (incl. m2, m3)");
+    sqlx::raw_sql(M4_MIGRATION_SQL)
+        .execute(pool)
+        .await
+        .context("run m4 migrations")?;
+    tracing::info!("migrations applied (incl. m2, m3, m4)");
     Ok(())
 }
 

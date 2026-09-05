@@ -25,7 +25,17 @@ export interface Approval {
   command: string | null;
   cwd: string | null;
   reason: string | null;
+  policy_decision: string | null;
+  risk_level: string | null;
   created_at: string;
+}
+
+export interface DailyUsage {
+  date: string;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  total_cost_micros: number;
+  total_turns: number;
 }
 
 export interface LoginResp {
@@ -83,6 +93,7 @@ export const api = {
       `/v1/approvals/${id}/resolve`,
       { method: "POST", body: JSON.stringify({ decision }) }
     ),
+  getUsage: (days = 7) => req<DailyUsage[]>(`/v1/usage?days=${days}`),
 };
 
 // Open a WS subscription to a thread's event stream.

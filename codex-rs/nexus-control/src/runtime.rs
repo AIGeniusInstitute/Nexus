@@ -282,6 +282,15 @@ fn driver_loop(
                     match park_for_decision(&cmd_rx, approval_id) {
                         Some(decision) => {
                             tracing::info!(?decision, "simulated approval resolved");
+                            // M4: 注入合成 tokenUsage（input=10/output=20/
+                            // model=nexus-gateway-mock），使 usage_records 落库
+                            // + cost 推导可端到端验证，无需真实模型。
+                            let sim_usage = Usage {
+                                input_tokens: 10,
+                                output_tokens: 20,
+                                cost_micros: 0, // http_server 落库前调 metering::compute_cost 重算
+                                model: Some("nexus-gateway-mock".into()),
+                            };
                             // Emit a synthetic item + turn/completed so the
                             // async side finalizes the turn.
                             seq += 1;
@@ -293,7 +302,7 @@ fn driver_loop(
                                 codex_item_id: Some(format!("sim-item-{approval_id}")),
                                 content_ref: Some(format!("approved: {decision:?}")),
                                 raw_json: serde_json::json!({"simulated": true}),
-                                usage: None,
+                                usage: Some(sim_usage.clone()),
                                 codex_thread_id: None,
                                 is_turn_completed: false,
                                 approval: None,
@@ -307,7 +316,7 @@ fn driver_loop(
                                 codex_item_id: None,
                                 content_ref: None,
                                 raw_json: Value::Null,
-                                usage: None,
+                                usage: Some(sim_usage),
                                 codex_thread_id: None,
                                 is_turn_completed: true,
                                 approval: None,
