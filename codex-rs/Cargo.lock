@@ -9853,6 +9853,7 @@ dependencies = [
  "anyhow",
  "clap",
  "codex-app-server-protocol",
+ "codex-execpolicy",
  "rama-error",
  "serde",
  "serde_json",

@@ -66,6 +66,17 @@ impl AppServerProcess {
     /// launched with `app-server` as the subcommand (stdio is the default
     /// transport — no `--listen` flag needed).
     pub fn spawn(codex_bin: &Path, codex_home: &Path) -> Result<Self> {
+        Self::spawn_with_config(codex_bin, codex_home, &[])
+    }
+
+    /// Spawn with additional `--config key=value` overrides (same pattern as
+    /// `codex-rs/app-server-test-client`). Each entry is passed as
+    /// `--config <kv>` before the `app-server` subcommand.
+    pub fn spawn_with_config(
+        codex_bin: &Path,
+        codex_home: &Path,
+        config_overrides: &[String],
+    ) -> Result<Self> {
         let mut cmd = Command::new(codex_bin);
 
         // Ensure the codex binary's parent dir is on PATH so it can find
@@ -80,6 +91,12 @@ impl AppServerProcess {
         }
         // Set CODEX_HOME so the server uses our isolated directory.
         cmd.env("CODEX_HOME", codex_home);
+
+        // Inject --config overrides before the subcommand (same order as
+        // app-server-test-client).
+        for override_kv in config_overrides {
+            cmd.arg("--config").arg(override_kv);
+        }
 
         let mut child = cmd
             .arg("app-server")

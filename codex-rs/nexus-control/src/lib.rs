@@ -5,4 +5,6 @@
 //! block for the Nexus control plane (FP1 + FP2 + FP3 of M0).
 
 pub mod event_store;
+pub mod execpolicy_rules;
+pub mod model_gateway;
 pub mod stdio_client;
