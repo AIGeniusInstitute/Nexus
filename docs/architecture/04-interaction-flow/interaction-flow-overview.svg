@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2200 900">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#a855f7"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f97316"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+</defs>
+<rect width="2200" height="900" fill="#0b141a"/>
+<text x="40" y="32" fill="#35c2b0" font-size="22" font-weight="700">Nexus 系统模块组件交互总览</text>
+<text x="40" y="56" fill="#9db8b4" font-size="13">6大流程全景: ①生命周期 ②事件持久化 ③审批HITL ④resume恢复 ⑤多Agent协作 ⑥工具调用</text>
+<rect x="60" y="90" width="1040" height="220" rx="10" fill="#13242e" stroke="#35c2b0" stroke-width="1.6"/>
+<rect x="60" y="90" width="1040" height="36" rx="10" fill="#35c2b0" opacity="0.3"/>
+<text x="76" y="114" fill="#35c2b0" font-size="14" font-weight="700">① 任务全生命周期</text>
+<text x="76" y="146" fill="#e8f2f0" font-size="11.5">13步时序: 提交>鉴权>调度>app-server>模型>事件>★落库>审批>工具>compact>产物>结算</text>
+<text x="76" y="170" fill="#9db8b4" font-size="10">> flow-01-lifecycle.svg</text>
+<rect x="80" y="190" width="180" height="24" rx="4" fill="#173341" stroke="#35c2b0" stroke-width="0.8"/>
+<text x="170" y="206" text-anchor="middle" fill="#35c2b0" font-size="9">step</text>
+<path d="M260 202 L275 202" fill="none" stroke="#35c2b0" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="275" y="190" width="180" height="24" rx="4" fill="#173341" stroke="#35c2b0" stroke-width="0.8"/>
+<text x="365" y="206" text-anchor="middle" fill="#35c2b0" font-size="9">flow</text>
+<path d="M455 202 L470 202" fill="none" stroke="#35c2b0" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="470" y="190" width="180" height="24" rx="4" fill="#173341" stroke="#35c2b0" stroke-width="0.8"/>
+<text x="560" y="206" text-anchor="middle" fill="#35c2b0" font-size="9">gate</text>
+<path d="M650 202 L665 202" fill="none" stroke="#35c2b0" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="665" y="190" width="180" height="24" rx="4" fill="#173341" stroke="#35c2b0" stroke-width="0.8"/>
+<text x="755" y="206" text-anchor="middle" fill="#35c2b0" font-size="9">persist</text>
+<path d="M845 202 L860 202" fill="none" stroke="#35c2b0" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="860" y="190" width="180" height="24" rx="4" fill="#173341" stroke="#35c2b0" stroke-width="0.8"/>
+<text x="950" y="206" text-anchor="middle" fill="#35c2b0" font-size="9">done</text>
+<rect x="1120" y="90" width="1040" height="220" rx="10" fill="#13242e" stroke="#3b82f6" stroke-width="1.6"/>
+<rect x="1120" y="90" width="1040" height="36" rx="10" fill="#3b82f6" opacity="0.3"/>
+<text x="1136" y="114" fill="#3b82f6" font-size="14" font-weight="700">② 事件流持久化</text>
+<text x="1136" y="146" fill="#e8f2f0" font-size="11.5">app-server事件>at-least-once消费>幂等写入Postgres+对象存储>WS推前端>seq补齐>fork/resume</text>
+<text x="1136" y="170" fill="#9db8b4" font-size="10">> flow-02-event-persistence.svg</text>
+<rect x="1140" y="190" width="180" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1230" y="206" text-anchor="middle" fill="#3b82f6" font-size="9">step</text>
+<path d="M1320 202 L1335 202" fill="none" stroke="#3b82f6" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1335" y="190" width="180" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1425" y="206" text-anchor="middle" fill="#3b82f6" font-size="9">flow</text>
+<path d="M1515 202 L1530 202" fill="none" stroke="#3b82f6" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1530" y="190" width="180" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1620" y="206" text-anchor="middle" fill="#3b82f6" font-size="9">gate</text>
+<path d="M1710 202 L1725 202" fill="none" stroke="#3b82f6" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1725" y="190" width="180" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1815" y="206" text-anchor="middle" fill="#3b82f6" font-size="9">persist</text>
+<path d="M1905 202 L1920 202" fill="none" stroke="#3b82f6" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1920" y="190" width="180" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="2010" y="206" text-anchor="middle" fill="#3b82f6" font-size="9">done</text>
+<rect x="60" y="340" width="1040" height="220" rx="10" fill="#13242e" stroke="#f97316" stroke-width="1.6"/>
+<rect x="60" y="340" width="1040" height="36" rx="10" fill="#f97316" opacity="0.3"/>
+<text x="76" y="364" fill="#f97316" font-size="14" font-weight="700">③ 审批HITL桥接</text>
+<text x="76" y="396" fill="#e8f2f0" font-size="11.5">requestApproval>ApprovalTicket>Web/IM>用户决策>先落库>回写>继续/中止(6边界)</text>
+<text x="76" y="420" fill="#9db8b4" font-size="10">> flow-03-approval-hitl.svg</text>
+<rect x="80" y="440" width="180" height="24" rx="4" fill="#173341" stroke="#f97316" stroke-width="0.8"/>
+<text x="170" y="456" text-anchor="middle" fill="#f97316" font-size="9">step</text>
+<path d="M260 452 L275 452" fill="none" stroke="#f97316" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="275" y="440" width="180" height="24" rx="4" fill="#173341" stroke="#f97316" stroke-width="0.8"/>
+<text x="365" y="456" text-anchor="middle" fill="#f97316" font-size="9">flow</text>
+<path d="M455 452 L470 452" fill="none" stroke="#f97316" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="470" y="440" width="180" height="24" rx="4" fill="#173341" stroke="#f97316" stroke-width="0.8"/>
+<text x="560" y="456" text-anchor="middle" fill="#f97316" font-size="9">gate</text>
+<path d="M650 452 L665 452" fill="none" stroke="#f97316" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="665" y="440" width="180" height="24" rx="4" fill="#173341" stroke="#f97316" stroke-width="0.8"/>
+<text x="755" y="456" text-anchor="middle" fill="#f97316" font-size="9">persist</text>
+<path d="M845 452 L860 452" fill="none" stroke="#f97316" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="860" y="440" width="180" height="24" rx="4" fill="#173341" stroke="#f97316" stroke-width="0.8"/>
+<text x="950" y="456" text-anchor="middle" fill="#f97316" font-size="9">done</text>
+<rect x="1120" y="340" width="1040" height="220" rx="10" fill="#13242e" stroke="#22c55e" stroke-width="1.6"/>
+<rect x="1120" y="340" width="1040" height="36" rx="10" fill="#22c55e" opacity="0.3"/>
+<text x="1136" y="364" fill="#22c55e" font-size="14" font-weight="700">④ thread/resume恢复</text>
+<text x="1136" y="396" fill="#e8f2f0" font-size="11.5">Pod崩溃>新Pod>下载rollout>thread/resume>seq从云端max继续>一致性保证</text>
+<text x="1136" y="420" fill="#9db8b4" font-size="10">> flow-04-resume.svg</text>
+<rect x="1140" y="440" width="180" height="24" rx="4" fill="#173341" stroke="#22c55e" stroke-width="0.8"/>
+<text x="1230" y="456" text-anchor="middle" fill="#22c55e" font-size="9">step</text>
+<path d="M1320 452 L1335 452" fill="none" stroke="#22c55e" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1335" y="440" width="180" height="24" rx="4" fill="#173341" stroke="#22c55e" stroke-width="0.8"/>
+<text x="1425" y="456" text-anchor="middle" fill="#22c55e" font-size="9">flow</text>
+<path d="M1515 452 L1530 452" fill="none" stroke="#22c55e" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1530" y="440" width="180" height="24" rx="4" fill="#173341" stroke="#22c55e" stroke-width="0.8"/>
+<text x="1620" y="456" text-anchor="middle" fill="#22c55e" font-size="9">gate</text>
+<path d="M1710 452 L1725 452" fill="none" stroke="#22c55e" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1725" y="440" width="180" height="24" rx="4" fill="#173341" stroke="#22c55e" stroke-width="0.8"/>
+<text x="1815" y="456" text-anchor="middle" fill="#22c55e" font-size="9">persist</text>
+<path d="M1905 452 L1920 452" fill="none" stroke="#22c55e" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1920" y="440" width="180" height="24" rx="4" fill="#173341" stroke="#22c55e" stroke-width="0.8"/>
+<text x="2010" y="456" text-anchor="middle" fill="#22c55e" font-size="9">done</text>
+<rect x="60" y="590" width="1040" height="220" rx="10" fill="#13242e" stroke="#a855f7" stroke-width="1.6"/>
+<rect x="60" y="590" width="1040" height="36" rx="10" fill="#a855f7" opacity="0.3"/>
+<text x="76" y="614" fill="#a855f7" font-size="14" font-weight="700">⑤ 多Agent协作</text>
+<text x="76" y="646" fill="#e8f2f0" font-size="11.5">spawn_subagent>fork_thread>子Agent>父子拓扑>Guardian审查>结果回灌</text>
+<text x="76" y="670" fill="#9db8b4" font-size="10">> flow-05-multi-agent.svg</text>
+<rect x="80" y="690" width="180" height="24" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="170" y="706" text-anchor="middle" fill="#a855f7" font-size="9">step</text>
+<path d="M260 702 L275 702" fill="none" stroke="#a855f7" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="275" y="690" width="180" height="24" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="365" y="706" text-anchor="middle" fill="#a855f7" font-size="9">flow</text>
+<path d="M455 702 L470 702" fill="none" stroke="#a855f7" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="470" y="690" width="180" height="24" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="560" y="706" text-anchor="middle" fill="#a855f7" font-size="9">gate</text>
+<path d="M650 702 L665 702" fill="none" stroke="#a855f7" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="665" y="690" width="180" height="24" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="755" y="706" text-anchor="middle" fill="#a855f7" font-size="9">persist</text>
+<path d="M845 702 L860 702" fill="none" stroke="#a855f7" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="860" y="690" width="180" height="24" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="950" y="706" text-anchor="middle" fill="#a855f7" font-size="9">done</text>
+<rect x="1120" y="590" width="1040" height="220" rx="10" fill="#13242e" stroke="#e8b64c" stroke-width="1.6"/>
+<rect x="1120" y="590" width="1040" height="36" rx="10" fill="#e8b64c" opacity="0.3"/>
+<text x="1136" y="614" fill="#e8b64c" font-size="14" font-weight="700">⑥ 工具调用</text>
+<text x="1136" y="646" fill="#e8f2f0" font-size="11.5">模型采样>ToolRouter>execpolicy>OS沙箱/MCP Gateway>记Item>审批(如需)</text>
+<text x="1136" y="670" fill="#9db8b4" font-size="10">> flow-06-tool-call.svg</text>
+<rect x="1140" y="690" width="180" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1230" y="706" text-anchor="middle" fill="#e8b64c" font-size="9">step</text>
+<path d="M1320 702 L1335 702" fill="none" stroke="#e8b64c" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1335" y="690" width="180" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1425" y="706" text-anchor="middle" fill="#e8b64c" font-size="9">flow</text>
+<path d="M1515 702 L1530 702" fill="none" stroke="#e8b64c" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1530" y="690" width="180" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1620" y="706" text-anchor="middle" fill="#e8b64c" font-size="9">gate</text>
+<path d="M1710 702 L1725 702" fill="none" stroke="#e8b64c" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1725" y="690" width="180" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1815" y="706" text-anchor="middle" fill="#e8b64c" font-size="9">persist</text>
+<path d="M1905 702 L1920 702" fill="none" stroke="#e8b64c" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1920" y="690" width="180" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="2010" y="706" text-anchor="middle" fill="#e8b64c" font-size="9">done</text>
+<text x="40" y="860" fill="#9db8b4" font-size="11.5">图 7 - 6大交互流程总览 (每张子图对应一张详细SVG时序图)</text>
+</svg>

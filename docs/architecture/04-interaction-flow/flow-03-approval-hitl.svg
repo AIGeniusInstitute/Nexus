@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2200 1800">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#a855f7"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f97316"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+</defs>
+<rect width="2200" height="1800" fill="#0b141a"/>
+<text x="40" y="32" fill="#35c2b0" font-size="22" font-weight="700">Nexus 跨进程审批 HITL 桥接时序</text>
+<text x="40" y="56" fill="#9db8b4" font-size="13">app-server发requestApproval > 适配层 > ApprovalTicket(pending) > Web/IM > 用户决策 > 先落库 > 回写 > 继续/中止 (含6边界情况)</text>
+<rect x="60" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#a855f7" stroke-width="1.4"/>
+<text x="200.0" y="100" text-anchor="middle" fill="#a855f7" font-size="12.5" font-weight="700">app-server</text>
+<text x="200.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L5(进程内审批外部化)</text>
+<line x1="200.0" y1="126" x2="200.0" y2="1740" stroke="#a855f7" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="400" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#35c2b0" stroke-width="1.4"/>
+<text x="540.0" y="100" text-anchor="middle" fill="#35c2b0" font-size="12.5" font-weight="700">Adapter</text>
+<text x="540.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L5 适配层</text>
+<line x1="540.0" y1="126" x2="540.0" y2="1740" stroke="#35c2b0" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="740" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#35c2b0" stroke-width="1.4"/>
+<text x="880.0" y="100" text-anchor="middle" fill="#35c2b0" font-size="12.5" font-weight="700">Approval</text>
+<text x="880.0" y="116" text-anchor="middle" fill="#35c2b0" font-size="12.5" font-weight="700">Center</text>
+<text x="880.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L3 审批中心</text>
+<line x1="880.0" y1="126" x2="880.0" y2="1740" stroke="#35c2b0" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1080" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="1220.0" y="100" text-anchor="middle" fill="#3b82f6" font-size="12.5" font-weight="700">Postgres</text>
+<text x="1220.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L7 approval_ticket</text>
+<line x1="1220.0" y1="126" x2="1220.0" y2="1740" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1420" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#22c55e" stroke-width="1.4"/>
+<text x="1560.0" y="100" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="700">Web/IM</text>
+<text x="1560.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">推送渠道(抽屉/卡片)</text>
+<line x1="1560.0" y1="126" x2="1560.0" y2="1740" stroke="#22c55e" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1760" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#e8b64c" stroke-width="1.4"/>
+<text x="1900.0" y="100" text-anchor="middle" fill="#e8b64c" font-size="12.5" font-weight="700">User</text>
+<text x="1900.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">审批人(跨设备/跨小时)</text>
+<line x1="1900.0" y1="126" x2="1900.0" y2="1740" stroke="#e8b64c" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="2100" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#ef4444" stroke-width="1.4"/>
+<text x="2240.0" y="100" text-anchor="middle" fill="#ef4444" font-size="12.5" font-weight="700">Audit</text>
+<text x="2240.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">WORM 审计日志</text>
+<line x1="2240.0" y1="126" x2="2240.0" y2="1740" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="195.0" y="146" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="535.0" y="146" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M200.0 160 L540.0 160" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<text x="370.0" y="154" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">item/commandExecution/requestApproval</text>
+<text x="370.0" y="167" text-anchor="middle" fill="#9db8b4" font-size="9">(Server>Client 请求)</text>
+<rect x="535.0" y="218" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="875.0" y="218" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M540.0 232 L880.0 232" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="710.0" y="226" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">解析审批请求 > 提取thread/turn/item/工具/参数(脱敏)/diff/风险</text>
+<rect x="875.0" y="290" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="1215.0" y="290" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<path d="M880.0 304 L1220.0 304" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="1050.0" y="298" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">★ 创建ApprovalTicket(status=pending)</text>
+<text x="1050.0" y="311" text-anchor="middle" fill="#9db8b4" font-size="9">含: 上下文快照/审批人策略/超时动作</text>
+<rect x="875.0" y="362" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="1555.0" y="362" width="10" height="28" rx="2" fill="#22c55e" opacity="0.65" stroke="#22c55e" stroke-width="0.8"/>
+<path d="M880.0 376 L1560.0 376" fill="none" stroke="#22c55e" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1220.0" y="370" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">推送Web抽屉+IM卡片</text>
+<text x="1220.0" y="383" text-anchor="middle" fill="#9db8b4" font-size="9">按优先级/风险等级选渠道</text>
+<rect x="1555.0" y="434" width="10" height="28" rx="2" fill="#22c55e" opacity="0.65" stroke="#22c55e" stroke-width="0.8"/>
+<rect x="1895.0" y="434" width="10" height="28" rx="2" fill="#e8b64c" opacity="0.65" stroke="#e8b64c" stroke-width="0.8"/>
+<path d="M1560.0 448 L1900.0 448" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="1730.0" y="442" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">用户看到审批请求(可跨小时/跨设备)</text>
+<rect x="1895.0" y="506" width="10" height="28" rx="2" fill="#e8b64c" opacity="0.65" stroke="#e8b64c" stroke-width="0.8"/>
+<rect x="1555.0" y="506" width="10" height="28" rx="2" fill="#22c55e" opacity="0.65" stroke="#22c55e" stroke-width="0.8"/>
+<path d="M1900.0 520 L1560.0 520" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="1730.0" y="514" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">用户决策: 批准/拒绝/修改后批准/转交</text>
+<rect x="1555.0" y="578" width="10" height="28" rx="2" fill="#22c55e" opacity="0.65" stroke="#22c55e" stroke-width="0.8"/>
+<rect x="875.0" y="578" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M1560.0 592 L880.0 592" fill="none" stroke="#22c55e" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1220.0" y="586" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">回传决策结果</text>
+<rect x="875.0" y="650" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="1215.0" y="650" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<path d="M880.0 664 L1220.0 664" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="1050.0" y="658" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">★ 先落库ticket(status=decided)</text>
+<text x="1050.0" y="671" text-anchor="middle" fill="#9db8b4" font-size="9">decided_by/decided_at/note</text>
+<rect x="875.0" y="722" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="2235.0" y="722" width="10" height="28" rx="2" fill="#ef4444" opacity="0.65" stroke="#ef4444" stroke-width="0.8"/>
+<path d="M880.0 736 L2240.0 736" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="1560.0" y="730" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">★ 审计: 请求快照+决策人+时间+理由(WORM)</text>
+<rect x="875.0" y="794" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="535.0" y="794" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M880.0 808 L540.0 808" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="710.0" y="802" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">回写app-server(decision payload)</text>
+<rect x="535.0" y="866" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="195.0" y="866" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<path d="M540.0 880 L200.0 880" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<text x="370.0" y="874" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">turn/interrupt 或 继续turn</text>
+<path d="M200.0 952 L230.0 952 L230.0 972 L200.0 972" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<text x="238.0" y="958" fill="#e8f2f0" font-size="9.5">item/completed(status=completed/declined)</text>
+<rect x="60" y="1054" width="2080" height="280" rx="6" fill="none" stroke="#f97316" stroke-width="1" stroke-dasharray="5,3"/>
+<rect x="68" y="1046" width="75" height="16" rx="3" fill="#0b141a" stroke="#f97316" stroke-width="0.8"/>
+<text x="74" y="1058" fill="#f97316" font-size="10" font-weight="600">6 个边界情况处理</text>
+<rect x="80" y="1079" width="660" height="100" rx="6" fill="#173341" stroke="#f97316" stroke-width="1"/>
+<text x="92" y="1101" fill="#f97316" font-size="11" font-weight="700">① Pod在等待审批时崩了</text>
+<text x="92" y="1121" fill="#9db8b4" font-size="10">审批状态在DB,Pod重建后resume</text>
+<text x="92" y="1137" fill="#9db8b4" font-size="10">用item_seq去重,同一请求只问一次</text>
+<text x="92" y="1153" fill="#9db8b4" font-size="10">已决策的直接重放</text>
+<rect x="760" y="1079" width="660" height="100" rx="6" fill="#173341" stroke="#f97316" stroke-width="1"/>
+<text x="772" y="1101" fill="#f97316" font-size="11" font-weight="700">② 审批超时</text>
+<text x="772" y="1121" fill="#9db8b4" font-size="10">按策略默认动作(建议默认拒绝而非批准)</text>
+<text x="772" y="1137" fill="#9db8b4" font-size="10">通知申请人</text>
+<text x="772" y="1153" fill="#9db8b4" font-size="10">ticket状态>expired</text>
+<rect x="1440" y="1079" width="660" height="100" rx="6" fill="#173341" stroke="#f97316" stroke-width="1"/>
+<text x="1452" y="1101" fill="#f97316" font-size="11" font-weight="700">③ 审批期间用户权限被撤销</text>
+<text x="1452" y="1121" fill="#9db8b4" font-size="10">决策时重新校验审批人权限,失效则ticket作废(cancelled)</text>
+<text x="1452" y="1137" fill="#9db8b4" font-size="10">通知重新审批</text>
+<rect x="80" y="1199" width="660" height="100" rx="6" fill="#173341" stroke="#f97316" stroke-width="1"/>
+<text x="92" y="1221" fill="#f97316" font-size="11" font-weight="700">④ 用户修改参数后批准</text>
+<text x="92" y="1241" fill="#9db8b4" font-size="10">必须重新走策略求值(改参数=新请求)</text>
+<text x="92" y="1257" fill="#9db8b4" font-size="10">不能沿用旧审批结果</text>
+<text x="92" y="1273" fill="#9db8b4" font-size="10">生成新ticket</text>
+<rect x="760" y="1199" width="660" height="100" rx="6" fill="#173341" stroke="#f97316" stroke-width="1"/>
+<text x="772" y="1221" fill="#f97316" font-size="11" font-weight="700">⑤ 批量相似请求</text>
+<text x="772" y="1241" fill="#9db8b4" font-size="10">提供'同类操作一律批准'作用域</text>
+<text x="772" y="1257" fill="#9db8b4" font-size="10">限定:仅该目录/仅该工具/有效期≤1h</text>
+<rect x="1440" y="1199" width="660" height="100" rx="6" fill="#173341" stroke="#f97316" stroke-width="1"/>
+<text x="1452" y="1221" fill="#f97316" font-size="11" font-weight="700">⑥ 全量审计</text>
+<text x="1452" y="1241" fill="#9db8b4" font-size="10">请求快照/决策人/时间/理由全部WORM留存</text>
+<text x="1452" y="1257" fill="#9db8b4" font-size="10">不可篡改</text>
+<text x="1452" y="1273" fill="#9db8b4" font-size="10">可导出SIEM</text>
+<text x="40" y="1354" fill="#9db8b4" font-size="11.5">图 3 - 跨进程审批HITL桥接时序 (审批是控制面一等资源,先落库后回写,6边界全覆盖)</text>
+</svg>

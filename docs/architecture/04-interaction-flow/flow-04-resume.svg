@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1300">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#a855f7"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f97316"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+</defs>
+<rect width="1800" height="1300" fill="#0b141a"/>
+<text x="40" y="32" fill="#35c2b0" font-size="22" font-weight="700">Nexus thread/resume 恢复流程</text>
+<text x="40" y="56" fill="#9db8b4" font-size="13">Pod崩溃/调度迁移 > 新Pod > 下载rollout对象存储 > thread/resume > 新事件seq从云端最大值继续</text>
+<rect x="60" y="80" width="240" height="46" rx="6" fill="#173341" stroke="#ef4444" stroke-width="1.4"/>
+<text x="180.0" y="100" text-anchor="middle" fill="#ef4444" font-size="12.5" font-weight="700">Old Pod</text>
+<text x="180.0" y="116" text-anchor="middle" fill="#ef4444" font-size="12.5" font-weight="700">(crashed)</text>
+<text x="180.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">旧app-server(已死)</text>
+<line x1="180.0" y1="126" x2="180.0" y2="1240" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="380" y="80" width="240" height="46" rx="6" fill="#173341" stroke="#e8b64c" stroke-width="1.4"/>
+<text x="500.0" y="100" text-anchor="middle" fill="#e8b64c" font-size="12.5" font-weight="700">Scheduler</text>
+<text x="500.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L4 调度器</text>
+<line x1="500.0" y1="126" x2="500.0" y2="1240" stroke="#e8b64c" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="700" y="80" width="240" height="46" rx="6" fill="#173341" stroke="#35c2b0" stroke-width="1.4"/>
+<text x="820.0" y="100" text-anchor="middle" fill="#35c2b0" font-size="12.5" font-weight="700">Control Plane</text>
+<text x="820.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L3(有云端真相)</text>
+<line x1="820.0" y1="126" x2="820.0" y2="1240" stroke="#35c2b0" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1020" y="80" width="240" height="46" rx="6" fill="#173341" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="1140.0" y="100" text-anchor="middle" fill="#3b82f6" font-size="12.5" font-weight="700">Object Store</text>
+<text x="1140.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L7 rollout</text>
+<line x1="1140.0" y1="126" x2="1140.0" y2="1240" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1340" y="80" width="240" height="46" rx="6" fill="#173341" stroke="#a855f7" stroke-width="1.4"/>
+<text x="1460.0" y="100" text-anchor="middle" fill="#a855f7" font-size="12.5" font-weight="700">New Pod</text>
+<text x="1460.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">新app-server</text>
+<line x1="1460.0" y1="126" x2="1460.0" y2="1240" stroke="#a855f7" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1660" y="80" width="240" height="46" rx="6" fill="#173341" stroke="#35c2b0" stroke-width="1.4"/>
+<text x="1780.0" y="100" text-anchor="middle" fill="#35c2b0" font-size="12.5" font-weight="700">Event Consumer</text>
+<text x="1780.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L3(继续消费)</text>
+<line x1="1780.0" y1="126" x2="1780.0" y2="1240" stroke="#35c2b0" stroke-width="1.2" stroke-dasharray="4,4"/>
+<path d="M180.0 160 L210.0 160 L210.0 180 L180.0 180" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="218.0" y="166" fill="#e8f2f0" font-size="9.5">✗ Pod崩溃 / OOM / 调度回收</text>
+<rect x="175.0" y="214" width="10" height="28" rx="2" fill="#ef4444" opacity="0.65" stroke="#ef4444" stroke-width="0.8"/>
+<rect x="495.0" y="214" width="10" height="28" rx="2" fill="#e8b64c" opacity="0.65" stroke="#e8b64c" stroke-width="0.8"/>
+<path d="M180.0 228 L500.0 228" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="340.0" y="222" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">Pod退出信号(或心跳超时)</text>
+<rect x="495.0" y="282" width="10" height="28" rx="2" fill="#e8b64c" opacity="0.65" stroke="#e8b64c" stroke-width="0.8"/>
+<rect x="815.0" y="282" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M500.0 296 L820.0 296" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="660.0" y="290" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">检测Pod失活 > 触发恢复</text>
+<path d="M820.0 364 L850.0 364 L850.0 384 L820.0 384" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="858.0" y="370" fill="#e8f2f0" font-size="9.5">查Postgres: thread/turn/item云端最大seq</text>
+<rect x="815.0" y="418" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="1135.0" y="418" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<path d="M820.0 432 L1140.0 432" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="980.0" y="426" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">确认rollout对象存储key可用</text>
+<rect x="495.0" y="486" width="10" height="28" rx="2" fill="#e8b64c" opacity="0.65" stroke="#e8b64c" stroke-width="0.8"/>
+<rect x="1455.0" y="486" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<path d="M500.0 500 L1460.0 500" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="980.0" y="494" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">调度新Pod(注入config/policy/令牌)</text>
+<rect x="815.0" y="554" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="1455.0" y="554" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<path d="M820.0 568 L1460.0 568" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1140.0" y="562" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">下发thread_id+rollout_object_key</text>
+<rect x="1455.0" y="622" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="1135.0" y="622" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<path d="M1460.0 636 L1140.0 636" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<text x="1300.0" y="630" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">下载rollout到Pod内本地</text>
+<path d="M1460.0 704 L1490.0 704 L1490.0 724 L1460.0 724" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<text x="1498.0" y="710" fill="#e8f2f0" font-size="9.5">thread/resume(threadId)
+加载rollout > 重建内存状态</text>
+<rect x="1455.0" y="758" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="815.0" y="758" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M1460.0 772 L820.0 772" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<text x="1140.0" y="766" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">resume成功 > 报告ready</text>
+<path d="M1460.0 840 L1490.0 840 L1490.0 860 L1460.0 860" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<text x="1498.0" y="846" fill="#e8f2f0" font-size="9.5">turn/start(继续未完成turn)
+或等待用户新输入</text>
+<rect x="1455.0" y="894" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="1775.0" y="894" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M1460.0 908 L1780.0 908" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1620.0" y="902" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">新事件流(seq从云端max+1继续)</text>
+<rect x="1775.0" y="962" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="815.0" y="962" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M1780.0 976 L820.0 976" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1300.0" y="970" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">幂等消费(thread_id+turn_id+item_seq)</text>
+<path d="M820.0 1044 L850.0 1044 L850.0 1064 L820.0 1064" fill="none" stroke="#22c55e" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="858.0" y="1050" fill="#e8f2f0" font-size="9.5">对比云端vs新事件 > 无缺口=一致</text>
+<rect x="60" y="1142" width="1680" height="100" rx="6" fill="none" stroke="#22c55e" stroke-width="1" stroke-dasharray="5,3"/>
+<rect x="68" y="1134" width="47" height="16" rx="3" fill="#0b141a" stroke="#22c55e" stroke-width="0.8"/>
+<text x="74" y="1146" fill="#22c55e" font-size="10" font-weight="600">一致性保证</text>
+<rect x="80" y="1162" width="1640" height="30" rx="4" fill="#13242e" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="88" y="1178" fill="#22c55e" font-size="10" font-weight="600">云端Postgres是唯一真相源; Harness本地SQLite/rollout是可丢弃缓存</text>
+<rect x="80" y="1197" width="1640" height="30" rx="4" fill="#13242e" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="88" y="1213" fill="#22c55e" font-size="10" font-weight="600">resume后新事件seq = MAX(云端已落库seq)+1 > 前端无重复无缺失</text>
+<text x="40" y="1262" fill="#9db8b4" font-size="11.5">图 4 - thread/resume恢复流程 (Pod随时可死,云端状态可重建resume)</text>
+</svg>

@@ -1,0 +1,605 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 1350">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#a855f7"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f97316"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+<linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7f1d1d"/><stop offset="1" stop-color="#ef4444"/></linearGradient>
+<linearGradient id="go" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9a3412"/><stop offset="1" stop-color="#f97316"/></linearGradient>
+</defs>
+<rect width="2400" height="1350" fill="#0b141a"/>
+<text x="40" y="40" fill="#35c2b0" font-size="22" font-weight="700">Nexus 领域模型 ER 总图 · 核心域</text>
+<text x="40" y="64" fill="#9db8b4" font-size="13">租户域(蓝) → 工作区域(青) → 会话域(青) → 审批域(金) → 计费域(红) · 外键标注基数 1:N / M:N</text>
+<rect x="60" y="100" width="280" height="162" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.4"/>
+<rect x="60" y="100" width="280" height="28" rx="6" fill="url(#gb)"/>
+<rect x="60" y="118" width="280" height="10" fill="url(#gb)"/>
+<text x="200.0" y="119" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">tenants</text>
+<text x="334" y="113" text-anchor="end" fill="#bfdbfe" font-size="9" opacity="0.7">租户域</text>
+<text x="70" y="136" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="98" y="136" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="332" y="136" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="70" y="152" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="152" fill="#e8f2f0" font-size="10.5">name</text>
+<text x="332" y="152" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="168" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="168" fill="#e8f2f0" font-size="10.5">plan</text>
+<text x="332" y="168" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="70" y="184" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="184" fill="#e8f2f0" font-size="10.5">isolation_tier</text>
+<text x="332" y="184" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="70" y="200" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="200" fill="#e8f2f0" font-size="10.5">cmk_id</text>
+<text x="332" y="200" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="216" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="216" fill="#e8f2f0" font-size="10.5">quota_profile</text>
+<text x="332" y="216" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<text x="70" y="232" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="232" fill="#e8f2f0" font-size="10.5">status</text>
+<text x="332" y="232" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="70" y="248" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="248" fill="#e8f2f0" font-size="10.5">created_at</text>
+<text x="332" y="248" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<rect x="420" y="100" width="280" height="130" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.4"/>
+<rect x="420" y="100" width="280" height="28" rx="6" fill="url(#gb)"/>
+<rect x="420" y="118" width="280" height="10" fill="url(#gb)"/>
+<text x="560.0" y="119" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">users</text>
+<text x="694" y="113" text-anchor="end" fill="#bfdbfe" font-size="9" opacity="0.7">租户域</text>
+<text x="430" y="136" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="458" y="136" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="692" y="136" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="430" y="152" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="458" y="152" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="692" y="152" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="430" y="168" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="458" y="168" fill="#e8f2f0" font-size="10.5">idp_subject</text>
+<text x="692" y="168" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="430" y="184" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="458" y="184" fill="#e8f2f0" font-size="10.5">email</text>
+<text x="692" y="184" text-anchor="end" fill="#9db8b4" font-size="9">CITEXT</text>
+<text x="430" y="200" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="458" y="200" fill="#e8f2f0" font-size="10.5">display_name</text>
+<text x="692" y="200" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="430" y="216" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="458" y="216" fill="#e8f2f0" font-size="10.5">status</text>
+<text x="692" y="216" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<rect x="780" y="100" width="260" height="98" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.4"/>
+<rect x="780" y="100" width="260" height="28" rx="6" fill="url(#gb)"/>
+<rect x="780" y="118" width="260" height="10" fill="url(#gb)"/>
+<text x="910.0" y="119" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">roles</text>
+<text x="1034" y="113" text-anchor="end" fill="#bfdbfe" font-size="9" opacity="0.7">租户域</text>
+<text x="790" y="136" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="818" y="136" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="1032" y="136" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="790" y="152" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="818" y="152" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="1032" y="152" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="790" y="168" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="818" y="168" fill="#e8f2f0" font-size="10.5">name</text>
+<text x="1032" y="168" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="790" y="184" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="818" y="184" fill="#e8f2f0" font-size="10.5">permissions_json</text>
+<text x="1032" y="184" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<rect x="1100" y="100" width="300" height="130" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.4"/>
+<rect x="1100" y="100" width="300" height="28" rx="6" fill="url(#gb)"/>
+<rect x="1100" y="118" width="300" height="10" fill="url(#gb)"/>
+<text x="1250.0" y="119" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">tenant_memberships</text>
+<text x="1394" y="113" text-anchor="end" fill="#bfdbfe" font-size="9" opacity="0.7">租户域</text>
+<text x="1110" y="136" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="1138" y="136" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="1392" y="136" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="1110" y="152" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1138" y="152" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="1392" y="152" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="1110" y="168" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1138" y="168" fill="#e8f2f0" font-size="10.5">user_id</text>
+<text x="1392" y="168" text-anchor="end" fill="#9db8b4" font-size="9">FK→users</text>
+<text x="1110" y="184" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1138" y="184" fill="#e8f2f0" font-size="10.5">org_unit_id</text>
+<text x="1392" y="184" text-anchor="end" fill="#9db8b4" font-size="9">FK</text>
+<text x="1110" y="200" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1138" y="200" fill="#e8f2f0" font-size="10.5">role_id</text>
+<text x="1392" y="200" text-anchor="end" fill="#9db8b4" font-size="9">FK→roles</text>
+<text x="1110" y="216" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1138" y="216" fill="#e8f2f0" font-size="10.5">scope_json</text>
+<text x="1392" y="216" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<rect x="60" y="360" width="320" height="194" rx="6" fill="#0a2620" stroke="#028090" stroke-width="1.4"/>
+<rect x="60" y="360" width="320" height="28" rx="6" fill="url(#gt)"/>
+<rect x="60" y="378" width="320" height="10" fill="url(#gt)"/>
+<text x="220.0" y="379" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">workspaces</text>
+<text x="374" y="373" text-anchor="end" fill="#a7f3e0" font-size="9" opacity="0.7">工作区域</text>
+<text x="70" y="396" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="98" y="396" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="372" y="396" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="70" y="412" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="412" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="372" y="412" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="70" y="428" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="428" fill="#e8f2f0" font-size="10.5">name</text>
+<text x="372" y="428" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="444" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="444" fill="#e8f2f0" font-size="10.5">env_tag</text>
+<text x="372" y="444" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="70" y="460" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="460" fill="#e8f2f0" font-size="10.5">repos_json</text>
+<text x="372" y="460" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<text x="70" y="476" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="476" fill="#e8f2f0" font-size="10.5">connectors_json</text>
+<text x="372" y="476" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<text x="70" y="492" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="492" fill="#e8f2f0" font-size="10.5">knowledge_scope_json</text>
+<text x="372" y="492" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<text x="70" y="508" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="508" fill="#e8f2f0" font-size="10.5">sandbox_mode</text>
+<text x="372" y="508" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="70" y="524" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="524" fill="#e8f2f0" font-size="10.5">approval_policy</text>
+<text x="372" y="524" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="70" y="540" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="540" fill="#e8f2f0" font-size="10.5">max_risk_level</text>
+<text x="372" y="540" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<rect x="460" y="360" width="260" height="98" rx="6" fill="#0a2620" stroke="#028090" stroke-width="1.4"/>
+<rect x="460" y="360" width="260" height="28" rx="6" fill="url(#gt)"/>
+<rect x="460" y="378" width="260" height="10" fill="url(#gt)"/>
+<text x="590.0" y="379" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">environments</text>
+<text x="714" y="373" text-anchor="end" fill="#a7f3e0" font-size="9" opacity="0.7">工作区域</text>
+<text x="470" y="396" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="498" y="396" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="712" y="396" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="470" y="412" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="498" y="412" fill="#e8f2f0" font-size="10.5">workspace_id</text>
+<text x="712" y="412" text-anchor="end" fill="#9db8b4" font-size="9">FK→workspaces</text>
+<text x="470" y="428" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="498" y="428" fill="#e8f2f0" font-size="10.5">name</text>
+<text x="712" y="428" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="470" y="444" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="498" y="444" fill="#e8f2f0" font-size="10.5">config_json</text>
+<text x="712" y="444" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<rect x="800" y="360" width="280" height="114" rx="6" fill="#0a2620" stroke="#028090" stroke-width="1.4"/>
+<rect x="800" y="360" width="280" height="28" rx="6" fill="url(#gt)"/>
+<rect x="800" y="378" width="280" height="10" fill="url(#gt)"/>
+<text x="940.0" y="379" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">knowledge_bases</text>
+<text x="1074" y="373" text-anchor="end" fill="#a7f3e0" font-size="9" opacity="0.7">工作区域</text>
+<text x="810" y="396" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="838" y="396" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="1072" y="396" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="810" y="412" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="838" y="412" fill="#e8f2f0" font-size="10.5">workspace_id</text>
+<text x="1072" y="412" text-anchor="end" fill="#9db8b4" font-size="9">FK→workspaces</text>
+<text x="810" y="428" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="838" y="428" fill="#e8f2f0" font-size="10.5">name</text>
+<text x="1072" y="428" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="810" y="444" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="838" y="444" fill="#e8f2f0" font-size="10.5">embedding_model</text>
+<text x="1072" y="444" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="810" y="460" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="838" y="460" fill="#e8f2f0" font-size="10.5">acl_json</text>
+<text x="1072" y="460" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<rect x="1160" y="360" width="300" height="162" rx="6" fill="#0a2620" stroke="#028090" stroke-width="1.4"/>
+<rect x="1160" y="360" width="300" height="28" rx="6" fill="url(#gt)"/>
+<rect x="1160" y="378" width="300" height="10" fill="url(#gt)"/>
+<text x="1310.0" y="379" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">connectors</text>
+<text x="1454" y="373" text-anchor="end" fill="#a7f3e0" font-size="9" opacity="0.7">MCP/连接器域</text>
+<text x="1170" y="396" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="1198" y="396" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="1452" y="396" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="1170" y="412" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1198" y="412" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="1452" y="412" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="1170" y="428" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1198" y="428" fill="#e8f2f0" font-size="10.5">name</text>
+<text x="1452" y="428" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="1170" y="444" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1198" y="444" fill="#e8f2f0" font-size="10.5">type</text>
+<text x="1452" y="444" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="1170" y="460" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1198" y="460" fill="#e8f2f0" font-size="10.5">endpoint</text>
+<text x="1452" y="460" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="1170" y="476" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1198" y="476" fill="#e8f2f0" font-size="10.5">auth_mode</text>
+<text x="1452" y="476" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="1170" y="492" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1198" y="492" fill="#e8f2f0" font-size="10.5">cred_ref</text>
+<text x="1452" y="492" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="1170" y="508" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1198" y="508" fill="#e8f2f0" font-size="10.5">enabled_tools</text>
+<text x="1452" y="508" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<rect x="60" y="620" width="360" height="274" rx="6" fill="#0a2620" stroke="#35c2b0" stroke-width="1.4"/>
+<rect x="60" y="620" width="360" height="28" rx="6" fill="url(#gt)"/>
+<rect x="60" y="638" width="360" height="10" fill="url(#gt)"/>
+<text x="240.0" y="639" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">threads</text>
+<text x="414" y="633" text-anchor="end" fill="#a7f3e0" font-size="9" opacity="0.7">会话域</text>
+<text x="70" y="656" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="98" y="656" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="412" y="656" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="70" y="672" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="672" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="412" y="672" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="70" y="688" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="688" fill="#e8f2f0" font-size="10.5">workspace_id</text>
+<text x="412" y="688" text-anchor="end" fill="#9db8b4" font-size="9">FK→workspaces</text>
+<text x="70" y="704" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="704" fill="#e8f2f0" font-size="10.5">owner_user_id</text>
+<text x="412" y="704" text-anchor="end" fill="#9db8b4" font-size="9">FK→users</text>
+<text x="70" y="720" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="720" fill="#e8f2f0" font-size="10.5">agent_account_id</text>
+<text x="412" y="720" text-anchor="end" fill="#9db8b4" font-size="9">FK</text>
+<text x="70" y="736" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="736" fill="#e8f2f0" font-size="10.5">codex_thread_id</text>
+<text x="412" y="736" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="752" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="752" fill="#e8f2f0" font-size="10.5">title</text>
+<text x="412" y="752" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="768" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="768" fill="#e8f2f0" font-size="10.5">status</text>
+<text x="412" y="768" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="70" y="784" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="784" fill="#e8f2f0" font-size="10.5">rollout_object_key</text>
+<text x="412" y="784" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="800" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="800" fill="#e8f2f0" font-size="10.5">rollout_version</text>
+<text x="412" y="800" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="70" y="816" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="816" fill="#e8f2f0" font-size="10.5">permission_snapshot_hash</text>
+<text x="412" y="816" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="832" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="832" fill="#e8f2f0" font-size="10.5">total_tokens</text>
+<text x="412" y="832" text-anchor="end" fill="#9db8b4" font-size="9">BIGINT</text>
+<text x="70" y="848" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="848" fill="#e8f2f0" font-size="10.5">total_cost_micros</text>
+<text x="412" y="848" text-anchor="end" fill="#9db8b4" font-size="9">BIGINT</text>
+<text x="70" y="864" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="864" fill="#e8f2f0" font-size="10.5">created_at</text>
+<text x="412" y="864" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<text x="70" y="880" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="880" fill="#e8f2f0" font-size="10.5">last_active_at</text>
+<text x="412" y="880" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<rect x="520" y="620" width="340" height="274" rx="6" fill="#0a2620" stroke="#35c2b0" stroke-width="1.4"/>
+<rect x="520" y="620" width="340" height="28" rx="6" fill="url(#gt)"/>
+<rect x="520" y="638" width="340" height="10" fill="url(#gt)"/>
+<text x="690.0" y="639" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">turns</text>
+<text x="854" y="633" text-anchor="end" fill="#a7f3e0" font-size="9" opacity="0.7">会话域</text>
+<text x="530" y="656" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="558" y="656" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="852" y="656" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="530" y="672" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="672" fill="#e8f2f0" font-size="10.5">thread_id</text>
+<text x="852" y="672" text-anchor="end" fill="#9db8b4" font-size="9">FK→threads</text>
+<text x="530" y="688" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="688" fill="#e8f2f0" font-size="10.5">seq</text>
+<text x="852" y="688" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="530" y="704" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="704" fill="#e8f2f0" font-size="10.5">status</text>
+<text x="852" y="704" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="530" y="720" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="720" fill="#e8f2f0" font-size="10.5">trigger</text>
+<text x="852" y="720" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="530" y="736" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="736" fill="#e8f2f0" font-size="10.5">model</text>
+<text x="852" y="736" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="530" y="752" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="752" fill="#e8f2f0" font-size="10.5">sandbox_mode</text>
+<text x="852" y="752" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="530" y="768" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="768" fill="#e8f2f0" font-size="10.5">approval_policy</text>
+<text x="852" y="768" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="530" y="784" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="784" fill="#e8f2f0" font-size="10.5">input_tokens</text>
+<text x="852" y="784" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="530" y="800" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="800" fill="#e8f2f0" font-size="10.5">output_tokens</text>
+<text x="852" y="800" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="530" y="816" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="816" fill="#e8f2f0" font-size="10.5">cached_tokens</text>
+<text x="852" y="816" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="530" y="832" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="832" fill="#e8f2f0" font-size="10.5">cost_micros</text>
+<text x="852" y="832" text-anchor="end" fill="#9db8b4" font-size="9">BIGINT</text>
+<text x="530" y="848" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="848" fill="#e8f2f0" font-size="10.5">started_at</text>
+<text x="852" y="848" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<text x="530" y="864" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="864" fill="#e8f2f0" font-size="10.5">ended_at</text>
+<text x="852" y="864" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<text x="530" y="880" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="880" fill="#e8f2f0" font-size="10.5">error_code</text>
+<text x="852" y="880" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<rect x="940" y="620" width="340" height="226" rx="6" fill="#0a2620" stroke="#35c2b0" stroke-width="1.4"/>
+<rect x="940" y="620" width="340" height="28" rx="6" fill="url(#gt)"/>
+<rect x="940" y="638" width="340" height="10" fill="url(#gt)"/>
+<text x="1110.0" y="639" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">items</text>
+<text x="1274" y="633" text-anchor="end" fill="#a7f3e0" font-size="9" opacity="0.7">会话域</text>
+<text x="950" y="656" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="978" y="656" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="1272" y="656" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="950" y="672" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="672" fill="#e8f2f0" font-size="10.5">thread_id</text>
+<text x="1272" y="672" text-anchor="end" fill="#9db8b4" font-size="9">FK→threads</text>
+<text x="950" y="688" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="688" fill="#e8f2f0" font-size="10.5">turn_id</text>
+<text x="1272" y="688" text-anchor="end" fill="#9db8b4" font-size="9">FK→turns</text>
+<text x="950" y="704" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="704" fill="#e8f2f0" font-size="10.5">seq</text>
+<text x="1272" y="704" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="950" y="720" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="720" fill="#e8f2f0" font-size="10.5">kind</text>
+<text x="1272" y="720" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="950" y="736" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="736" fill="#e8f2f0" font-size="10.5">actor</text>
+<text x="1272" y="736" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="950" y="752" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="752" fill="#e8f2f0" font-size="10.5">content_ref</text>
+<text x="1272" y="752" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="950" y="768" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="768" fill="#e8f2f0" font-size="10.5">content_digest</text>
+<text x="1272" y="768" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="950" y="784" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="784" fill="#e8f2f0" font-size="10.5">summary</text>
+<text x="1272" y="784" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="950" y="800" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="800" fill="#e8f2f0" font-size="10.5">visibility</text>
+<text x="1272" y="800" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="950" y="816" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="816" fill="#e8f2f0" font-size="10.5">created_at</text>
+<text x="1272" y="816" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<text x="950" y="832" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="832" fill="#e8f2f0" font-size="10.5">UNIQUE(thread_id,turn_id,seq)</text>
+<text x="1272" y="832" text-anchor="end" fill="#9db8b4" font-size="9">★幂等键</text>
+<rect x="1380" y="620" width="300" height="162" rx="6" fill="#0a2620" stroke="#35c2b0" stroke-width="1.4"/>
+<rect x="1380" y="620" width="300" height="28" rx="6" fill="url(#gt)"/>
+<rect x="1380" y="638" width="300" height="10" fill="url(#gt)"/>
+<text x="1530.0" y="639" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">steps</text>
+<text x="1674" y="633" text-anchor="end" fill="#a7f3e0" font-size="9" opacity="0.7">会话域</text>
+<text x="1390" y="656" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="1418" y="656" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="1672" y="656" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="1390" y="672" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1418" y="672" fill="#e8f2f0" font-size="10.5">turn_id</text>
+<text x="1672" y="672" text-anchor="end" fill="#9db8b4" font-size="9">FK→turns</text>
+<text x="1390" y="688" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1418" y="688" fill="#e8f2f0" font-size="10.5">seq</text>
+<text x="1672" y="688" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="1390" y="704" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1418" y="704" fill="#e8f2f0" font-size="10.5">sample_status</text>
+<text x="1672" y="704" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="1390" y="720" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1418" y="720" fill="#e8f2f0" font-size="10.5">model_output_ref</text>
+<text x="1672" y="720" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="1390" y="736" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1418" y="736" fill="#e8f2f0" font-size="10.5">tool_calls_json</text>
+<text x="1672" y="736" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<text x="1390" y="752" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1418" y="752" fill="#e8f2f0" font-size="10.5">duration_ms</text>
+<text x="1672" y="752" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="1390" y="768" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1418" y="768" fill="#e8f2f0" font-size="10.5">created_at</text>
+<text x="1672" y="768" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<rect x="60" y="920" width="380" height="322" rx="6" fill="#2a2110" stroke="#e8b64c" stroke-width="1.4"/>
+<rect x="60" y="920" width="380" height="28" rx="6" fill="url(#gg)"/>
+<rect x="60" y="938" width="380" height="10" fill="url(#gg)"/>
+<text x="250.0" y="939" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">approval_tickets</text>
+<text x="434" y="933" text-anchor="end" fill="#fde9b8" font-size="9" opacity="0.7">审批域</text>
+<text x="70" y="956" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="98" y="956" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="432" y="956" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="70" y="972" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="972" fill="#e8f2f0" font-size="10.5">thread_id</text>
+<text x="432" y="972" text-anchor="end" fill="#9db8b4" font-size="9">FK→threads</text>
+<text x="70" y="988" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="988" fill="#e8f2f0" font-size="10.5">turn_id</text>
+<text x="432" y="988" text-anchor="end" fill="#9db8b4" font-size="9">FK→turns</text>
+<text x="70" y="1004" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1004" fill="#e8f2f0" font-size="10.5">item_seq</text>
+<text x="432" y="1004" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="70" y="1020" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1020" fill="#e8f2f0" font-size="10.5">tool_name</text>
+<text x="432" y="1020" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="1036" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1036" fill="#e8f2f0" font-size="10.5">params_ref</text>
+<text x="432" y="1036" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="1052" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1052" fill="#e8f2f0" font-size="10.5">params_redacted</text>
+<text x="432" y="1052" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<text x="70" y="1068" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1068" fill="#e8f2f0" font-size="10.5">diff_preview_ref</text>
+<text x="432" y="1068" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="1084" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1084" fill="#e8f2f0" font-size="10.5">risk_level</text>
+<text x="432" y="1084" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="70" y="1100" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1100" fill="#e8f2f0" font-size="10.5">required_approver_role</text>
+<text x="432" y="1100" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="1116" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1116" fill="#e8f2f0" font-size="10.5">require_dual</text>
+<text x="432" y="1116" text-anchor="end" fill="#9db8b4" font-size="9">BOOL</text>
+<text x="70" y="1132" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1132" fill="#e8f2f0" font-size="10.5">status</text>
+<text x="432" y="1132" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="70" y="1148" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1148" fill="#e8f2f0" font-size="10.5">decided_by</text>
+<text x="432" y="1148" text-anchor="end" fill="#9db8b4" font-size="9">FK→users</text>
+<text x="70" y="1164" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1164" fill="#e8f2f0" font-size="10.5">decided_at</text>
+<text x="432" y="1164" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<text x="70" y="1180" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1180" fill="#e8f2f0" font-size="10.5">decision_note</text>
+<text x="432" y="1180" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="1196" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1196" fill="#e8f2f0" font-size="10.5">context_snapshot_ref</text>
+<text x="432" y="1196" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="1212" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1212" fill="#e8f2f0" font-size="10.5">expires_at</text>
+<text x="432" y="1212" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<text x="70" y="1228" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="1228" fill="#e8f2f0" font-size="10.5">default_action</text>
+<text x="432" y="1228" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<rect x="520" y="920" width="360" height="210" rx="6" fill="#2a1015" stroke="#ef4444" stroke-width="1.4"/>
+<rect x="520" y="920" width="360" height="28" rx="6" fill="url(#gr)"/>
+<rect x="520" y="938" width="360" height="10" fill="url(#gr)"/>
+<text x="700.0" y="939" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">usage_records</text>
+<text x="874" y="933" text-anchor="end" fill="#fecaca" font-size="9" opacity="0.7">计费配额域</text>
+<text x="530" y="956" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="558" y="956" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="872" y="956" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="530" y="972" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="972" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="872" y="972" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="530" y="988" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="988" fill="#e8f2f0" font-size="10.5">org_unit_id</text>
+<text x="872" y="988" text-anchor="end" fill="#9db8b4" font-size="9">FK</text>
+<text x="530" y="1004" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="1004" fill="#e8f2f0" font-size="10.5">user_id</text>
+<text x="872" y="1004" text-anchor="end" fill="#9db8b4" font-size="9">FK→users</text>
+<text x="530" y="1020" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="1020" fill="#e8f2f0" font-size="10.5">thread_id</text>
+<text x="872" y="1020" text-anchor="end" fill="#9db8b4" font-size="9">FK→threads</text>
+<text x="530" y="1036" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="1036" fill="#e8f2f0" font-size="10.5">turn_id</text>
+<text x="872" y="1036" text-anchor="end" fill="#9db8b4" font-size="9">FK→turns</text>
+<text x="530" y="1052" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="1052" fill="#e8f2f0" font-size="10.5">metric</text>
+<text x="872" y="1052" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="530" y="1068" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="1068" fill="#e8f2f0" font-size="10.5">quantity</text>
+<text x="872" y="1068" text-anchor="end" fill="#9db8b4" font-size="9">NUMERIC</text>
+<text x="530" y="1084" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="1084" fill="#e8f2f0" font-size="10.5">model</text>
+<text x="872" y="1084" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="530" y="1100" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="1100" fill="#e8f2f0" font-size="10.5">unit_cost_micros</text>
+<text x="872" y="1100" text-anchor="end" fill="#9db8b4" font-size="9">BIGINT</text>
+<text x="530" y="1116" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="1116" fill="#e8f2f0" font-size="10.5">occurred_at</text>
+<text x="872" y="1116" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<rect x="960" y="920" width="300" height="162" rx="6" fill="#2a1015" stroke="#ef4444" stroke-width="1.4"/>
+<rect x="960" y="920" width="300" height="28" rx="6" fill="url(#gr)"/>
+<rect x="960" y="938" width="300" height="10" fill="url(#gr)"/>
+<text x="1110.0" y="939" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">quotas</text>
+<text x="1254" y="933" text-anchor="end" fill="#fecaca" font-size="9" opacity="0.7">计费配额域</text>
+<text x="970" y="956" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="998" y="956" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="1252" y="956" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="970" y="972" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="998" y="972" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="1252" y="972" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="970" y="988" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="998" y="988" fill="#e8f2f0" font-size="10.5">scope</text>
+<text x="1252" y="988" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="970" y="1004" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="998" y="1004" fill="#e8f2f0" font-size="10.5">metric</text>
+<text x="1252" y="1004" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="970" y="1020" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="998" y="1020" fill="#e8f2f0" font-size="10.5">limit_value</text>
+<text x="1252" y="1020" text-anchor="end" fill="#9db8b4" font-size="9">NUMERIC</text>
+<text x="970" y="1036" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="998" y="1036" fill="#e8f2f0" font-size="10.5">period</text>
+<text x="1252" y="1036" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="970" y="1052" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="998" y="1052" fill="#e8f2f0" font-size="10.5">used_value</text>
+<text x="1252" y="1052" text-anchor="end" fill="#9db8b4" font-size="9">NUMERIC</text>
+<text x="970" y="1068" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="998" y="1068" fill="#e8f2f0" font-size="10.5">reset_at</text>
+<text x="1252" y="1068" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<rect x="1340" y="920" width="300" height="162" rx="6" fill="#2a1015" stroke="#ef4444" stroke-width="1.4"/>
+<rect x="1340" y="920" width="300" height="28" rx="6" fill="url(#gr)"/>
+<rect x="1340" y="938" width="300" height="10" fill="url(#gr)"/>
+<text x="1490.0" y="939" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">budgets</text>
+<text x="1634" y="933" text-anchor="end" fill="#fecaca" font-size="9" opacity="0.7">计费配额域</text>
+<text x="1350" y="956" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="1378" y="956" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="1632" y="956" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="1350" y="972" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1378" y="972" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="1632" y="972" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="1350" y="988" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1378" y="988" fill="#e8f2f0" font-size="10.5">org_unit_id</text>
+<text x="1632" y="988" text-anchor="end" fill="#9db8b4" font-size="9">FK</text>
+<text x="1350" y="1004" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1378" y="1004" fill="#e8f2f0" font-size="10.5">amount_micros</text>
+<text x="1632" y="1004" text-anchor="end" fill="#9db8b4" font-size="9">BIGINT</text>
+<text x="1350" y="1020" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1378" y="1020" fill="#e8f2f0" font-size="10.5">spent_micros</text>
+<text x="1632" y="1020" text-anchor="end" fill="#9db8b4" font-size="9">BIGINT</text>
+<text x="1350" y="1036" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1378" y="1036" fill="#e8f2f0" font-size="10.5">period</text>
+<text x="1632" y="1036" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="1350" y="1052" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1378" y="1052" fill="#e8f2f0" font-size="10.5">alert_threshold</text>
+<text x="1632" y="1052" text-anchor="end" fill="#9db8b4" font-size="9">NUMERIC</text>
+<text x="1350" y="1068" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1378" y="1068" fill="#e8f2f0" font-size="10.5">hard_limit</text>
+<text x="1632" y="1068" text-anchor="end" fill="#9db8b4" font-size="9">BOOL</text>
+<path d="M60 181.0 L700 165.0" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<rect x="354.0" y="163.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#3b82f6" stroke-width="0.6"/>
+<text x="380.0" y="175.0" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">1:N</text>
+<path d="M340 181.0 C 560.0 181.0, 560.0 149.0, 780 149.0" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<rect x="534.0" y="155.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#3b82f6" stroke-width="0.6"/>
+<text x="560.0" y="167.0" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">1:N</text>
+<path d="M700 165.0 C 900.0 165.0, 900.0 165.0, 1100 165.0" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<rect x="874.0" y="155.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#3b82f6" stroke-width="0.6"/>
+<text x="900.0" y="167.0" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">M:N</text>
+<path d="M1040 149.0 L1100 165.0" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<rect x="1044.0" y="147.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#3b82f6" stroke-width="0.6"/>
+<text x="1070.0" y="159.0" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">1:N</text>
+<path d="M200.0 262 C 210.0 262, 210.0 457.0, 220.0 457.0" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="184.0" y="349.5" width="52" height="16" rx="3" fill="#0b141a" stroke="#35c2b0" stroke-width="0.6"/>
+<text x="210.0" y="361.5" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">1:N</text>
+<path d="M380 457.0 L460 409.0" fill="none" stroke="#028090" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="394.0" y="423.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#028090" stroke-width="0.6"/>
+<text x="420.0" y="435.0" text-anchor="middle" fill="#028090" font-size="9.5" font-weight="700">1:N</text>
+<path d="M380 457.0 C 590.0 457.0, 590.0 417.0, 800 417.0" fill="none" stroke="#028090" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="564.0" y="427.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#028090" stroke-width="0.6"/>
+<text x="590.0" y="439.0" text-anchor="middle" fill="#028090" font-size="9.5" font-weight="700">1:N</text>
+<path d="M200.0 312 C 755.0 312, 755.0 441.0, 1310.0 441.0" fill="none" stroke="#028090" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="729.0" y="366.5" width="52" height="16" rx="3" fill="#0b141a" stroke="#028090" stroke-width="0.6"/>
+<text x="755.0" y="378.5" text-anchor="middle" fill="#028090" font-size="9.5" font-weight="700">1:N</text>
+<path d="M220.0 554 C 230.0 554, 230.0 757.0, 240.0 757.0" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="204.0" y="645.5" width="52" height="16" rx="3" fill="#0b141a" stroke="#35c2b0" stroke-width="0.6"/>
+<text x="230.0" y="657.5" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">1:N</text>
+<path d="M420 757.0 L520 757.0" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="444.0" y="747.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#35c2b0" stroke-width="0.6"/>
+<text x="470.0" y="759.0" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">1:N</text>
+<path d="M860 757.0 L940 733.0" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="874.0" y="735.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#35c2b0" stroke-width="0.6"/>
+<text x="900.0" y="747.0" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">1:N</text>
+<path d="M860 757.0 C 1120.0 757.0, 1120.0 701.0, 1380 701.0" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="1094.0" y="719.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#35c2b0" stroke-width="0.6"/>
+<text x="1120.0" y="731.0" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">1:N</text>
+<path d="M240.0 894 C 245.0 894, 245.0 1081.0, 250.0 1081.0" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<rect x="219.0" y="977.5" width="52" height="16" rx="3" fill="#0b141a" stroke="#e8b64c" stroke-width="0.6"/>
+<text x="245.0" y="989.5" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">1:N</text>
+<path d="M690.0 894 C 500.0 894, 500.0 1081.0, 310.0 1081.0" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<rect x="474.0" y="977.5" width="52" height="16" rx="3" fill="#0b141a" stroke="#e8b64c" stroke-width="0.6"/>
+<text x="500.0" y="989.5" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">1:N</text>
+<path d="M340.0 894 C 520.0 894, 520.0 1025.0, 700.0 1025.0" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="494.0" y="949.5" width="52" height="16" rx="3" fill="#0b141a" stroke="#ef4444" stroke-width="0.6"/>
+<text x="520.0" y="961.5" text-anchor="middle" fill="#ef4444" font-size="9.5" font-weight="700">1:N</text>
+<path d="M200.0 262 C 490.0 262, 490.0 1025.0, 780.0 1025.0" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="464.0" y="633.5" width="52" height="16" rx="3" fill="#0b141a" stroke="#ef4444" stroke-width="0.6"/>
+<text x="490.0" y="645.5" text-anchor="middle" fill="#ef4444" font-size="9.5" font-weight="700">1:N</text>
+<path d="M200.0 282 C 655.0 282, 655.0 1001.0, 1110.0 1001.0" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="629.0" y="631.5" width="52" height="16" rx="3" fill="#0b141a" stroke="#ef4444" stroke-width="0.6"/>
+<text x="655.0" y="643.5" text-anchor="middle" fill="#ef4444" font-size="9.5" font-weight="700">1:N</text>
+<path d="M200.0 302 C 845.0 302, 845.0 1001.0, 1490.0 1001.0" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="819.0" y="641.5" width="52" height="16" rx="3" fill="#0b141a" stroke="#ef4444" stroke-width="0.6"/>
+<text x="845.0" y="653.5" text-anchor="middle" fill="#ef4444" font-size="9.5" font-weight="700">1:N</text>
+<rect x="60" y="1250" width="2280" height="60" rx="8" fill="#13242e" stroke="#2e5a68"/>
+<rect x="80" y="1266" width="16" height="16" rx="3" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="102" y="1278" fill="#e8f2f0" font-size="11">租户域</text>
+<rect x="230" y="1266" width="16" height="16" rx="3" fill="#0a2620" stroke="#028090" stroke-width="1.4"/>
+<text x="252" y="1278" fill="#e8f2f0" font-size="11">工作区域</text>
+<rect x="380" y="1266" width="16" height="16" rx="3" fill="#0a2620" stroke="#35c2b0" stroke-width="1.4"/>
+<text x="402" y="1278" fill="#e8f2f0" font-size="11">会话域</text>
+<rect x="530" y="1266" width="16" height="16" rx="3" fill="#2a2110" stroke="#e8b64c" stroke-width="1.4"/>
+<text x="552" y="1278" fill="#e8f2f0" font-size="11">审批域</text>
+<rect x="680" y="1266" width="16" height="16" rx="3" fill="#2a1015" stroke="#ef4444" stroke-width="1.4"/>
+<text x="702" y="1278" fill="#e8f2f0" font-size="11">计费配额域</text>
+<text x="830" y="1278" fill="#9db8b4" font-size="11">线条标注: 1:N 一对多 · M:N 多对多(经关联表) · PK=主键(金色) · ★ 幂等键</text>
+<text x="40" y="1328" fill="#9db8b4" font-size="12">图 1 · 核心域 ER 总图（tenants→users→workspaces→threads→turns→items + approval_tickets + usage_records/quotas/budgets）</text>
+</svg>

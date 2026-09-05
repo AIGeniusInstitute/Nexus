@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 1400">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#a855f7"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f97316"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+</defs>
+<rect width="2000" height="1400" fill="#0b141a"/>
+<text x="40" y="32" fill="#35c2b0" font-size="22" font-weight="700">Nexus 工具调用流程</text>
+<text x="40" y="56" fill="#9db8b4" font-size="13">模型采样 > ToolRouter.dispatch > execpolicy评估 > OS沙箱执行(shell)或MCP Gateway注入凭据(MCP) > 记Item > 审批(如需)</text>
+<rect x="60" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#35c2b0" stroke-width="1.4"/>
+<text x="200.0" y="100" text-anchor="middle" fill="#35c2b0" font-size="12.5" font-weight="700">Model</text>
+<text x="200.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L6 模型采样</text>
+<line x1="200.0" y1="126" x2="200.0" y2="1340" stroke="#35c2b0" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="420" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#a855f7" stroke-width="1.4"/>
+<text x="560.0" y="100" text-anchor="middle" fill="#a855f7" font-size="12.5" font-weight="700">ToolRouter</text>
+<text x="560.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L5 工具路由</text>
+<line x1="560.0" y1="126" x2="560.0" y2="1340" stroke="#a855f7" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="780" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#e8b64c" stroke-width="1.4"/>
+<text x="920.0" y="100" text-anchor="middle" fill="#e8b64c" font-size="12.5" font-weight="700">ExecPolicy</text>
+<text x="920.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L5 策略求值</text>
+<line x1="920.0" y1="126" x2="920.0" y2="1340" stroke="#e8b64c" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1140" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#ef4444" stroke-width="1.4"/>
+<text x="1280.0" y="100" text-anchor="middle" fill="#ef4444" font-size="12.5" font-weight="700">Sandbox</text>
+<text x="1280.0" y="116" text-anchor="middle" fill="#ef4444" font-size="12.5" font-weight="700">/MCP Gateway</text>
+<text x="1280.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L4 沙箱/MCP侧车</text>
+<line x1="1280.0" y1="126" x2="1280.0" y2="1340" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1500" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#a855f7" stroke-width="1.4"/>
+<text x="1640.0" y="100" text-anchor="middle" fill="#a855f7" font-size="12.5" font-weight="700">app-server</text>
+<text x="1640.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L5 Item记录</text>
+<line x1="1640.0" y1="126" x2="1640.0" y2="1340" stroke="#a855f7" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1860" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#f97316" stroke-width="1.4"/>
+<text x="2000.0" y="100" text-anchor="middle" fill="#f97316" font-size="12.5" font-weight="700">Approval</text>
+<text x="2000.0" y="116" text-anchor="middle" fill="#f97316" font-size="12.5" font-weight="700">Center</text>
+<text x="2000.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L3审批(如需)</text>
+<line x1="2000.0" y1="126" x2="2000.0" y2="1340" stroke="#f97316" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="195.0" y="146" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="555.0" y="146" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<path d="M200.0 160 L560.0 160" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="380.0" y="154" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">采样: function_call(tool, arguments)</text>
+<path d="M560.0 224 L590.0 224 L590.0 244 L560.0 244" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<text x="598.0" y="230" fill="#e8f2f0" font-size="9.5">ToolRouter.dispatch(tool_name, args)</text>
+<rect x="555.0" y="274" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="915.0" y="274" width="10" height="28" rx="2" fill="#e8b64c" opacity="0.65" stroke="#e8b64c" stroke-width="0.8"/>
+<path d="M560.0 288 L920.0 288" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="740.0" y="282" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">execpolicy规则求值</text>
+<text x="740.0" y="295" text-anchor="middle" fill="#9db8b4" font-size="9">allow/deny/require_approval</text>
+<rect x="915.0" y="338" width="10" height="28" rx="2" fill="#e8b64c" opacity="0.65" stroke="#e8b64c" stroke-width="0.8"/>
+<rect x="555.0" y="338" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<path d="M920.0 352 L560.0 352" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="740.0" y="346" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">决策: allow / deny / require_approval</text>
+<rect x="555.0" y="402" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="1275.0" y="402" width="10" height="28" rx="2" fill="#ef4444" opacity="0.65" stroke="#ef4444" stroke-width="0.8"/>
+<path d="M560.0 416 L1280.0 416" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="920.0" y="410" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">[shell] 命令 > OS沙箱执行</text>
+<text x="920.0" y="423" text-anchor="middle" fill="#9db8b4" font-size="9">Seatbelt/Landlock+seccomp/bwrap</text>
+<path d="M1280.0 480 L1310.0 480 L1310.0 500 L1280.0 500" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="1318.0" y="486" fill="#e8f2f0" font-size="9.5">沙箱内执行(网络仅到Gateway)</text>
+<rect x="1275.0" y="530" width="10" height="28" rx="2" fill="#ef4444" opacity="0.65" stroke="#ef4444" stroke-width="0.8"/>
+<rect x="555.0" y="530" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<path d="M1280.0 544 L560.0 544" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="920.0" y="538" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">执行结果(stdout/stderr/exitCode)</text>
+<rect x="555.0" y="594" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="1275.0" y="594" width="10" height="28" rx="2" fill="#ef4444" opacity="0.65" stroke="#ef4444" stroke-width="0.8"/>
+<path d="M560.0 608 L1280.0 608" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<text x="920.0" y="602" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">[MCP] 工具调用 > MCP Gateway侧车</text>
+<path d="M1280.0 672 L1310.0 672 L1310.0 692 L1280.0 692" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<text x="1318.0" y="678" fill="#e8f2f0" font-size="9.5">凭据注入(短期JWT)+白名单过滤
+出站审计+敏感字段脱敏</text>
+<path d="M1280.0 736 L1310.0 736 L1310.0 756 L1280.0 756" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<text x="1318.0" y="742" fill="#e8f2f0" font-size="9.5">转发到真实MCP Server/企业API</text>
+<rect x="1275.0" y="786" width="10" height="28" rx="2" fill="#ef4444" opacity="0.65" stroke="#ef4444" stroke-width="0.8"/>
+<rect x="555.0" y="786" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<path d="M1280.0 800 L560.0 800" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<text x="920.0" y="794" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">MCP结果(result/error)</text>
+<rect x="555.0" y="850" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="1995.0" y="850" width="10" height="28" rx="2" fill="#f97316" opacity="0.65" stroke="#f97316" stroke-width="0.8"/>
+<path d="M560.0 864 L2000.0 864" fill="none" stroke="#f97316" stroke-width="1.6" marker-end="url(#ao)"/>
+<text x="1280.0" y="858" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">[require_approval] > 审批中心</text>
+<rect x="1995.0" y="914" width="10" height="28" rx="2" fill="#f97316" opacity="0.65" stroke="#f97316" stroke-width="0.8"/>
+<rect x="555.0" y="914" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<path d="M2000.0 928 L560.0 928" fill="none" stroke="#f97316" stroke-width="1.6" marker-end="url(#ao)"/>
+<text x="1280.0" y="922" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">审批结果(approved/rejected)</text>
+<rect x="555.0" y="978" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="1635.0" y="978" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<path d="M560.0 992 L1640.0 992" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<text x="1100.0" y="986" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">item/started(commandExecution/mcpToolCall)</text>
+<rect x="555.0" y="1042" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="1635.0" y="1042" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<path d="M560.0 1056 L1640.0 1056" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<text x="1100.0" y="1050" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">item/completed(status=completed/failed/declined)</text>
+<rect x="1635.0" y="1106" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="195.0" y="1106" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M1640.0 1120 L200.0 1120" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="920.0" y="1114" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">工具结果回灌模型上下文</text>
+<rect x="60" y="1214" width="1880" height="120" rx="6" fill="none" stroke="#e8b64c" stroke-width="1" stroke-dasharray="5,3"/>
+<rect x="68" y="1206" width="54" height="16" rx="3" fill="#0b141a" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="74" y="1218" fill="#e8b64c" font-size="10" font-weight="600">三条路径决策</text>
+<rect x="80" y="1234" width="600" height="30" rx="4" fill="#13242e" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="88" y="1250" fill="#22c55e" font-size="10" font-weight="600">[shell] execpolicy=allow > OS沙箱直接执行</text>
+<rect x="700" y="1234" width="600" height="30" rx="4" fill="#13242e" stroke="#3b82f6" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="708" y="1250" fill="#3b82f6" font-size="10" font-weight="600">[MCP] Gateway注入凭据 > 白名单 > 企业API</text>
+<rect x="1320" y="1234" width="600" height="30" rx="4" fill="#13242e" stroke="#f97316" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="1328" y="1250" fill="#f97316" font-size="10" font-weight="600">[approval] execpolicy=require_approval > 审批中心</text>
+<rect x="80" y="1269" width="1840" height="30" rx="4" fill="#13242e" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="88" y="1285" fill="#ef4444" font-size="10" font-weight="600">安全: config.toml零真实密钥; MCP凭据由Gateway持有; 破坏性工具恒定需审批; 命令显示用redacted值</text>
+<text x="40" y="1354" fill="#9db8b4" font-size="11.5">图 6 - 工具调用流程 (模型>路由>策略>沙箱/MCP>记录>审批闭环)</text>
+</svg>

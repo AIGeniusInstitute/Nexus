@@ -1,0 +1,758 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 3600">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+<linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7f1d1d"/><stop offset="1" stop-color="#ef4444"/></linearGradient>
+</defs>
+<rect width="2400" height="3600" fill="#0b141a"/>
+<text x="40" y="40" fill="#35c2b0" font-size="22" font-weight="700">Nexus 企业级 AI Agent 平台 · 全部系统 API 清单总览</text>
+<text x="40" y="64" fill="#9db8b4" font-size="13">三大类 API：A. Codex app-server JSON-RPC（L5 Harness 集成面，复用） · B. Nexus 控制平面 REST API（L2 网关，自建） · C. Webhook 与 WebSocket</text>
+<rect x="40" y="82" width="14" height="10" rx="2" fill="#35c2b0" opacity="0.8"/>
+<text x="60" y="91" fill="#9db8b4" font-size="11">复用 Codex</text>
+<rect x="150" y="82" width="14" height="10" rx="2" fill="#3b82f6" opacity="0.8"/>
+<text x="170" y="91" fill="#9db8b4" font-size="11">Nexus 自建</text>
+<rect x="260" y="82" width="14" height="10" rx="2" fill="#e8b64c" opacity="0.8"/>
+<text x="280" y="91" fill="#9db8b4" font-size="11">实验性</text>
+<rect x="350" y="82" width="14" height="10" rx="2" fill="#a855f7" opacity="0.8"/>
+<text x="370" y="91" fill="#9db8b4" font-size="11">Server→Client 请求</text>
+<rect x="490" y="82" width="14" height="10" rx="2" fill="#ef4444" opacity="0.8"/>
+<text x="510" y="91" fill="#9db8b4" font-size="11">已废弃</text>
+<rect x="20" y="110" width="2360" height="1480" rx="14" fill="#13242e" stroke="#028090" stroke-width="2"/>
+<rect x="20" y="110" width="2360" height="34" rx="14" fill="url(#gt)"/>
+<rect x="20" y="130" width="2360" height="14" fill="url(#gt)"/>
+<text x="40" y="133" fill="#e8f2f0" font-size="15" font-weight="700">A. Codex app-server JSON-RPC API（L5 Harness 集成面 · 复用 Codex 黑盒）</text>
+<text x="2100" y="133" fill="#e8f2f0" font-size="12" font-weight="700">协议: JSON-RPC 2.0 · 传输: stdio/ws/unix</text>
+<text x="40" y="172" fill="#35c2b0" font-size="12" font-weight="700">A.1 生命周期 Lifecycle</text>
+<rect x="40" y="180" width="100" height="28" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="90.0" y="197.0" text-anchor="middle" fill="#e8f2f0" font-size="9" font-weight="700">initialize</text>
+<rect x="150" y="180" width="100" height="28" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="200.0" y="197.0" text-anchor="middle" fill="#e8f2f0" font-size="9" font-weight="700">initialized</text>
+<text x="40" y="234" fill="#35c2b0" font-size="12" font-weight="700">A.2 Thread（会话）</text>
+<rect x="40" y="242" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="107.5" y="259.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/start</text>
+<rect x="185" y="242" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="252.5" y="259.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/resume</text>
+<rect x="330" y="242" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="397.5" y="259.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/fork</text>
+<rect x="475" y="242" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="542.5" y="259.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/archive</text>
+<rect x="620" y="242" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="687.5" y="259.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/unarchive</text>
+<rect x="765" y="242" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="832.5" y="259.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/delete</text>
+<rect x="910" y="242" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="977.5" y="259.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/read</text>
+<rect x="1055" y="242" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="1122.5" y="259.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/list</text>
+<rect x="40" y="276" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="107.5" y="293.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/search</text>
+<rect x="185" y="276" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="252.5" y="293.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/searchOccurrences</text>
+<rect x="330" y="276" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="397.5" y="293.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/loaded/list</text>
+<rect x="475" y="276" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="542.5" y="293.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/turns/list</text>
+<rect x="620" y="276" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="687.5" y="293.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/items/list</text>
+<rect x="765" y="276" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="832.5" y="293.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/inject_items</text>
+<rect x="910" y="276" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="977.5" y="293.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/timeline/list</text>
+<rect x="1055" y="276" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="1122.5" y="293.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/unsubscribe</text>
+<rect x="40" y="310" width="135" height="28" rx="4" fill="#173341" stroke="#ef4444" stroke-width="0.8"/>
+<text x="107.5" y="327.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/rollback*</text>
+<rect x="185" y="310" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="252.5" y="327.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/revert</text>
+<rect x="330" y="310" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="397.5" y="327.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/compact/start</text>
+<rect x="475" y="310" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="542.5" y="327.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/shellCommand</text>
+<rect x="620" y="310" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="687.5" y="327.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/approveGuardianDeniedAction</text>
+<rect x="765" y="310" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="832.5" y="327.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/metadata/update</text>
+<rect x="910" y="310" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="977.5" y="327.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/name/set</text>
+<rect x="1055" y="310" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1122.5" y="327.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/memoryMode/set</text>
+<rect x="40" y="344" width="135" height="28" rx="4" fill="#173341" stroke="#2e5a68" stroke-width="0.8"/>
+<text x="107.5" y="361.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">memory/reset</text>
+<text x="40" y="396" fill="#35c2b0" font-size="12" font-weight="700">A.2b Thread Sections / Queue / Goal</text>
+<rect x="40" y="404" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="107.5" y="421.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">threadSection/list</text>
+<rect x="185" y="404" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="252.5" y="421.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">threadSection/create</text>
+<rect x="330" y="404" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="397.5" y="421.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">threadSection/update</text>
+<rect x="475" y="404" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="542.5" y="421.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">threadSection/delete</text>
+<rect x="620" y="404" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="687.5" y="421.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/section/move</text>
+<rect x="765" y="404" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="832.5" y="421.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/settings/update</text>
+<rect x="910" y="404" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="977.5" y="421.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/queue/add</text>
+<rect x="1055" y="404" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1122.5" y="421.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/queue/list</text>
+<rect x="40" y="438" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="107.5" y="455.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/queue/update</text>
+<rect x="185" y="438" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="252.5" y="455.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/queue/delete</text>
+<rect x="330" y="438" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="397.5" y="455.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/queue/reorder</text>
+<rect x="475" y="438" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="542.5" y="455.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/queue/start</text>
+<rect x="620" y="438" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="687.5" y="455.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/goal/set</text>
+<rect x="765" y="438" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="832.5" y="455.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/goal/get</text>
+<rect x="910" y="438" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="977.5" y="455.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">thread/goal/clear</text>
+<text x="40" y="490" fill="#35c2b0" font-size="12" font-weight="700">A.2c Background Terminals / Realtime</text>
+<rect x="40" y="498" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="107.5" y="515.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">bgTerms/clean</text>
+<rect x="185" y="498" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="252.5" y="515.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">bgTerms/list</text>
+<rect x="330" y="498" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="397.5" y="515.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">bgTerms/terminate</text>
+<rect x="475" y="498" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="542.5" y="515.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">realtime/start</text>
+<rect x="620" y="498" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="687.5" y="515.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">realtime/appendAudio</text>
+<rect x="765" y="498" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="832.5" y="515.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">realtime/appendText</text>
+<rect x="910" y="498" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="977.5" y="515.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">realtime/appendSpeech</text>
+<rect x="1055" y="498" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1122.5" y="515.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">realtime/stop</text>
+<rect x="1200" y="498" width="135" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1267.5" y="515.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">realtime/listVoices</text>
+<text x="40" y="550" fill="#35c2b0" font-size="12" font-weight="700">A.3 Turn（对话轮次）</text>
+<rect x="40" y="558" width="135" height="28" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="107.5" y="575.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">turn/start</text>
+<rect x="185" y="558" width="135" height="28" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="252.5" y="575.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">turn/settings/update</text>
+<rect x="330" y="558" width="135" height="28" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="397.5" y="575.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">turn/steer</text>
+<rect x="475" y="558" width="135" height="28" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="542.5" y="575.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">turn/interrupt</text>
+<text x="40" y="612" fill="#35c2b0" font-size="12" font-weight="700">A.4 事件 ServerNotification（服务器推送通知）</text>
+<rect x="40" y="620" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="635.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/started</text>
+<rect x="170" y="620" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="635.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/status/changed</text>
+<rect x="300" y="620" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="360.0" y="635.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/archived</text>
+<rect x="430" y="620" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="490.0" y="635.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/unarchived</text>
+<rect x="560" y="620" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="620.0" y="635.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/closed</text>
+<rect x="690" y="620" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="750.0" y="635.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/name/updated</text>
+<rect x="820" y="620" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="880.0" y="635.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/deleted</text>
+<rect x="950" y="620" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1010.0" y="635.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/settings/updated</text>
+<rect x="1080" y="620" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1140.0" y="635.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/tokenUsage/updated</text>
+<rect x="40" y="650" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="665.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/goal/updated</text>
+<rect x="170" y="650" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="665.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/goal/cleared</text>
+<rect x="300" y="650" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="360.0" y="665.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/queue/changed</text>
+<rect x="430" y="650" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="490.0" y="665.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/reverted</text>
+<rect x="560" y="650" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="620.0" y="665.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/environment/connected</text>
+<rect x="690" y="650" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="750.0" y="665.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/environment/disconnected</text>
+<rect x="820" y="650" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="880.0" y="665.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">turn/started</text>
+<rect x="950" y="650" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1010.0" y="665.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">turn/completed</text>
+<rect x="1080" y="650" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1140.0" y="665.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">turn/diff/updated</text>
+<rect x="40" y="680" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="695.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">turn/plan/updated</text>
+<rect x="170" y="680" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="695.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">turn/moderationMetadata</text>
+<rect x="300" y="680" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="360.0" y="695.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">item/started</text>
+<rect x="430" y="680" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="490.0" y="695.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">item/completed</text>
+<rect x="560" y="680" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="620.0" y="695.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">item/agentMessage/delta</text>
+<rect x="690" y="680" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="750.0" y="695.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">item/plan/delta</text>
+<rect x="820" y="680" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="880.0" y="695.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">item/reasoning/summaryTextDelta</text>
+<rect x="950" y="680" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1010.0" y="695.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">item/reasoning/summaryPartAdded</text>
+<rect x="1080" y="680" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1140.0" y="695.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">item/reasoning/textDelta</text>
+<rect x="40" y="710" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="725.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">item/commandExecution/outputDelta</text>
+<rect x="170" y="710" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="725.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">item/fileChange/patchUpdated</text>
+<rect x="300" y="710" width="120" height="24" rx="4" fill="#173341" stroke="#ef4444" stroke-width="0.8"/>
+<text x="360.0" y="725.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">item/fileChange/outputDelta*</text>
+<rect x="430" y="710" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="490.0" y="725.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">rawResponse/completed</text>
+<rect x="560" y="710" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="620.0" y="725.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">rawResponseItem/completed</text>
+<rect x="690" y="710" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="750.0" y="725.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">model/safetyBuffering/updated</text>
+<rect x="820" y="710" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="880.0" y="725.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">model/rerouted</text>
+<rect x="950" y="710" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1010.0" y="725.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">model/verification</text>
+<rect x="1080" y="710" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1140.0" y="725.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">modelProvider/authRecoveryStarted</text>
+<rect x="40" y="740" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="755.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">modelProvider/authRecoveryCompleted</text>
+<rect x="170" y="740" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="755.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">error</text>
+<rect x="300" y="740" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="360.0" y="755.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">warning</text>
+<rect x="430" y="740" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="490.0" y="755.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">configWarning</text>
+<rect x="560" y="740" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="620.0" y="755.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">skills/changed</text>
+<rect x="690" y="740" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="750.0" y="755.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">app/list/updated</text>
+<rect x="820" y="740" width="120" height="24" rx="4" fill="#173341" stroke="#ef4444" stroke-width="0.8"/>
+<text x="880.0" y="755.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">compacted*</text>
+<rect x="950" y="740" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1010.0" y="755.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/project/updated</text>
+<rect x="1080" y="740" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1140.0" y="755.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">project/changed</text>
+<rect x="40" y="770" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="785.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fuzzyFileSearch/sessionUpdated</text>
+<rect x="170" y="770" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="785.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fuzzyFileSearch/sessionCompleted</text>
+<rect x="300" y="770" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="360.0" y="785.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/realtime/started</text>
+<rect x="430" y="770" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="490.0" y="785.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/realtime/itemAdded</text>
+<rect x="560" y="770" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="620.0" y="785.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/realtime/transcript/delta</text>
+<rect x="690" y="770" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="750.0" y="785.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/realtime/transcript/done</text>
+<rect x="820" y="770" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="880.0" y="785.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/realtime/item/started</text>
+<rect x="950" y="770" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1010.0" y="785.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/realtime/item/transcript/delta</text>
+<rect x="1080" y="770" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1140.0" y="785.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/realtime/item/completed</text>
+<rect x="40" y="800" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="815.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/realtime/outputAudio/delta</text>
+<rect x="170" y="800" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="815.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/realtime/error</text>
+<rect x="300" y="800" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="360.0" y="815.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/realtime/closed</text>
+<rect x="430" y="800" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="490.0" y="815.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">thread/realtime/sdp</text>
+<rect x="560" y="800" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="620.0" y="815.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">mcpServer/startupStatus/updated</text>
+<rect x="690" y="800" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="750.0" y="815.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">mcpServer/event/stream/notification</text>
+<rect x="820" y="800" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="880.0" y="815.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">item/autoApprovalReview/started</text>
+<rect x="950" y="800" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1010.0" y="815.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">item/autoApprovalReview/completed</text>
+<rect x="1080" y="800" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1140.0" y="815.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">autoApprovalReview/strictReviewRequired</text>
+<rect x="40" y="830" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="845.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">windowsSandbox/setupCompleted</text>
+<rect x="170" y="830" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="845.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">serverRequest/resolved</text>
+<rect x="300" y="830" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="360.0" y="845.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">account/login/completed</text>
+<rect x="430" y="830" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="490.0" y="845.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">account/updated</text>
+<rect x="560" y="830" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="620.0" y="845.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">account/rateLimits/updated</text>
+<rect x="690" y="830" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="750.0" y="845.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">mcpServer/oauthLogin/completed</text>
+<text x="40" y="880" fill="#a855f7" font-size="12" font-weight="700">A.5 审批 Server→Client 请求（HITL 审批流）</text>
+<rect x="40" y="888" width="275" height="28" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="177.5" y="905.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">item/commandExecution/requestApproval</text>
+<rect x="330" y="888" width="275" height="28" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="467.5" y="905.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">item/fileChange/requestApproval</text>
+<rect x="620" y="888" width="275" height="28" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="757.5" y="905.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">item/permissions/requestApproval</text>
+<rect x="910" y="888" width="275" height="28" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="1047.5" y="905.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">item/tool/requestUserInput</text>
+<rect x="40" y="922" width="275" height="28" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="177.5" y="939.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">mcpServer/elicitation/request</text>
+<rect x="330" y="922" width="275" height="28" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="467.5" y="939.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">item/tool/call (DynamicToolCall)</text>
+<rect x="620" y="922" width="275" height="28" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="757.5" y="939.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">attestation/generate</text>
+<rect x="910" y="922" width="275" height="28" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="1047.5" y="939.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">currentTime/read</text>
+<text x="40" y="976" fill="#35c2b0" font-size="12" font-weight="700">A.6 工具/文件/MCP/插件/Skills/Hooks</text>
+<rect x="40" y="984" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="999.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">app/read</text>
+<rect x="170" y="984" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="999.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">app/list</text>
+<rect x="300" y="984" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="360.0" y="999.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">app/installed</text>
+<rect x="430" y="984" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="490.0" y="999.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">app/read(batch)</text>
+<rect x="560" y="984" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="620.0" y="999.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fs/readFile</text>
+<rect x="690" y="984" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="750.0" y="999.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fs/writeFile</text>
+<rect x="820" y="984" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="880.0" y="999.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fs/createDirectory</text>
+<rect x="950" y="984" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1010.0" y="999.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fs/getMetadata</text>
+<rect x="1080" y="984" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1140.0" y="999.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fs/readDirectory</text>
+<rect x="40" y="1014" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="1029.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fs/remove</text>
+<rect x="170" y="1014" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="1029.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fs/copy</text>
+<rect x="300" y="1014" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="360.0" y="1029.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fs/watch</text>
+<rect x="430" y="1014" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="490.0" y="1029.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fs/unwatch</text>
+<rect x="560" y="1014" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="620.0" y="1029.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fs/changed</text>
+<rect x="690" y="1014" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="750.0" y="1029.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">plugin/list</text>
+<rect x="820" y="1014" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="880.0" y="1029.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">plugin/search</text>
+<rect x="950" y="1014" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1010.0" y="1029.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">plugin/installed</text>
+<rect x="1080" y="1014" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1140.0" y="1029.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">plugin/reconcile</text>
+<rect x="40" y="1044" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="1059.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">plugin/read</text>
+<rect x="170" y="1044" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="1059.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">plugin/skill/read</text>
+<rect x="300" y="1044" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="360.0" y="1059.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">plugin/install</text>
+<rect x="430" y="1044" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="490.0" y="1059.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">plugin/uninstall</text>
+<rect x="560" y="1044" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="620.0" y="1059.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">skills/list</text>
+<rect x="690" y="1044" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="750.0" y="1059.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">skills/extraRoots/set</text>
+<rect x="820" y="1044" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="880.0" y="1059.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">skills/config/write</text>
+<rect x="950" y="1044" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1010.0" y="1059.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">hooks/list</text>
+<rect x="1080" y="1044" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1140.0" y="1059.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">marketplace/add</text>
+<rect x="40" y="1074" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="1089.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">marketplace/remove</text>
+<rect x="170" y="1074" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="1089.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">marketplace/upgrade</text>
+<rect x="300" y="1074" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="360.0" y="1089.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">mcpServer/oauth/login</text>
+<rect x="430" y="1074" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="490.0" y="1089.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">mcpServer/tool/call</text>
+<rect x="560" y="1074" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="620.0" y="1089.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">mcpServer/resource/read</text>
+<rect x="690" y="1074" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="750.0" y="1089.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">mcpServerStatus/list</text>
+<rect x="820" y="1074" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="880.0" y="1089.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">config/mcpServer/reload</text>
+<rect x="950" y="1074" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1010.0" y="1089.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">mcpServer/event/stream/start</text>
+<rect x="1080" y="1074" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1140.0" y="1089.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">mcpServer/event/stream/stop</text>
+<rect x="40" y="1104" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="1119.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">command/exec</text>
+<rect x="170" y="1104" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="1119.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">command/exec/write</text>
+<rect x="300" y="1104" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="360.0" y="1119.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">command/exec/resize</text>
+<rect x="430" y="1104" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="490.0" y="1119.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">command/exec/terminate</text>
+<rect x="560" y="1104" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="620.0" y="1119.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">command/exec/outputDelta</text>
+<rect x="690" y="1104" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="750.0" y="1119.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">process/spawn</text>
+<rect x="820" y="1104" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="880.0" y="1119.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">process/writeStdin</text>
+<rect x="950" y="1104" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1010.0" y="1119.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">process/resizePty</text>
+<rect x="1080" y="1104" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1140.0" y="1119.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">process/kill</text>
+<rect x="40" y="1134" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="100.0" y="1149.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">process/outputDelta</text>
+<rect x="170" y="1134" width="120" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="230.0" y="1149.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">process/exited</text>
+<rect x="300" y="1134" width="120" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="360.0" y="1149.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fuzzyFileSearch/sessionStart*</text>
+<rect x="430" y="1134" width="120" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="490.0" y="1149.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">fuzzyFileSearch/query*</text>
+<text x="40" y="1184" fill="#35c2b0" font-size="12" font-weight="700">A.7 配置/模型/账户</text>
+<rect x="40" y="1192" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="95.0" y="1207.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">config/read</text>
+<rect x="157" y="1192" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="212.0" y="1207.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">config/value/write</text>
+<rect x="274" y="1192" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="329.0" y="1207.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">config/batchWrite</text>
+<rect x="391" y="1192" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="446.0" y="1207.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">configRequirements/read</text>
+<rect x="508" y="1192" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="563.0" y="1207.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">model/list</text>
+<rect x="625" y="1192" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="680.0" y="1207.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">modelProvider/capabilities/read</text>
+<rect x="742" y="1192" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="797.0" y="1207.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">permissionProfile/list</text>
+<rect x="859" y="1192" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="914.0" y="1207.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">experimentalFeature/list</text>
+<rect x="976" y="1192" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1031.0" y="1207.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">experimentalFeature/enablement/set</text>
+<rect x="1093" y="1192" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1148.0" y="1207.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">collaborationMode/list</text>
+<rect x="40" y="1222" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="95.0" y="1237.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">environment/add</text>
+<rect x="157" y="1222" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="212.0" y="1237.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">environment/info</text>
+<rect x="274" y="1222" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="329.0" y="1237.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">environment/status</text>
+<rect x="391" y="1222" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="446.0" y="1237.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">account/read</text>
+<rect x="508" y="1222" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="563.0" y="1237.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">account/login/start</text>
+<rect x="625" y="1222" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="680.0" y="1237.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">account/login/cancel</text>
+<rect x="742" y="1222" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="797.0" y="1237.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">account/logout</text>
+<rect x="859" y="1222" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="914.0" y="1237.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">account/rateLimits/read</text>
+<rect x="976" y="1222" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1031.0" y="1237.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">account/usage/read</text>
+<rect x="1093" y="1222" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="1148.0" y="1237.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">account/workspaceMessages/read</text>
+<rect x="40" y="1252" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="95.0" y="1267.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">account/rateLimitResetCredit/consume</text>
+<rect x="157" y="1252" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="212.0" y="1267.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">account/sendAddCreditsNudgeEmail</text>
+<rect x="274" y="1252" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="329.0" y="1267.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">account/bedrock/discover*</text>
+<rect x="391" y="1252" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="446.0" y="1267.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">account/bedrock/setup*</text>
+<rect x="508" y="1252" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="563.0" y="1267.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">review/start</text>
+<rect x="625" y="1252" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="680.0" y="1267.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">server/diagnostics</text>
+<rect x="742" y="1252" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="797.0" y="1267.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">feedback/upload</text>
+<rect x="859" y="1252" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="914.0" y="1267.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">remoteControl/enable*</text>
+<rect x="976" y="1252" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1031.0" y="1267.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">remoteControl/disable*</text>
+<rect x="1093" y="1252" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1148.0" y="1267.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">remoteControl/status/read*</text>
+<rect x="40" y="1282" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="95.0" y="1297.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">remoteControl/pairing/start*</text>
+<rect x="157" y="1282" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="212.0" y="1297.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">remoteControl/pairing/status*</text>
+<rect x="274" y="1282" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="329.0" y="1297.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">remoteControl/client/list*</text>
+<rect x="391" y="1282" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="446.0" y="1297.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">remoteControl/client/revoke*</text>
+<rect x="508" y="1282" width="110" height="24" rx="4" fill="#173341" stroke="#028090" stroke-width="0.8"/>
+<text x="563.0" y="1297.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">windowsSandbox/setupStart</text>
+<rect x="625" y="1282" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="680.0" y="1297.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">externalAgentConfig/detect*</text>
+<rect x="742" y="1282" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="797.0" y="1297.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">externalAgentConfig/import*</text>
+<rect x="859" y="1282" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="914.0" y="1297.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">externalAgentConfig/import/readHistories*</text>
+<rect x="976" y="1282" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1031.0" y="1297.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">project/list*</text>
+<rect x="1093" y="1282" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1148.0" y="1297.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">project/read*</text>
+<rect x="40" y="1312" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="95.0" y="1327.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">project/create*</text>
+<rect x="157" y="1312" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="212.0" y="1327.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">project/import*</text>
+<rect x="274" y="1312" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="329.0" y="1327.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">project/update*</text>
+<rect x="391" y="1312" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="446.0" y="1327.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">project/move*</text>
+<rect x="508" y="1312" width="110" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="563.0" y="1327.0" text-anchor="middle" fill="#e8f2f0" font-size="7" font-weight="400">project/delete*</text>
+<text x="40" y="1580" fill="#9db8b4" font-size="11.5">图 A · Codex app-server JSON-RPC API 全清单（紫色=Server→Client审批请求，红色*=已废弃，金色*=实验性）</text>
+<rect x="20" y="1610" width="2360" height="1300" rx="14" fill="#13242e" stroke="#3b82f6" stroke-width="2"/>
+<rect x="20" y="1610" width="2360" height="34" rx="14" fill="url(#gb)"/>
+<rect x="20" y="1630" width="2360" height="14" fill="url(#gb)"/>
+<text x="40" y="1633" fill="#e8f2f0" font-size="15" font-weight="700">B. Nexus 控制平面 REST API（L2 网关 · 自建 · 鉴权: Bearer JWT + RBAC）</text>
+<text x="1900" y="1633" fill="#e8f2f0" font-size="12" font-weight="700">协议: HTTPS REST · 内容: JSON</text>
+<text x="40" y="1672" fill="#3b82f6" font-size="12" font-weight="700">B.1 认证 Auth</text>
+<rect x="40" y="1680" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="177.5" y="1695.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">POST /auth/login</text>
+<rect x="330" y="1680" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="467.5" y="1695.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">POST /auth/refresh</text>
+<rect x="620" y="1680" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="757.5" y="1695.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">POST /auth/logout</text>
+<rect x="910" y="1680" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1047.5" y="1695.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">GET /auth/me</text>
+<rect x="40" y="1710" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="177.5" y="1725.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">POST /auth/api-keys</text>
+<rect x="330" y="1710" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="467.5" y="1725.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">DELETE /auth/api-keys/{id}</text>
+<rect x="620" y="1710" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="757.5" y="1725.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">GET /auth/sessions</text>
+<rect x="910" y="1710" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1047.5" y="1725.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">DELETE /auth/sessions/{id}</text>
+<text x="40" y="1758" fill="#3b82f6" font-size="12" font-weight="700">B.2 租户/组织/用户/RBAC</text>
+<rect x="40" y="1766" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="132.5" y="1781.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">GET /tenants</text>
+<rect x="235" y="1766" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="327.5" y="1781.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">POST /tenants</text>
+<rect x="430" y="1766" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="522.5" y="1781.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">GET /tenants/{id}</text>
+<rect x="625" y="1766" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="717.5" y="1781.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">PUT /tenants/{id}</text>
+<rect x="820" y="1766" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="912.5" y="1781.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">GET /org-units</text>
+<rect x="1015" y="1766" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1107.5" y="1781.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">POST /org-units</text>
+<rect x="40" y="1796" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="132.5" y="1811.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">PUT /org-units/{id}</text>
+<rect x="235" y="1796" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="327.5" y="1811.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">DELETE /org-units/{id}</text>
+<rect x="430" y="1796" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="522.5" y="1811.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">GET /users</text>
+<rect x="625" y="1796" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="717.5" y="1811.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">POST /users</text>
+<rect x="820" y="1796" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="912.5" y="1811.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">GET /users/{id}</text>
+<rect x="1015" y="1796" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1107.5" y="1811.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">PUT /users/{id}</text>
+<rect x="40" y="1826" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="132.5" y="1841.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">DELETE /users/{id}</text>
+<rect x="235" y="1826" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="327.5" y="1841.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">GET /roles</text>
+<rect x="430" y="1826" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="522.5" y="1841.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">POST /roles</text>
+<rect x="625" y="1826" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="717.5" y="1841.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">PUT /roles/{id}</text>
+<rect x="820" y="1826" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="912.5" y="1841.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">DELETE /roles/{id}</text>
+<rect x="1015" y="1826" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1107.5" y="1841.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">GET /users/{id}/memberships</text>
+<rect x="40" y="1856" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="132.5" y="1871.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">POST /users/{id}/memberships</text>
+<rect x="235" y="1856" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="327.5" y="1871.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">DELETE /memberships/{id}</text>
+<text x="40" y="1904" fill="#3b82f6" font-size="12" font-weight="700">B.3 工作区 Workspaces</text>
+<rect x="40" y="1912" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="132.5" y="1927.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">GET /workspaces</text>
+<rect x="235" y="1912" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="327.5" y="1927.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">POST /workspaces</text>
+<rect x="430" y="1912" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="522.5" y="1927.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">GET /workspaces/{id}</text>
+<rect x="625" y="1912" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="717.5" y="1927.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">PUT /workspaces/{id}</text>
+<rect x="820" y="1912" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="912.5" y="1927.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">DELETE /workspaces/{id}</text>
+<rect x="1015" y="1912" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1107.5" y="1927.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">GET /workspaces/{id}/members</text>
+<rect x="40" y="1942" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="132.5" y="1957.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">POST /workspaces/{id}/members</text>
+<rect x="235" y="1942" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="327.5" y="1957.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">PUT /workspaces/{id}/members/{uid}</text>
+<rect x="430" y="1942" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="522.5" y="1957.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">DELETE /workspaces/{id}/members/{uid}</text>
+<rect x="625" y="1942" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="717.5" y="1957.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">GET /workspaces/{id}/settings</text>
+<rect x="820" y="1942" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="912.5" y="1957.0" text-anchor="middle" fill="#e8f2f0" font-size="8" font-weight="400">PUT /workspaces/{id}/settings</text>
+<text x="40" y="1990" fill="#3b82f6" font-size="12" font-weight="700">B.4 会话 Threads（REST 网关 → 映射 app-server JSON-RPC）</text>
+<rect x="40" y="1998" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="177.5" y="2013.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /threads</text>
+<rect x="330" y="1998" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="467.5" y="2013.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /threads (→thread/start)</text>
+<rect x="620" y="1998" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="757.5" y="2013.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /threads/{id} (→thread/read)</text>
+<rect x="910" y="1998" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1047.5" y="2013.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">DELETE /threads/{id} (→thread/delete)</text>
+<rect x="40" y="2028" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="177.5" y="2043.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /threads/{id}/resume (→thread/resume)</text>
+<rect x="330" y="2028" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="467.5" y="2043.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /threads/{id}/fork (→thread/fork)</text>
+<rect x="620" y="2028" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="757.5" y="2043.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /threads/{id}/archive (→thread/archive)</text>
+<rect x="910" y="2028" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1047.5" y="2043.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /threads/{id}/turns</text>
+<rect x="40" y="2058" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="177.5" y="2073.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /threads/{id}/turns (→turn/start)</text>
+<rect x="330" y="2058" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="467.5" y="2073.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /threads/{id}/interrupt (→turn/interrupt)</text>
+<rect x="620" y="2058" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="757.5" y="2073.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /threads/{id}/steer (→turn/steer)</text>
+<rect x="910" y="2058" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1047.5" y="2073.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /threads/{id}/items</text>
+<rect x="40" y="2088" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="177.5" y="2103.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /threads/{id}/messages</text>
+<rect x="330" y="2088" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="467.5" y="2103.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /threads/{id}/timeline (→thread/timeline/list)</text>
+<rect x="620" y="2088" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="757.5" y="2103.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /threads/{id}/compact (→thread/compact/start)</text>
+<rect x="910" y="2088" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1047.5" y="2103.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /threads/{id}/search (→thread/searchOccurrences)</text>
+<rect x="40" y="2118" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="177.5" y="2133.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">PUT /threads/{id}/metadata (→thread/metadata/update)</text>
+<rect x="330" y="2118" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="467.5" y="2133.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">PUT /threads/{id}/settings (→thread/settings/update)</text>
+<rect x="620" y="2118" width="275" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="757.5" y="2133.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /threads/{id}/shell (→thread/shellCommand)</text>
+<text x="40" y="2166" fill="#3b82f6" font-size="12" font-weight="700">B.5 审批中心 Approvals（HITL）</text>
+<rect x="40" y="2174" width="275" height="24" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="177.5" y="2189.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">GET /approvals</text>
+<rect x="330" y="2174" width="275" height="24" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="467.5" y="2189.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">GET /approvals/pending</text>
+<rect x="620" y="2174" width="275" height="24" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="757.5" y="2189.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">POST /approvals</text>
+<rect x="910" y="2174" width="275" height="24" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="1047.5" y="2189.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">GET /approvals/{id}</text>
+<rect x="40" y="2204" width="275" height="24" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="177.5" y="2219.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">POST /approvals/{id}/decide</text>
+<rect x="330" y="2204" width="275" height="24" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="467.5" y="2219.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">GET /approvals/stats</text>
+<rect x="620" y="2204" width="275" height="24" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="757.5" y="2219.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">GET /approvals/rules</text>
+<rect x="910" y="2204" width="275" height="24" rx="4" fill="#173341" stroke="#a855f7" stroke-width="0.8"/>
+<text x="1047.5" y="2219.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">PUT /approvals/rules</text>
+<text x="40" y="2252" fill="#3b82f6" font-size="12" font-weight="700">B.6 连接器 Connectors / MCP Gateway</text>
+<rect x="40" y="2260" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="132.5" y="2275.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /connectors</text>
+<rect x="235" y="2260" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="327.5" y="2275.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /connectors</text>
+<rect x="430" y="2260" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="522.5" y="2275.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /connectors/{id}</text>
+<rect x="625" y="2260" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="717.5" y="2275.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">PUT /connectors/{id}</text>
+<rect x="820" y="2260" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="912.5" y="2275.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">DELETE /connectors/{id}</text>
+<rect x="1015" y="2260" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1107.5" y="2275.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /connectors/{id}/tools</text>
+<rect x="40" y="2290" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="132.5" y="2305.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /connectors/{id}/tools/call</text>
+<rect x="235" y="2290" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="327.5" y="2305.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /connectors/{id}/health</text>
+<rect x="430" y="2290" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="522.5" y="2305.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /connectors/{id}/resources</text>
+<rect x="625" y="2290" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="717.5" y="2305.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /connectors/{id}/oauth/start</text>
+<rect x="820" y="2290" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="912.5" y="2305.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /connectors/{id}/oauth/callback</text>
+<text x="40" y="2338" fill="#3b82f6" font-size="12" font-weight="700">B.7 计量/审计/成本</text>
+<rect x="40" y="2346" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="132.5" y="2361.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /usage</text>
+<rect x="235" y="2346" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="327.5" y="2361.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /usage/breakdown</text>
+<rect x="430" y="2346" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="522.5" y="2361.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /usage/export</text>
+<rect x="625" y="2346" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="717.5" y="2361.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /usage/realtime</text>
+<rect x="820" y="2346" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="912.5" y="2361.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /audit-logs</text>
+<rect x="1015" y="2346" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1107.5" y="2361.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /audit-logs/{id}</text>
+<rect x="40" y="2376" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="132.5" y="2391.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /audit-logs/export</text>
+<rect x="235" y="2376" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="327.5" y="2391.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /cost-dashboard</text>
+<rect x="430" y="2376" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="522.5" y="2391.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /cost-dashboard/by-tenant</text>
+<rect x="625" y="2376" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="717.5" y="2391.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /cost-dashboard/by-workspace</text>
+<rect x="820" y="2376" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="912.5" y="2391.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /cost-dashboard/by-model</text>
+<text x="40" y="2424" fill="#3b82f6" font-size="12" font-weight="700">B.8 知识库 Knowledge Base / RAG</text>
+<rect x="40" y="2432" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="132.5" y="2447.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /kb/documents</text>
+<rect x="235" y="2432" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="327.5" y="2447.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /kb/documents</text>
+<rect x="430" y="2432" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="522.5" y="2447.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /kb/documents/{id}</text>
+<rect x="625" y="2432" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="717.5" y="2447.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">PUT /kb/documents/{id}</text>
+<rect x="820" y="2432" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="912.5" y="2447.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">DELETE /kb/documents/{id}</text>
+<rect x="1015" y="2432" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1107.5" y="2447.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /kb/search</text>
+<rect x="40" y="2462" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="132.5" y="2477.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /kb/embeddings</text>
+<rect x="235" y="2462" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="327.5" y="2477.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /kb/collections</text>
+<rect x="430" y="2462" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="522.5" y="2477.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /kb/collections</text>
+<rect x="625" y="2462" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="717.5" y="2477.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">DELETE /kb/collections/{id}</text>
+<rect x="820" y="2462" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="912.5" y="2477.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">POST /kb/ingest</text>
+<rect x="1015" y="2462" width="185" height="24" rx="4" fill="#173341" stroke="#3b82f6" stroke-width="0.8"/>
+<text x="1107.5" y="2477.0" text-anchor="middle" fill="#e8f2f0" font-size="7.5" font-weight="400">GET /kb/stats</text>
+<text x="40" y="2900" fill="#9db8b4" font-size="11.5">图 B · Nexus 控制平面 REST API 全清单（自建 · L2 网关 · Bearer JWT + RBAC 鉴权）</text>
+<rect x="20" y="2930" width="2360" height="460" rx="14" fill="#13242e" stroke="#e8b64c" stroke-width="2"/>
+<rect x="20" y="2930" width="2360" height="34" rx="14" fill="url(#gg)"/>
+<rect x="20" y="2950" width="2360" height="14" fill="url(#gg)"/>
+<text x="40" y="2953" fill="#e8f2f0" font-size="15" font-weight="700">C. Webhook 与 WebSocket（事件推送 · 权限驱动订阅）</text>
+<text x="40" y="2992" fill="#e8b64c" font-size="12" font-weight="700">C.1 任务完成 Webhook（POST 回调 · HMAC-SHA256 签名 · 幂等）</text>
+<rect x="40" y="3000" width="800" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="440.0" y="3017.0" text-anchor="middle" fill="#e8f2f0" font-size="9" font-weight="400">POST {callback_url}  ·  X-Nexus-Signature: hmac_sha256(payload, secret)  ·  X-Nexus-Event: turn.completed</text>
+<rect x="40" y="3034" width="800" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="440.0" y="3051.0" text-anchor="middle" fill="#e8f2f0" font-size="9" font-weight="400">POST {callback_url}  ·  X-Nexus-Event: approval.requested</text>
+<rect x="40" y="3068" width="800" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="440.0" y="3085.0" text-anchor="middle" fill="#e8f2f0" font-size="9" font-weight="400">POST {callback_url}  ·  X-Nexus-Event: thread.archived</text>
+<rect x="40" y="3102" width="800" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="440.0" y="3119.0" text-anchor="middle" fill="#e8f2f0" font-size="9" font-weight="400">POST {callback_url}  ·  X-Nexus-Event: goal.blocked</text>
+<rect x="40" y="3136" width="800" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="440.0" y="3153.0" text-anchor="middle" fill="#e8f2f0" font-size="9" font-weight="400">POST {callback_url}  ·  X-Nexus-Event: usage.threshold_exceeded</text>
+<text x="900" y="2992" fill="#e8b64c" font-size="12" font-weight="700">C.2 Webhook 管理</text>
+<rect x="900" y="3000" width="285" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1042.5" y="3017.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">POST /webhooks</text>
+<rect x="1200" y="3000" width="285" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1342.5" y="3017.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">GET /webhooks</text>
+<rect x="900" y="3034" width="285" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1042.5" y="3051.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">PUT /webhooks/{id}</text>
+<rect x="1200" y="3034" width="285" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1342.5" y="3051.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">DELETE /webhooks/{id}</text>
+<rect x="900" y="3068" width="285" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1042.5" y="3085.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">POST /webhooks/{id}/test</text>
+<rect x="1200" y="3068" width="285" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1342.5" y="3085.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">GET /webhooks/{id}/deliveries</text>
+<rect x="900" y="3102" width="285" height="28" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1042.5" y="3119.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">POST /webhooks/{id}/deliveries/{did}/retry</text>
+<text x="40" y="3188" fill="#e8b64c" font-size="12" font-weight="700">C.3 WebSocket 事件推送 WS /ws/threads/{id}/events（权限驱动订阅）</text>
+<rect x="40" y="3196" width="800" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="440.0" y="3211.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">WS /ws/threads/{threadId}/events  ·  subscribe → thread/turn/item 事件实时推送</text>
+<rect x="40" y="3226" width="800" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="440.0" y="3241.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">WS /ws/threads/{threadId}/events  ·  subscribe → item/agentMessage/delta 流式</text>
+<rect x="40" y="3256" width="800" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="440.0" y="3271.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">WS /ws/threads/{threadId}/events  ·  subscribe → item/commandExecution/outputDelta</text>
+<rect x="40" y="3286" width="800" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="440.0" y="3301.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">WS /ws/threads/{threadId}/events  ·  subscribe → turn/started / turn/completed</text>
+<rect x="40" y="3316" width="800" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="440.0" y="3331.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">WS /ws/threads/{threadId}/events  ·  subscribe → approval 请求推送 + 响应</text>
+<rect x="40" y="3346" width="800" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="440.0" y="3361.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">WS /ws/dashboard  ·  subscribe → 全局用量/状态/告警实时推送</text>
+<text x="900" y="3188" fill="#e8b64c" font-size="12" font-weight="700">C.4 SSE 降级（WS 不可用时）</text>
+<rect x="900" y="3196" width="600" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1200.0" y="3211.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">GET /threads/{id}/events/stream  ·  text/event-stream 降级推送</text>
+<rect x="900" y="3226" width="600" height="24" rx="4" fill="#173341" stroke="#e8b64c" stroke-width="0.8"/>
+<text x="1200.0" y="3241.0" text-anchor="middle" fill="#e8f2f0" font-size="8.5" font-weight="400">GET /dashboard/stream  ·  全局仪表盘 SSE 降级</text>
+<text x="40" y="3380" fill="#9db8b4" font-size="11.5">图 C · Webhook（HMAC 签名 POST 回调 · 幂等）与 WebSocket（权限驱动实时订阅 · SSE 降级）</text>
+<text x="40" y="3410" fill="#35c2b0" font-size="14" font-weight="700">统计概要</text>
+<text x="60" y="3435" fill="#9db8b4" font-size="11">A. Codex JSON-RPC: ~180 方法（含通知/审批请求） · 复用 Codex 黑盒 · L5 Harness 集成面</text>
+<text x="60" y="3455" fill="#9db8b4" font-size="11">B. Nexus REST API: ~85 路由 · 自建 · L2 网关 · Bearer JWT + RBAC + 幂等键</text>
+<text x="60" y="3475" fill="#9db8b4" font-size="11">C. Webhook/WebSocket: 6 事件类型回调 + 8 WS 通道 + 2 SSE 降级 · HMAC 签名 · 权限驱动</text>
+</svg>

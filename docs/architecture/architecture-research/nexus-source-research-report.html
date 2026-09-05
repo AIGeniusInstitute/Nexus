@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus 源码深度调研报告 · 交互报告</title>
+<style>
+:root{--bg:#0b141a;--panel:#13242e;--panel2:#173341;--text:#e8f2f0;--muted:#9db8b4;--line:#24414e;--accent:#35c2b0;--gold:#e8b64c;--blue:#3b82f6;--red:#ef4444;--code-bg:#0d1b20}
+[data-theme="light"]{--bg:#f6f8f9;--panel:#fff;--panel2:#eef2f4;--text:#16202a;--muted:#5a6b72;--line:#d4dde0;--accent:#028090;--gold:#b07d1a;--blue:#2563eb;--red:#dc2626;--code-bg:#f1f3f4}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px}
+.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--gold));z-index:1000;width:0;transition:width .1s}
+header{padding:32px 40px 16px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
+header h1{color:var(--accent);font-size:24px;margin-bottom:4px}
+header .sub{color:var(--muted);font-size:13px}
+.theme-btn{position:absolute;right:40px;top:30px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px}
+.theme-btn:hover{border-color:var(--accent)}
+.layout{display:flex;max-width:1600px;margin:0 auto}
+nav.toc{width:250px;position:sticky;top:120px;height:calc(100vh - 140px);overflow-y:auto;padding:24px 12px;flex-shrink:0}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;font-size:12.5px;padding:5px 12px;border-radius:6px;border-left:2px solid transparent}
+nav.toc a:hover,nav.toc a.active{color:var(--accent);background:var(--panel);border-left-color:var(--accent)}
+nav.toc .toc-sub{padding-left:20px;font-size:11.5px}
+main{flex:1;padding:24px 40px;min-width:0}
+section{margin-bottom:48px;padding-bottom:16px;border-bottom:1px dashed var(--line)}
+section:last-child{border-bottom:none}
+h2{color:var(--accent);font-size:20px;margin-bottom:14px;padding-bottom:6px;border-bottom:2px solid var(--accent)}
+h3{color:var(--gold);font-size:16px;margin:18px 0 10px}
+h4{color:var(--text);font-size:14px;margin:14px 0 8px;font-weight:600}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px;background:var(--panel)}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+th{background:var(--panel2);color:var(--accent);font-weight:600}
+tr:hover{background:var(--panel2)}
+code{background:var(--code-bg);padding:2px 6px;border-radius:4px;font-family:Consolas,monospace;font-size:12px;color:var(--gold)}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;margin:12px 0}
+pre code{background:none;padding:0;color:var(--text);font-size:12.5px}
+details{border:1px solid var(--line);border-radius:8px;margin:10px 0;background:var(--panel)}
+summary{cursor:pointer;padding:10px 14px;font-weight:600;color:var(--accent);user-select:none}
+summary:hover{background:var(--panel2);border-radius:8px}
+details[open] summary{border-bottom:1px solid var(--line)}
+.detail-body{padding:12px 14px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-reuse{background:rgba(53,194,176,.18);color:var(--accent)}
+.b-shell{background:rgba(232,182,76,.18);color:var(--gold)}
+.b-blackbox{background:rgba(59,130,246,.18);color:var(--blue)}
+.b-build{background:rgba(239,68,68,.18);color:var(--red)}
+.callout{border-left:4px solid var(--accent);background:var(--panel);padding:12px 16px;margin:14px 0;border-radius:0 8px 8px 0}
+.callout.gold{border-color:var(--gold)}
+.callout.red{border-color:var(--red)}
+.callout.blue{border-color:var(--blue)}
+ul,ol{margin:8px 0 8px 22px}
+li{margin:4px 0}
+.pillar{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:14px 0}
+.pillar-item{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.pillar-item .num{color:var(--accent);font-size:24px;font-weight:700}
+.pillar-item .lbl{color:var(--muted);font-size:12px;margin-top:4px}
+@media(max-width:980px){.layout{flex-direction:column}nav.toc{position:static;width:auto;height:auto;margin-bottom:16px}main{padding:24px 16px}}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<header>
+  <h1>Nexus 源码深度调研报告</h1>
+  <div class="sub">基于 codex-rs 111+ Rust crate 全量源码调研 · 架构解构与平台化启示</div>
+  <button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+</header>
+<div class="layout">
+<nav class="toc" id="toc"></nav>
+<main>
+
+<!-- §0 执行摘要 -->
+<section id="s0">
+<h2>§0 执行摘要</h2>
+<div class="callout gold">
+<strong>仓库规模</strong>：Cargo workspace + Bazel overlay，<strong>111+ Rust crate</strong>（105 workspace member + 14 ext/ 子目录），Rust 2024 edition + Tokio 异步运行时。
+</div>
+<div class="callout">
+<strong>架构本质</strong>：Codex Harness 是「单用户、本地、可打断的 Agent 引擎」。核心引擎层 <code>codex-core</code> 驱动 Turn 七阶段循环，通过 <code>app-server</code> JSON-RPC 协议层对外暴露 Thread/Turn/Item 三原语，底层以 SQLite + JSONL rollout 实现本地持久化，以 execpolicy（Starlark）+ 三平台 OS 沙箱实现命令级隔离。
+</div>
+<div class="callout red">
+<strong>核心结论</strong>：Harness 提供了完备的 Agent 执行内核与协议接口，但<strong>缺失多租户、计量、审计、云端会话、跨进程审批等企业能力</strong>。Nexus 路径：控制/执行分离——以 app-server 为唯一集成面，消费事件流写云端 Postgres，下发 config.toml + execpolicy 规则集表达租户差异，不改内核，四重隔离保障安全。
+</div>
+<div class="pillar">
+  <div class="pillar-item"><div class="num">111+</div><div class="lbl">Rust crate 总量</div></div>
+  <div class="pillar-item"><div class="num">7</div><div class="lbl">Turn 循环阶段</div></div>
+  <div class="pillar-item"><div class="num">5</div><div class="lbl">核心原语（Thread/Session/Turn/Step/Item）</div></div>
+  <div class="pillar-item"><div class="num">4</div><div class="lbl">隔离层（容器/OS沙箱/策略/网络）</div></div>
+  <div class="pillar-item"><div class="num">8</div><div class="lbl">Nexus 架构层</div></div>
+</div>
+</section>
+
+<!-- §1 仓库总览 -->
+<section id="s1">
+<h2>§1 仓库总览</h2>
+<h3>1.1 仓库结构</h3>
+<pre><code>~/Nexus/
+├── codex-rs/          # ← 实际 Harness 内核，编辑在此
+│   ├── Cargo.toml     # workspace root, edition = "2024"
+│   ├── core/          # codex-core 引擎主体
+│   ├── app-server/    # JSON-RPC 协议层
+│   ├── state/         # SQLite 元数据镜像
+│   ├── execpolicy/    # Starlark 规则引擎
+│   ├── sandboxing/    # 跨平台沙箱编排
+│   ├── ...            # 105 个 workspace member crate
+│   └── ext/           # 14 个扩展 crate
+├── codex-main/        # ← 上游快照参考，禁止编辑
+├── docs/architecture/ # Nexus 架构文档
+└── CLAUDE.md          # 项目说明 + crate 清单</code></pre>
+<ul>
+<li><strong>Cargo workspace</strong>：105 workspace member + 14 ext/ 子目录 = 111+ crate</li>
+<li><strong>Rust 2024 edition</strong>：workspace 级统一追踪</li>
+<li><strong>Tokio 异步运行时</strong>：全仓库统一使用</li>
+<li><strong>Bazel 覆盖层</strong>：Bazel 9.0.0，每个 crate 有 <code>BUILD.bazel</code>，CI 校验 <code>MODULE.bazel.lock</code> 漂移</li>
+</ul>
+<h3>1.2 crate 拓扑概览</h3>
+<table>
+<tr><th>层</th><th>crate 群</th><th>数量</th><th>定位</th></tr>
+<tr><td>核心引擎</td><td>core, core-api, core-plugins, protocol, context-fragments, prompts</td><td>6</td><td>Turn 循环 + 上下文管理 + 协议定义</td></tr>
+<tr><td>app-server 协议</td><td>app-server, app-server-protocol, app-server-transport, app-server-daemon, app-server-client, app-server-test-client, app-server-protocol-noop-macros</td><td>7</td><td>JSON-RPC 双向通信 + 传输 + 托管</td></tr>
+<tr><td>持久化与状态</td><td>state, thread-store, rollout, rollout-trace, history, message-history, attachment-store</td><td>7</td><td>SQLite 镜像 + JSONL rollout + 附件</td></tr>
+<tr><td>沙箱安全</td><td>execpolicy, sandboxing, linux-sandbox, bwrap, windows-sandbox-rs, windows-sandbox-service, process-hardening, mxc-sandbox, secrets, keyring-store, workload-identity, guardian-context</td><td>12</td><td>策略引擎 + OS 沙箱 + 凭证 + 守护</td></tr>
+<tr><td>模型与云控</td><td>model-provider, model-provider-info, responses-api-proxy, ollama, lmstudio, chatgpt, login, aws-auth, backend-client, cloud-config, cloud-tasks, cloud-tasks-client, codex-backend-openapi-models, codex-api, codex-home, models-manager</td><td>17</td><td>模型抽象 + 登录认证 + 云任务/配置</td></tr>
+<tr><td>MCP/技能/工具</td><td>codex-mcp, rmcp-client, skills, hooks, tools, file-search, file-system, file-watcher, apply-patch, git-utils, collaboration-mode-templates, agent-roles, agent-identity, agent-graph-store, connectors, ext/extension-api + 14 ext/*</td><td>30+</td><td>MCP + 技能 + 钩子 + 文件工具 + 协作</td></tr>
+<tr><td>exec/TUI/可观测</td><td>exec, exec-server, exec-server-protocol, shell-command, shell-escalation, cli, tui, codex-client, otel, otel-trace-websocket, analytics, diagnostics, feedback, realtime-webrtc, voice-host, code-mode*(4), websocket-client, uds, stdio-to-uds, terminal-detection, thread-manager-sample</td><td>25+</td><td>非交互执行 + 终端 UI + 可观测 + 语音</td></tr>
+</table>
+</section>
+
+<!-- §2 核心引擎层 -->
+<section id="s2">
+<h2>§2 核心引擎层 codex-core</h2>
+<h3>2.1 crate 职责</h3>
+<details open><summary>核心引擎层 crate 清单</summary><div class="detail-body">
+<table>
+<tr><th>Crate</th><th>职责</th><th>关键源文件</th></tr>
+<tr><td><code>codex-core</code></td><td>引擎主体：会话循环、上下文管理、工具分发、压缩、MCP/插件编排、rollout 持久化</td><td><code>core/src/lib.rs:1</code>，子模块 <code>agent/</code> <code>context/</code> <code>context_manager/</code> <code>session/</code> <code>state/</code> <code>tools/</code> <code>tasks/</code> <code>guardian/</code> <code>unified_exec/</code> <code>mcp_tool_call/</code> <code>exec_policy/</code> <code>plugins/</code></td></tr>
+<tr><td><code>codex-core-api</code></td><td>对外门面，<code>pub use</code> 再导出 <code>ThreadManager</code>/<code>CodexThread</code>/<code>TurnInput</code>/<code>Config</code></td><td><code>core-api/src/lib.rs:23-50</code></td></tr>
+<tr><td><code>codex-core-plugins</code></td><td>插件市场与加载：marketplace、安装/升级、清单解析</td><td><code>core-plugins/src/manager.rs</code> <code>loader.rs</code> <code>marketplace.rs</code></td></tr>
+<tr><td><code>codex-protocol</code></td><td>纯数据协议层：<code>ThreadId</code>/<code>TurnItem</code>/<code>ResponseItem</code>/<code>EventMsg</code></td><td><code>protocol/src/lib.rs:1</code>，无业务逻辑</td></tr>
+<tr><td><code>codex-context-fragments</code></td><td>上下文片段：<code>RenderedFragment</code>、<code>ContextualUserFragment</code> trait</td><td><code>context-fragments/src/lib.rs:1</code>，<code>fragment.rs:6</code></td></tr>
+<tr><td><code>codex-prompts</code></td><td>prompt 模板：<code>SUMMARIZATION_PROMPT</code>、<code>REVIEW_PROMPT</code></td><td><code>prompts/src/lib.rs:1</code>，<code>include_str!</code> 引用 <code>templates/</code></td></tr>
+</table>
+</div></details>
+
+<h3>2.2 Turn 七阶段</h3>
+<p>Turn 循环主入口为 <code>run_turn</code>（<code>core/src/session/turn.rs:162</code>），由 <code>RegularTask::run</code>（<code>tasks/regular.rs:40-87</code>）调用。</p>
+<table>
+<tr><th>#</th><th>阶段</th><th>实现函数</th><th>文件:行号</th></tr>
+<tr><td>1</td><td><strong>admission</strong>（输入准入）</td><td><code>start_or_steer_turn</code> → <code>submit_turn_input_with_mode</code> → <code>ensure_execution_capacity_for_turn_start</code></td><td><code>codex_thread.rs:313,325,349</code>，<code>tasks/mod.rs:427</code></td></tr>
+<tr><td>2</td><td><strong>snapshot</strong>（步骤快照）</td><td><code>capture_step_context_with_required_mcp_servers</code> → <code>StepContext</code></td><td><code>turn.rs:230,370,395</code>，<code>step_context.rs:15</code></td></tr>
+<tr><td>3</td><td><strong>sampling</strong>（采样请求）</td><td><code>run_sampling_request</code> → <code>try_run_sampling_request</code> → <code>ModelClientSession::stream</code></td><td><code>turn.rs:1411,2261,2300+</code></td></tr>
+<tr><td>4</td><td><strong>tool dispatch</strong>（工具分发）</td><td><code>ToolCallRuntime::handle_tool_call</code> → <code>ToolRouter::dispatch_tool_call_with_terminal_outcome</code></td><td><code>tools/parallel.rs:74</code>，<code>router.rs:325</code>，<code>mcp_tool_call.rs:121</code></td></tr>
+<tr><td>5</td><td><strong>result writeback</strong>（结果回写）</td><td><code>handle_output_item_done</code> → <code>record_conversation_items</code></td><td><code>stream_events_utils.rs:290,245,92</code></td></tr>
+<tr><td>6</td><td><strong>compaction</strong>（压缩）</td><td><code>run_pre_sampling_compact</code> + <code>run_auto_compact</code> → <code>compact::run_inline_auto_compact_task</code></td><td><code>turn.rs:1082,1248</code>，<code>compact.rs:119,151</code>，<code>compact_remote_v2.rs:82</code></td></tr>
+<tr><td>7</td><td><strong>complete/interrupt</strong></td><td><code>run_turn_stop_hooks</code> + <code>emit_thread_idle_lifecycle_if_idle</code>；中断：<code>run_turn_interrupt_hooks</code> / <code>abort_all_tasks</code></td><td><code>hook_runtime.rs</code>，<code>tasks/lifecycle.rs:43</code>，<code>tasks/mod.rs:30,807,965,509,540</code></td></tr>
+</table>
+
+<h3>2.3 五原语严格区分</h3>
+<div class="callout blue"><strong>CLAUDE.md 原文</strong>："Key primitives, which you must keep distinct or you'll design the data model wrong"</div>
+<table>
+<tr><th>原语</th><th>定义位置</th><th>层级</th><th>说明</th></tr>
+<tr><td><strong>Thread</strong></td><td><code>CodexThread</code>（<code>codex_thread.rs:177</code>）</td><td>协议层</td><td>app-server 长生命周期会话对象，支持 <code>fork</code>/<code>resume</code>/<code>archive</code></td></tr>
+<tr><td><strong>Session</strong></td><td><code>session/session.rs:42</code></td><td>内部运行时</td><td>Core 内部运行态，<strong>不对外暴露</strong></td></tr>
+<tr><td><strong>Turn</strong></td><td><code>TurnContext</code>（<code>turn_context.rs:194</code>）</td><td>运行时</td><td>一次任务往返，冻结单轮模型/权限/技能视图</td></tr>
+<tr><td><strong>Step</strong></td><td><code>StepContext</code>（<code>step_context.rs:15</code>）</td><td>采样</td><td>一次采样请求的不可变视图</td></tr>
+<tr><td><strong>Item</strong></td><td><code>TurnItem</code>（<code>items.rs:45</code>）</td><td>持久化</td><td>Turn 中可持久化的原子事实</td></tr>
+</table>
+
+<h3>2.4 为何不膨胀 core</h3>
+<div class="callout red"><strong>CLAUDE.md 规定</strong>："Resist adding code to <code>codex-core</code>. It's already bloated." 新概念须放入已有的小 crate 或新建 workspace crate。core 已依赖约 40 个 crate。<code>core-api</code> 作为稳定门面，使上游仅依赖门面而非 core 内部。</div>
+</section>
+
+<!-- §3 app-server 协议层 -->
+<section id="s3">
+<h2>§3 app-server 协议层</h2>
+<h3>3.1 crate 职责</h3>
+<details><summary>app-server 协议层 crate 清单（7 个）</summary><div class="detail-body">
+<table>
+<tr><th>Crate</th><th>职责</th><th>关键源文件</th></tr>
+<tr><td><code>app-server-protocol</code></td><td>纯协议定义：JSON-RPC 封装、四向枚举、generate-ts/json-schema 导出</td><td><code>rpc.rs</code>、<code>protocol/common.rs</code>、<code>protocol/v1.rs</code>、<code>protocol/v2/</code>、<code>precomputed_exports.rs</code></td></tr>
+<tr><td><code>app-server-protocol-noop-macros</code></td><td>proc-macro，生产构建 no-op <code>JsonSchema</code>/<code>TS</code> derive</td><td><code>lib.rs:11-19</code></td></tr>
+<tr><td><code>app-server-transport</code></td><td>传输层：<code>AppServerTransport</code>（Stdio/UnixSocket/WebSocket/Off）</td><td><code>transport/mod.rs</code>（<code>from_listen_url:116</code>）、<code>stdio.rs</code>、<code>unix_socket.rs</code>、<code>websocket.rs</code></td></tr>
+<tr><td><code>app-server</code></td><td>核心服务进程：消息处理、请求分发、线程生命周期</td><td><code>message_processor.rs</code>、<code>outgoing_message.rs</code>、<code>thread_state.rs</code>、<code>request_processors/</code></td></tr>
+<tr><td><code>app-server-daemon</code></td><td>托管进程生命周期：start/stop/restart/version</td><td><code>lib.rs</code>、<code>backend/</code>、<code>update_loop.rs</code></td></tr>
+<tr><td><code>app-server-client</code></td><td>in-process 客户端门面</td><td><code>lib.rs:1-17</code></td></tr>
+<tr><td><code>app-server-test-client</code></td><td>CLI 测试客户端，loopback 响应服务器</td><td>—</td></tr>
+</table>
+</div></details>
+
+<h3>3.2 JSON-RPC 2.0 协议设计</h3>
+<div class="callout"><strong>类 JSON-RPC 2.0 但不发送 <code>"jsonrpc":"2.0"</code> 字段</strong>（<code>rpc.rs:1-2</code> 注释："We do not do true JSON-RPC 2.0"）。<code>JSONRPCMessage</code> 为 <code>untagged</code> 枚举，区分 Request/Notification/Response/Error。<code>RequestId</code> 支持 String/Integer。可选携带 W3C <code>trace</code> 分布式追踪上下文。</div>
+<p><strong>v1 vs v2</strong> 是协议 API 版本划分：v1 保留旧稳定类型；v2 是新 API 命名空间，所有类型 <code>#[ts(export_to = "v2/")]</code>，用 <code>#[experimental("...")]</code> 标注未稳定方法。</p>
+
+<h3>3.3 传输层</h3>
+<table>
+<tr><th>传输</th><th>URL 格式</th><th>实现</th><th>备注</th></tr>
+<tr><td>stdio</td><td><code>stdio://</code></td><td><code>stdio.rs:24</code>，按行 JSONL</td><td>默认</td></tr>
+<tr><td>Unix socket</td><td><code>unix://[PATH]</code></td><td><code>unix_socket.rs</code>，WebSocket-over-UDS + HTTP Upgrade</td><td>默认 <code>$CODEX_HOME/app-server-control/app-server-control.sock</code></td></tr>
+<tr><td>WebSocket</td><td><code>ws://IP:PORT</code></td><td><code>websocket.rs</code></td><td>实验性</td></tr>
+<tr><td>off</td><td><code>off</code></td><td>—</td><td>不暴露本地传输</td></tr>
+</table>
+<p>背压通过 128 容量 mpsc + <code>OVERLOADED_ERROR_CODE=-32001</code>（<code>mod.rs:52,229-258</code>）处理。</p>
+
+<h3>3.4 ServerNotification 事件流</h3>
+<details><summary>ServerNotification 事件覆盖清单</summary><div class="detail-body">
+<ul>
+<li><strong>thread/*</strong>：<code>started</code>、<code>status/changed</code>、<code>archived</code>、<code>deleted</code>、<code>unarchived</code>、<code>closed</code>、<code>reverted</code>、<code>name/updated</code>、<code>goal/{updated,cleared}</code>、<code>queue/changed</code>、<code>tokenUsage/updated</code>、<code>settings/updated</code>、<code>compacted</code></li>
+<li><strong>turn/*</strong>：<code>started</code>、<code>completed</code>、<code>diff/updated</code>、<code>plan/updated</code>、<code>moderationMetadata</code></li>
+<li><strong>hook/*</strong>：<code>started</code>、<code>completed</code></li>
+<li><strong>item/*</strong>：<code>started</code>、<code>completed</code>、<code>agentMessage/delta</code>、<code>plan/delta</code>、<code>commandExecution/outputDelta</code>、<code>fileChange/outputDelta</code>、<code>mcpToolCall/progress</code>、<code>reasoning/*</code>、<code>autoApprovalReview/*</code></li>
+<li>其他：<code>rawResponse{Item,}/completed</code>、<code>command/exec/outputDelta</code>、<code>process/{outputDelta,exited}</code>、<code>mcpServer/*</code>、<code>account/*</code>、<code>model/*</code>、<code>fs/changed</code></li>
+</ul>
+</div></details>
+<p>事件推送：<code>OutgoingMessageSender::send_server_notification</code>（<code>outgoing_message.rs:585</code>）封装为 <code>ServerNotificationEnvelope</code>（带 <code>emittedAtMs</code>），通过 <code>Broadcast</code> 或 <code>ToConnection</code> 路由。订阅模型由 <code>ThreadStateManager</code> 维护 per-thread <code>connection_ids</code> 集合。</p>
+
+<h3>3.5 Server→Client 审批请求</h3>
+<table>
+<tr><th>请求方法</th><th>参数结构</th><th>文件:行号</th></tr>
+<tr><td><code>item/commandExecution/requestApproval</code></td><td><code>CommandExecutionRequestApprovalParams</code>（含 kind/approval_id/network_approval_context/available_decisions）</td><td><code>item.rs:1533</code></td></tr>
+<tr><td><code>item/fileChange/requestApproval</code></td><td>文件变更审批</td><td><code>item.rs:1616</code></td></tr>
+<tr><td><code>item/permissions/requestApproval</code></td><td>额外文件/网络权限，响应 <code>GrantedPermissionProfile</code></td><td><code>permissions.rs:773</code></td></tr>
+<tr><td><code>item/tool/requestUserInput</code></td><td>用户输入请求</td><td>—</td></tr>
+<tr><td><code>mcpServer/elicitation/request</code></td><td>MCP elicitation</td><td>—</td></tr>
+<tr><td><code>item/tool/call</code></td><td>DynamicToolCall（动态工具）</td><td>—</td></tr>
+</table>
+
+<h3>3.6 thread/resume/fork/revert/rollback</h3>
+<table>
+<tr><th>操作</th><th>实现</th><th>文件:行号</th></tr>
+<tr><td><strong>resume</strong></td><td>循环 <code>thread_resume_inner</code> 直到无 <code>ControlFlow::Continue</code>，处理重入与 rollout path 校验</td><td><code>thread_processor.rs:544</code></td></tr>
+<tr><td><strong>fork</strong></td><td>支持 <code>last_turn_id</code>/<code>before_turn_id</code>/<code>ephemeral</code>，goal 继承</td><td><code>thread_processor.rs:568</code>，<code>thread.rs:518</code></td></tr>
+<tr><td><strong>revert</strong></td><td>替换分页 thread 持久历史前缀：shutdown+drain+remove+重建 runtime，返回分页 cursor</td><td><code>thread_processor.rs:587,2093-2304</code></td></tr>
+<tr><td><strong>rollback</strong></td><td><span class="badge b-build">deprecated</span> <code>num_turns</code> 从尾部丢弃 N 个 turn，仅改历史不回滚文件</td><td><code>thread_processor.rs:803,2088</code></td></tr>
+</table>
+
+<h3>3.7 核心 RPC 方法清单</h3>
+<p>方法清单在 <code>app-server-protocol/src/protocol/common.rs</code> 的宏中集中声明（<code>client_request_definitions!</code> 行 506-1426，<code>server_request_definitions!</code> 行 1696-1767）。</p>
+<details><summary>thread/* 方法清单</summary><div class="detail-body">
+<ul>
+<li><strong>生命周期</strong>：<code>thread/start</code>、<code>thread/resume</code>、<code>thread/fork</code>、<code>thread/archive</code>、<code>thread/unarchive</code>、<code>thread/delete</code>、<code>thread/unsubscribe</code></li>
+<li><strong>元数据</strong>：<code>thread/name/set</code>、<code>thread/metadata/update</code>、<code>thread/settings/update</code>、<code>thread/memoryMode/set</code>、<code>memory/reset</code></li>
+<li><strong>目标</strong>：<code>thread/goal/{set,get,clear}</code></li>
+<li><strong>队列</strong>：<code>thread/queue/{add,list,update,delete,reorder,start}</code></li>
+<li><strong>分区</strong>：<code>threadSection/{list,create,update,delete}</code>、<code>thread/section/move</code></li>
+<li><strong>读取</strong>：<code>thread/list</code>、<code>thread/search</code>、<code>thread/read</code>、<code>thread/turns/list</code>、<code>thread/items/list</code>、<code>thread/inject_items</code>、<code>thread/timeline/list</code></li>
+<li><strong>历史</strong>：<code>thread/rollback</code>(deprecated)、<code>thread/revert</code></li>
+<li><strong>压缩</strong>：<code>thread/compact/start</code></li>
+<li><strong>审批</strong>：<code>thread/approveGuardianDeniedAction</code></li>
+<li><strong>终端</strong>：<code>thread/backgroundTerminals/{clean,list,terminate}</code>、<code>thread/shellCommand</code></li>
+<li><strong>实时</strong>：<code>thread/realtime/{start,appendAudio,appendText,appendSpeech,stop,listVoices}</code>（实验性）</li>
+</ul>
+</div></details>
+<p><strong>turn/*</strong>：<code>turn/start</code>、<code>turn/settings/update</code>、<code>turn/steer</code>、<code>turn/interrupt</code></p>
+<p><strong>其他大块</strong>：<code>initialize</code>、<code>config/{read,value/write,batchWrite}</code>、<code>fs/{readFile,writeFile,createDirectory,...}</code>、<code>plugin/{list,search,installed,reconcile,install,uninstall}</code>、<code>skills/{list,extraRoots/set,config/write}</code>、<code>hooks/list</code>、<code>marketplace/{add,remove,upgrade}</code>、<code>command/exec{,/write,/terminate,/resize}</code>、<code>process/{spawn,writeStdin,kill,resizePty}</code>、<code>model/{list}</code>、<code>remoteControl/*</code>、<code>collaborationMode/list</code>、<code>project/{list,read,create,import,update,move,delete}</code>、<code>mcpServer/*</code>、<code>account/*</code>、<code>feedback/upload</code>、<code>fuzzyFileSearch/*</code>、<code>review/start</code></p>
+
+<h3>3.8 类型导出机制</h3>
+<p>导出器在 <code>precomputed_exports.rs</code>，核心是<strong>预计算 + zstd 压缩内嵌</strong>策略。公开 API：<code>generate_types</code>（= ts + json）、<code>generate_ts</code>、<code>generate_json</code>。<code>app-server-protocol-noop-macros</code> 让非 test 构建零成本保留 <code>#[ts(...)]</code>/<code>#[schemars(...)]</code> 注解。</p>
+
+<h3>3.9 为何是 Nexus 主集成面</h3>
+<table>
+<tr><th>集成方式</th><th>长生命周期 Thread</th><th>双向事件流</th><th>turn/interrupt</th><th>协议级审批</th><th>resume/fork/revert</th><th>崩溃恢复</th></tr>
+<tr><td><code>codex exec</code></td><td>✗</td><td>✗</td><td>✗</td><td>✗</td><td>✗</td><td>✗</td></tr>
+<tr><td>in-process SDK</td><td>部分</td><td>✗</td><td>✗</td><td>✗</td><td>✗</td><td>✗</td></tr>
+<tr><td><strong>app-server</strong></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+</table>
+<div class="callout gold"><strong>CLAUDE.md 明确</strong>："Integrate via <code>app-server</code> (JSON-RPC), never <code>codex exec</code> or the in-process SDK" —— app-server 是唯一提供全量企业级能力的集成面。</div>
+</section>
+
+<!-- §4 持久化与状态层 -->
+<section id="s4">
+<h2>§4 持久化与状态层</h2>
+<h3>4.1 crate 职责</h3>
+<details><summary>持久化层 crate 清单（7 个）</summary><div class="detail-body">
+<table>
+<tr><th>Crate</th><th>职责</th><th>关键源文件</th></tr>
+<tr><td><code>state</code></td><td>SQLite 元数据镜像：从 rollout JSONL 抽取元数据落库</td><td><code>lib.rs</code>、<code>runtime.rs</code>、<code>sqlite.rs</code>、<code>extract.rs</code></td></tr>
+<tr><td><code>thread-store</code></td><td>存储中立 trait <code>ThreadStore</code> + <code>LocalThreadStore</code></td><td><code>store.rs:52</code>、<code>local/mod.rs:428</code></td></tr>
+<tr><td><code>rollout</code></td><td>JSONL rollout 文件写入/读取/压缩/索引</td><td><code>recorder.rs</code>、<code>compression.rs</code>、<code>state_db.rs</code></td></tr>
+<tr><td><code>rollout-trace</code></td><td>可选诊断 trace bundle</td><td><code>bundle.rs</code>、<code>writer.rs</code></td></tr>
+<tr><td><code>history</code></td><td>rollout 领域类型：<code>RolloutItem</code>、<code>ResponseItemEnvelope</code></td><td><code>lib.rs</code>、<code>rollout_payload.rs</code></td></tr>
+<tr><td><code>message-history</code></td><td>全局追加式 <code>~/.codex/history.jsonl</code></td><td><code>lib.rs</code>、<code>batch.rs</code></td></tr>
+<tr><td><code>attachment-store</code></td><td>附件存储中立 trait，返回 <code>sediment://</code> URL</td><td><code>lib.rs</code></td></tr>
+</table>
+</div></details>
+
+<h3>4.2 SQLite Schema（6 个独立文件）</h3>
+<table>
+<tr><th>文件</th><th>用途</th></tr>
+<tr><td><code>state_5.sqlite</code></td><td>主元数据（threads、projects、artifacts）</td></tr>
+<tr><td><code>logs_2.sqlite</code></td><td>日志（按 thread/process 分区 10MiB 上限）</td></tr>
+<tr><td><code>goals_1.sqlite</code></td><td>目标</td></tr>
+<tr><td><code>memories_1.sqlite</code></td><td>记忆</td></tr>
+<tr><td><code>queue_1.sqlite</code></td><td>队列（上限 <code>MAX_QUEUE_ITEMS=100</code>）</td></tr>
+<tr><td><code>thread_history_1.sqlite</code></td><td>线程历史（turns、items、projection_state）</td></tr>
+</table>
+
+<h3>4.3 三者边界</h3>
+<table>
+<tr><th>层</th><th>职责</th><th>说明</th></tr>
+<tr><td><strong>rollout</strong></td><td>本地 JSONL 文件原语</td><td>字节级落地层：写、读、压缩、seekable reader</td></tr>
+<tr><td><strong>state</strong></td><td>SQLite 元数据投影</td><td>从 rollout 抽取元数据镜像到关系表</td></tr>
+<tr><td><strong>thread-store</strong></td><td>存储中立抽象</td><td><code>ThreadStore</code> trait，<code>ThreadId</code> 为唯一持久句柄。<code>LocalThreadStore</code> 组合 rollout + state</td></tr>
+</table>
+
+<h3>4.4 关键数据结构与接口</h3>
+<details><summary>持久化层核心类型</summary><div class="detail-body">
+<table>
+<tr><th>类型</th><th>说明</th><th>位置</th></tr>
+<tr><td><code>RolloutItem</code></td><td>枚举，落盘单位（SessionMeta/ResponseItem/Compacted/WorldState 等）</td><td><code>history/src/lib.rs</code></td></tr>
+<tr><td><code>RolloutLine</code></td><td>JSONL 每行结构 {timestamp, ordinal, item}</td><td><code>rollout/src/lib.rs</code></td></tr>
+<tr><td><code>StateRuntime</code></td><td>持有 6 个 SQLite 连接池</td><td><code>state/src/runtime.rs:101</code></td></tr>
+<tr><td><code>ThreadStore</code> trait</td><td>存储中立边界，<code>ThreadId</code> 为唯一句柄</td><td><code>thread-store/src/store.rs:52</code></td></tr>
+<tr><td><code>LocalThreadStore</code></td><td>组合 RolloutRecorder + StateDbHandle</td><td><code>thread-store/src/local/mod.rs:428</code></td></tr>
+<tr><td><code>RolloutRecorder</code></td><td>JSONL 写入器，mpsc 通道异步写</td><td><code>rollout/src/recorder.rs</code></td></tr>
+<tr><td><code>AttachmentStore</code> trait</td><td>附件存储，返回 <code>sediment://</code> URL</td><td><code>attachment-store/src/lib.rs</code></td></tr>
+</table>
+</div></details>
+
+<h3>4.5 与 Nexus 云端化的关系</h3>
+<div class="callout blue">
+<ul>
+<li><code>ThreadStore</code> trait 是存储中立边界——云端可用 Postgres 替换 SQLite，rollout 镜像对象存储</li>
+<li><code>rollout/src/model_context.rs:22</code>："future reverse-paged cloud readers" 已设计进重建路径</li>
+<li><code>attachment-store</code> 的 <code>sediment://</code> URL 构成附件到对象存储的桥</li>
+<li>Pod 死亡时：从 Postgres 恢复元数据 → 从对象存储拉 rollout → <code>thread/resume</code> 重建运行态</li>
+</ul>
+</div>
+</section>
+
+<!-- §5 沙箱安全与策略层 -->
+<section id="s5">
+<h2>§5 沙箱安全与策略层</h2>
+<h3>5.1 四组职责</h3>
+<details><summary>安全/策略层 crate 清单（12 个）</summary><div class="detail-body">
+<table>
+<tr><th>组</th><th>Crate</th><th>关键文件</th></tr>
+<tr><td>策略规则引擎</td><td>execpolicy</td><td><code>parser.rs</code>（Starlark）、<code>policy.rs</code>（评估器）、<code>decision.rs</code>、<code>amend.rs</code></td></tr>
+<tr><td rowspan="5">OS 级沙箱</td><td>sandboxing</td><td><code>manager.rs</code>（<code>SandboxManager::transform</code>）、<code>seatbelt.rs</code>、<code>landlock.rs</code>、<code>windows.rs</code></td></tr>
+<tr><td>linux-sandbox</td><td><code>linux_run_main.rs</code>、<code>launcher.rs</code>、<code>bwrap.rs</code></td></tr>
+<tr><td>bwrap</td><td>极薄的 bubblewrap 二进制</td></tr>
+<tr><td>windows-sandbox-rs</td><td><code>token.rs</code>、<code>elevated/</code>、<code>wfp.rs</code></td></tr>
+<tr><td>windows-sandbox-service</td><td><code>service.rs</code>、<code>ipc/</code></td></tr>
+<tr><td>进程加固</td><td>process-hardening</td><td><code>lib.rs</code>（pre-main <code>#[ctor::ctor]</code>）</td></tr>
+<tr><td></td><td>mxc-sandbox</td><td>Windows MXC 探测</td></tr>
+<tr><td rowspan="4">凭证与守护</td><td>secrets</td><td><code>lib.rs</code>、<code>local.rs</code>、<code>sanitizer.rs</code></td></tr>
+<tr><td>keyring-store</td><td><code>lib.rs</code></td></tr>
+<tr><td>workload-identity</td><td><code>exchange.rs</code>（RFC 7522 JWT-Bearer）</td></tr>
+<tr><td>guardian-context</td><td><code>lib.rs</code>、<code>transcript.rs</code>、<code>authorization.rs</code></td></tr>
+</table>
+</div></details>
+
+<h3>5.2 execpolicy 规则引擎</h3>
+<p><strong>规则文件格式</strong>：Starlark 脚本（<code>parser.rs:59-66</code>）。三个内置函数：</p>
+<ul>
+<li><code>prefix_rule(pattern, decision, match, not_match, justification)</code></li>
+<li><code>network_rule(host, protocol, decision, justification)</code></li>
+<li><code>host_executable(name, paths)</code></li>
+</ul>
+<p><strong>评估</strong>：<code>Policy::check</code> → <code>matches_for_command_with_options</code> → <code>Evaluation::from_matches</code> 对所有命中规则的 <code>Decision</code> 取 <code>max()</code>，即 <strong>Forbidden > Prompt > Allow</strong>。</p>
+<p><strong>per-tenant 叠加</strong>：<code>Policy::merge_overlay</code>（<code>policy.rs:178-202</code>）把 overlay 策略叠加到基础策略——<code>ExecPolicyManager::current_for_environment</code>（<code>model_policy.rs:14-25</code>）正是用此机制。<code>RequirementsExecPolicy</code> 可序列化，可作为租户/环境级配置在控制平面与执行器间传输。</p>
+
+<h3>5.3 三层沙箱</h3>
+<table>
+<tr><th>层</th><th>平台</th><th>实现</th><th>关键文件</th></tr>
+<tr><td>容器层</td><td>K8s Pod</td><td>NetworkPolicy + 资源限制</td><td>Nexus 自建</td></tr>
+<tr><td rowspan="3">Codex 命令级 OS 沙箱</td><td>macOS</td><td>Seatbelt：<code>/usr/bin/sandbox-exec</code> + <code>.sbpl</code> 模板</td><td><code>seatbelt.rs:63</code>，<code>manager.rs:395-432</code></td></tr>
+<tr><td>Linux</td><td>Landlock + seccomp + bubblewrap（独立 mount/net namespace）</td><td><code>landlock.rs:23-60</code>，<code>launcher.rs:38-57</code></td></tr>
+<tr><td>Windows</td><td>Restricted token / AppContainer / WFP / ConPTY</td><td><code>windows-sandbox-rs/src/token.rs</code></td></tr>
+<tr><td>网络层</td><td>全平台</td><td>NetworkPolicy 决策</td><td><code>exec-server-protocol/network_policy.rs</code></td></tr>
+</table>
+
+<h3>5.4 凭证与守护机制</h3>
+<table>
+<tr><th>Crate</th><th>机制</th><th>关键特性</th></tr>
+<tr><td><code>process-hardening</code></td><td>pre-main 进程加固</td><td>Linux: <code>prctl(PR_SET_DUMPABLE,0)</code> + <code>setrlimit(RLIMIT_CORE,0)</code> + 清除 <code>LD_*</code>；macOS: <code>PT_DENY_ATTACH</code> + 清除 <code>DYLD_*</code></td></tr>
+<tr><td><code>secrets</code></td><td>本地加密凭证</td><td><code>SecretScope</code> 分 Global/Environment(id)；keyring 存主密钥 + 磁盘存加密密文；<code>redact_secrets</code> 输出脱敏</td></tr>
+<tr><td><code>keyring-store</code></td><td>OS keychain 抽象</td><td><code>KeyringStore</code> trait（load/save/delete），<code>DefaultKeyringStore</code> 封装 OS keychain</td></tr>
+<tr><td><code>workload-identity</code></td><td>RFC 7522 JWT-Bearer 交换</td><td>单飞 Mutex 缓存短令牌；token URL 仅允许 HTTPS 或 loopback HTTP</td></tr>
+<tr><td><code>guardian-context</code></td><td>Guardian 审查上下文组装</td><td><code>SectionContributor</code> trait；4 内建 section；零拷贝可并发复用；喂给审查/评分模型</td></tr>
+</table>
+<p><strong>attestation</strong>（<code>core/src/attestation.rs</code>）：<code>AttestationProvider</code> trait 的 <code>header_for_request()</code> 返回 <code>x-oai-attestation</code> header。这是 host 集成边界，具体证明生成策略由宿主实现。</p>
+
+<h3>5.5 单租户命令级 vs 多租户隔离</h3>
+<div class="callout red">上述所有 crate 实现的是<strong>单进程、单租户、命令级</strong>隔离。<code>PermissionProfile</code>、<code>Policy</code> 均为进程级配置，不携带 tenant 身份。在 Nexus 中这些属于<strong>数据平面执行器</strong>：控制平面负责租户认证/配额/调度；沙箱/execpolicy 在执行器内部保证单条命令不越权。<code>core/src/sandboxing/mod.rs</code> 的 <code>ExecRequest</code>（<code>mod.rs:50-74</code>）就是控制平面下发的执行单元边界。</div>
+</section>
+
+<!-- §6 模型抽象与云控制层 -->
+<section id="s6">
+<h2>§6 模型抽象与云控制层</h2>
+<h3>6.1 crate 职责</h3>
+<details><summary>模型与云控层 crate 清单（17 个）</summary><div class="detail-body">
+<table>
+<tr><th>Crate</th><th>职责</th><th>关键源文件</th></tr>
+<tr><td><code>model-provider</code></td><td>运行时 trait <code>ModelProvider</code></td><td><code>provider.rs:148-329</code></td></tr>
+<tr><td><code>model-provider-info</code></td><td>可序列化 <code>ModelProviderInfo</code> + 内置注册表</td><td><code>lib.rs:97-633</code></td></tr>
+<tr><td><code>responses-api-proxy</code></td><td>极简 OpenAI Responses API HTTP 代理</td><td><code>lib.rs:73-275</code></td></tr>
+<tr><td><code>ollama</code></td><td>本地 Ollama 接入（≥0.13.4）</td><td><code>lib.rs:1-70</code></td></tr>
+<tr><td><code>lmstudio</code></td><td>本地 LM Studio 接入</td><td><code>lib.rs:1-46</code></td></tr>
+<tr><td><code>chatgpt</code></td><td>ChatGPT backend-api 客户端</td><td><code>chatgpt_client.rs:55-176</code></td></tr>
+<tr><td><code>login</code></td><td>OAuth/Device Code/PKCE 登录</td><td><code>auth/mod.rs</code>、<code>device_code_auth.rs</code></td></tr>
+<tr><td><code>aws-auth</code></td><td>AWS SigV4 凭证与请求签名</td><td><code>lib.rs:19-195</code></td></tr>
+<tr><td><code>backend-client</code></td><td>统一后端 HTTP 客户端</td><td><code>client.rs:135-756</code></td></tr>
+<tr><td><code>cloud-config</code></td><td>云端配置 bundle 生命周期</td><td><code>service.rs:35-534</code></td></tr>
+<tr><td><code>cloud-tasks</code></td><td><code>codex cloud</code> TUI + CLI</td><td><code>lib.rs:37-2024</code></td></tr>
+<tr><td><code>cloud-tasks-client</code></td><td><code>CloudBackend</code> trait + HTTP 实现</td><td><code>api.rs:136-176</code></td></tr>
+<tr><td><code>codex-api</code></td><td>OpenAI Responses/WebSocket 协议客户端</td><td><code>lib.rs:1-80</code></td></tr>
+<tr><td><code>models-manager</code></td><td>模型目录管理</td><td><code>manager.rs:37-120</code></td></tr>
+</table>
+</div></details>
+
+<h3>6.2 模型提供商抽象</h3>
+<p><strong>内置 provider 注册表</strong>（<code>lib.rs:512-544</code>）：<code>openai</code>、<code>amazon-bedrock</code>、<code>amazon-bedrock-runtime</code>、<code>ollama</code>(端口 11434)、<code>lmstudio</code>(端口 1234)。</p>
+<p><strong>运行时 trait <code>ModelProvider</code></code></strong>（<code>provider.rs:148-304</code>）：<code>capabilities()</code> 返回 <code>ProviderCapabilities</code>（<code>remote_compaction</code>/<code>namespace_tools</code>/<code>web_search</code>）。<code>ConfiguredModelProvider</code> 对 OpenAI/Azure 启用 <code>RemoteCompactionSupport::V2</code>。</p>
+
+<h3>6.3 responses-api-proxy</h3>
+<p>极简 HTTP 代理（<code>lib.rs:73-275</code>）：特权用户持 key，非特权用户通过 HTTP 调用。<strong>只允许 <code>POST /v1/responses</code></strong>。硬核安全：栈缓冲 + <code>zeroize</code> + <code>mlock(2)</code> 防止 key 落盘交换。<code>--dump-dir</code> 采集 request/response pair。这是 Nexus "自建 Model Gateway" 的本地单租户极简形态。</p>
+
+<h3>6.4 云控制平面</h3>
+<p><code>backend-client</code>：<code>PathStyle</code>（<code>client.rs:117-133</code>）区分 <code>CodexApi</code>（<code>/api/codex/...</code>）与 <code>ChatGptApi</code>（<code>/wham/...</code>）。覆盖 <code>list_tasks</code>、<code>create_task</code>、<code>get_config_bundle</code>（enterprise-managed TOML）、<code>get_rate_limits</code>。</p>
+<p><code>cloud-config</code>：启动 15s 超时加载，miss 时最多 5 次重试，后台每 15 分钟刷新，401 触发 auth recovery。<code>cloud_config_eligible_auth</code> 只对 business/education/Enterprise plan 启用。</p>
+
+<h3>6.5 登录与认证流程</h3>
+<p><code>login</code> crate 统一管理凭证：<code>CodexAuth</code> 枚举变体包括 <code>ApiKey</code>、<code>Chatgpt</code>、<code>ChatgptAuthTokens</code>、<code>Headers</code>、<code>AgentIdentity</code>、<code>PersonalAccessToken</code>、<code>BedrockApiKey</code>、<code>BedrockAccessKeys</code>。<code>AuthManager</code> 持有 shared 状态，<code>auth()</code> async 返回当前凭证，<code>unauthorized_recovery()</code> 用于 401 后刷新。OAuth Device Code Flow + PKCE 在 <code>device_code_auth.rs</code> 实现。</p>
+<p><strong>数据流</strong>：模型选择 <code>config.toml</code> → <code>merge_configured_model_providers</code> → <code>ModelProviderInfo</code> → <code>create_model_provider</code> → <code>ModelProvider</code> → <code>ResponsesClient</code>。Auth：<code>codex login</code> → <code>AuthManager</code> → <code>CodexAuth</code> → <code>api_auth_for_scope</code> → <code>SharedAuthProvider</code> → header 注入。Bedrock：<code>AwsAuthContext::sign</code> 做 SigV4。</p>
+
+<h3>6.6 GPT-5.x 不开源的影响</h3>
+<div class="callout red"><strong>CLAUDE.md 明确</strong>："Codex did not open-source the model." Harness + 集成接口开源，但 GPT-5.x 是 API/ChatGPT-only。本地/私有模型通过 <code>ollama</code>/<code>lmstudio</code> 路由（能力受限）。Nexus 需自建 Model Gateway 实现：多模型路由、Token 计量与配额、租户级路由隔离、审计日志。</div>
+</section>
+
+<!-- §7 MCP/技能/工具/协作层 -->
+<section id="s7">
+<h2>§7 MCP/技能/工具/协作层</h2>
+<h3>7.1 codex-mcp：MCP 连接管理</h3>
+<p><code>McpConnectionSet</code>（<code>connection_manager.rs:1-8</code>）是 <code>McpRuntime</code>/<code>McpBinding</code> 背后的私有连接集合。<code>McpServerConnection</code>（:60-118）持有 <code>AsyncManagedClient</code>，连接复用校验身份/OAuth 凭据。<code>rmcp-client</code> 提供底层传输：stdio、HTTP、SSE、OAuth、EMA。</p>
+
+<h3>7.2 skills：Markdown 技能系统</h3>
+<p>技能以 <code>SKILL.md</code> 定义（YAML frontmatter + Markdown 正文）。<code>SkillMetadata</code>（<code>model.rs:16-30</code>）含 name/description/interface/policy/scope。<code>ext/skills</code> 多 Provider 支持：<code>HostSkillProvider</code>/<code>ExecutorSkillProvider</code>/<code>OrchestratorSkillProvider</code>。</p>
+
+<h3>7.3 hooks：12 个生命周期钩子</h3>
+<table>
+<tr><th>钩子</th><th>matcher</th><th>钩子</th><th>matcher</th></tr>
+<tr><td><code>PreToolUse</code></td><td>✓</td><td><code>SessionStart</code></td><td>✓</td></tr>
+<tr><td><code>PermissionRequest</code></td><td>✓</td><td><code>SessionEnd</code></td><td>✓</td></tr>
+<tr><td><code>PostToolUse</code></td><td>✓</td><td><code>UserPromptSubmit</code></td><td>✓</td></tr>
+<tr><td><code>PreCompact</code></td><td>✓</td><td><code>SubagentStart</code></td><td>✓</td></tr>
+<tr><td><code>PostCompact</code></td><td>✓</td><td><code>SubagentStop</code></td><td>✓</td></tr>
+<tr><td><code>Stop</code></td><td>✗</td><td><code>Interrupt</code></td><td>✗</td></tr>
+</table>
+<p><code>HookResult</code>：<code>Success</code>/<code>FailedContinue</code>/<code>FailedAbort</code>。引擎含 <code>command_runner.rs</code>、<code>dispatcher.rs</code>、<code>mcp_runner.rs</code>。</p>
+
+<h3>7.4 多 Agent 协作</h3>
+<table>
+<tr><th>Crate</th><th>职责</th></tr>
+<tr><td><code>collaboration-mode-templates</code></td><td>Default/Plan 模式提示模板，<code>&lt;collaboration_mode&gt;</code> 标签切换</td></tr>
+<tr><td><code>agent-roles</code></td><td>TOML 角色配置（description/nickname/config）</td></tr>
+<tr><td><code>agent-identity</code></td><td>ed25519 + JWT 密码学身份（issuer <code>https://chatgpt.com/codex-backend/agent-identity</code>）</td></tr>
+<tr><td><code>agent-graph-store</code></td><td>thread-spawn 父子拓扑（<code>AgentGraphStore</code> trait，SQLite 实现）</td></tr>
+<tr><td><code>ext/agent</code></td><td><code>AgentRunner</code> 通过 <code>ThreadManager</code> fork 线程启动子 Agent</td></tr>
+<tr><td><code>ext/guardian-v2</code></td><td>子 Agent spawn 执行安全审查</td></tr>
+</table>
+
+<h3>7.5 ext/extension-api 贡献者矩阵</h3>
+<details><summary>11 个 Contributor trait</summary><div class="detail-body">
+<table>
+<tr><th>Contributor</th><th>职责</th></tr>
+<tr><td><code>ThreadLifecycleContributor</code></td><td>线程生命周期</td></tr>
+<tr><td><code>TurnLifecycleContributor</code></td><td>轮次生命周期</td></tr>
+<tr><td><code>TurnInputContributor</code></td><td>轮次输入注入</td></tr>
+<tr><td><code>ToolContributor</code>/<code>ToolLifecycleContributor</code></td><td>工具注册与生命周期</td></tr>
+<tr><td><code>ContextContributor</code></td><td>上下文注入</td></tr>
+<tr><td><code>ConfigContributor</code></td><td>配置贡献</td></tr>
+<tr><td><code>ApprovalReviewContributor</code></td><td>审批审查</td></tr>
+<tr><td><code>SkillInvocationContributor</code></td><td>技能调用</td></tr>
+<tr><td><code>McpServerContributor</code></td><td>MCP 服务器动态注入/移除</td></tr>
+<tr><td><code>TokenUsageContributor</code></td><td>Token 用量</td></tr>
+<tr><td><code>TurnItemContributor</code></td><td>Turn Item 贡献</td></tr>
+</table>
+</div></details>
+<p>新能力通过实现 Contributor trait 并在 <code>install</code> 函数注册即可接入——构成插件式企业 Agent 平台架构。</p>
+
+<h3>7.6 文件操作工具</h3>
+<table>
+<tr><th>Crate</th><th>职责</th><th>关键特性</th></tr>
+<tr><td><code>file-search</code></td><td>模糊搜索</td><td><code>ignore</code> WalkBuilder + <code>nucleo</code> 模糊匹配，<code>crossbeam-channel</code> 并行</td></tr>
+<tr><td><code>file-system</code></td><td>FS 抽象</td><td>封装沙箱策略、权限配置、流式读取（1MB chunk）、遍历限制（depth 64 / dirs 10000）</td></tr>
+<tr><td><code>file-watcher</code></td><td>文件监控</td><td><code>notify</code> crate RecommendedWatcher，事件合并去重</td></tr>
+<tr><td><code>apply-patch</code></td><td>补丁解析与应用</td><td>流式解析、<code>similar</code> diff 引擎、独立可执行</td></tr>
+<tr><td><code>git-utils</code></td><td>Git 操作全集</td><td>apply/baseline/branch/info/status/operations/trust/fsmonitor</td></tr>
+</table>
+
+<h3>7.7 与 Nexus 连接器治理/Skills 市场的关系</h3>
+<ul>
+<li><strong>技能市场</strong>：<code>connectors</code> crate 提供 App/Connector 目录、元数据存储、工具策略评估</li>
+<li><strong>MCP 工具供给通道</strong>：<code>codex-mcp</code> 聚合本地与远程 MCP 服务器工具，<code>McpServerContributor</code> 允许动态注入</li>
+<li><strong>多 Agent 协作</strong>：密码学身份 + 父子拓扑 + <code>AgentRunner</code> + 模式模板 + Guardian 子 Agent 审查</li>
+<li><strong>扩展点</strong>：贡献者 trait 矩阵是平台扩展核心契约——构成插件式企业 Agent 平台架构</li>
+</ul>
+</section>
+
+<!-- §8 exec CLI / TUI / 可观测层 -->
+<section id="s8">
+<h2>§8 exec CLI / TUI / 可观测层</h2>
+<h3>8.1 关键 crate</h3>
+<details><summary>exec/TUI/可观测层 crate 清单</summary><div class="detail-body">
+<table>
+<tr><th>Crate</th><th>职责</th><th>关键源文件</th></tr>
+<tr><td><code>exec</code></td><td>非交互式执行器（<code>codex-exec</code>）</td><td><code>main.rs:28-40</code>、<code>cli.rs:15-81</code></td></tr>
+<tr><td><code>exec-server</code></td><td>远程命令/进程/FS 执行服务端</td><td><code>server.rs:46-61</code>、<code>relay.rs</code>（Noise 中继）</td></tr>
+<tr><td><code>cli</code></td><td><code>codex</code> 二进制入口，统一命令分发</td><td><code>main.rs</code>（183KB）、<code>doctor.rs</code>（148KB）</td></tr>
+<tr><td><code>tui</code></td><td>ratatui 终端界面</td><td><code>app.rs</code>（42KB）、<code>chatwidget.rs</code>（84KB）、<code>keymap.rs</code>（155KB）</td></tr>
+<tr><td><code>otel</code></td><td>OpenTelemetry 全栈 provider</td><td><code>provider.rs:62-69</code>、<code>trace_context.rs</code>（W3C traceparent）</td></tr>
+<tr><td><code>analytics</code></td><td>分析事件采集 + reducer 聚合 → Statsig</td><td><code>reducer.rs</code>（148KB）、<code>facts.rs</code></td></tr>
+<tr><td><code>feedback</code></td><td>Sentry 上报</td><td><code>upload.rs:33-47</code></td></tr>
+<tr><td><code>rollout-trace</code></td><td>trace bundle：append-only writer + reducer replay</td><td><code>writer.rs:36-47</code></td></tr>
+<tr><td><code>realtime-webrtc / voice-host</code></td><td>实时语音 WebRTC + GStreamer</td><td><code>protocol.rs:60-71</code>、<code>transport.rs</code></td></tr>
+</table>
+</div></details>
+
+<h3>8.2 code-mode 系列</h3>
+<table>
+<tr><th>Crate</th><th>职责</th><th>关键文件</th></tr>
+<tr><td><code>code-mode-protocol</code></td><td>工具协议：<code>PUBLIC_TOOL_NAME="exec"</code>、<code>WAIT_TOOL_NAME="wait"</code>、<code>CodeModeSession</code> trait</td><td><code>lib.rs:51-52</code>、<code>description.rs</code>、<code>session.rs</code>、<code>runtime.rs</code></td></tr>
+<tr><td><code>code-mode</code></td><td>re-export + <code>GrpcCodeModeSessionProvider</code> / <code>ProcessOwnedCodeModeSessionProvider</code></td><td><code>lib.rs</code>、<code>remote_session.rs</code></td></tr>
+<tr><td><code>code-mode-host</code></td><td>宿主端，最多 256 并发请求、128 活跃 cell</td><td><code>lib.rs:54-59</code>、<code>peer.rs</code>、<code>grpc_transport.rs</code></td></tr>
+<tr><td><code>code-mode-runtime</code></td><td>进程内 V8 运行时</td><td><code>service.rs:33-50</code>、<code>v8_init.rs</code>、<code>cell_actor/</code></td></tr>
+</table>
+
+<h3>8.3 可观测性四层金字塔</h3>
+<table>
+<tr><th>层</th><th>crate</th><th>覆盖谱系</th></tr>
+<tr><td>进程内 hot-path trace</td><td>rollout-trace</td><td>每次推理/工具派发/线程启动原始事件，<code>trace.jsonl</code> bundle 可离线 replay</td></tr>
+<tr><td>分布式 trace</td><td>otel</td><td>全局 OtelProvider，OTLP/gRPC 或 HTTP 导出，W3C traceparent 跨进程串联</td></tr>
+<tr><td>实时 trace 调试</td><td>otel-trace-websocket</td><td>loopback OTLP trace 桥接到 WebSocket，实时订阅</td></tr>
+<tr><td>业务级分析</td><td>analytics + diagnostics + feedback</td><td>事件流 reducer 聚合为 facts → Statsig；进程 gauge；Sentry envelope</td></tr>
+</table>
+
+<h3>8.4 可观测性数据流</h3>
+<ul>
+<li><strong>TUI 路径</strong>：<code>cli</code> → <code>tui::run_main</code> → <code>App</code> → <code>AppServerSession</code> → <code>InProcessAppServerClient</code> → app-server → <code>ExecServerClient</code> → JSON-RPC over Noise → <code>local_process.rs</code> / <code>local_file_system.rs</code></li>
+<li><strong>exec 路径</strong>：<code>exec/src/main.rs</code> → <code>codex_exec::run_main</code> → <code>InProcessAppServerClient</code> → 事件经 <code>EventProcessorWithJsonOutput</code> / <code>EventProcessorWithHumanOutput</code></li>
+<li><strong>可观测</strong>：<code>TraceWriter</code> 写本地 bundle → <code>otel</code> provider 批量导出 OTLP → <code>otel-trace-websocket</code> 桥接 WS → <code>analytics</code> reducer 聚合 → Statsig/Sentry</li>
+<li><strong>传输辅助</strong>：<code>uds</code>（跨平台 async UDS）、<code>stdio-to-uds</code>（中继二进制）、<code>websocket-client</code>（代理感知 WS）、<code>terminal-detection</code>（OTel user-agent）</li>
+</ul>
+
+<h3>8.5 为何 TUI 审批不能直接搬到 Web</h3>
+<div class="callout red"><strong>CLAUDE.md 明确</strong>："Codex's approval mechanism cannot be lifted to the Web directly. It's a local TUI popup blocking in-process." 企业需要：审批持久化到 DB → IM/Web 推送 → 数小时后响应 → Pod 已重建需 <code>thread/resume</code> 回放审批决策。这需要 Nexus 自建审批桥接层。</div>
+</section>
+
+<!-- §9 架构特征总结表 -->
+<section id="s9">
+<h2>§9 架构特征总结表</h2>
+<p>每个 crate 群标注「可直接复用 / 需自建外壳 / 黑盒不改」三档：</p>
+<table>
+<tr><th>crate 群</th><th>核心 crate</th><th>Nexus 复用策略</th><th>说明</th></tr>
+<tr><td>核心引擎</td><td>codex-core, core-api, protocol</td><td><span class="badge b-blackbox">黑盒不改</span></td><td>通过 core-api 门面 + protocol 协议交互</td></tr>
+<tr><td>app-server 协议</td><td>app-server, app-server-protocol, app-server-transport</td><td><span class="badge b-reuse">可直接复用</span></td><td>唯一集成面，JSON-RPC 双向通信</td></tr>
+<tr><td>持久化</td><td>state, thread-store, rollout</td><td><span class="badge b-shell">需自建外壳</span></td><td>ThreadStore trait 存储中立，云端用 Postgres 替换</td></tr>
+<tr><td>沙箱安全</td><td>execpolicy, sandboxing, linux-sandbox</td><td><span class="badge b-reuse">可直接复用+承接策略</span></td><td>merge_overlay 承接 per-tenant 规则注入</td></tr>
+<tr><td>进程加固</td><td>process-hardening, attestation</td><td><span class="badge b-reuse">可直接复用</span></td><td>pre-main 加固 + attestation header</td></tr>
+<tr><td>凭证管理</td><td>secrets, keyring-store, workload-identity</td><td><span class="badge b-shell">需自建外壳</span></td><td>单租户→多租户 KMS + 短期令牌</td></tr>
+<tr><td>模型抽象</td><td>model-provider, model-provider-info</td><td><span class="badge b-shell">需自建外壳</span></td><td>指向自建 Model Gateway</td></tr>
+<tr><td>本地模型</td><td>ollama, lmstudio</td><td><span class="badge b-reuse">可直接复用</span></td><td>OSS provider 路由</td></tr>
+<tr><td>云控制</td><td>backend-client, cloud-config, cloud-tasks</td><td><span class="badge b-blackbox">黑盒不改/参考</span></td><td>指向 ChatGPT backend-api，Nexus 自建控制平面替代</td></tr>
+<tr><td>登录认证</td><td>login, aws-auth</td><td><span class="badge b-shell">需自建外壳</span></td><td>企业需 OIDC/SAML/SCIM</td></tr>
+<tr><td>MCP</td><td>codex-mcp, rmcp-client</td><td><span class="badge b-reuse">可直接复用</span></td><td>MCP Gateway 侧车由 Nexus 自建</td></tr>
+<tr><td>技能</td><td>skills, ext/skills</td><td><span class="badge b-reuse">可直接复用</span></td><td>Markdown 技能系统</td></tr>
+<tr><td>钩子</td><td>hooks</td><td><span class="badge b-reuse">可直接复用</span></td><td>12 生命周期钩子</td></tr>
+<tr><td>工具</td><td>tools, file-search, file-system, apply-patch, git-utils</td><td><span class="badge b-reuse">可直接复用</span></td><td>内置工具集完整</td></tr>
+<tr><td>协作</td><td>collaboration-mode-templates, agent-roles</td><td><span class="badge b-shell">参考实现</span></td><td>Nexus 需自建编排器</td></tr>
+<tr><td>扩展 API</td><td>ext/extension-api + 14 ext/*</td><td><span class="badge b-reuse">可直接复用</span></td><td>贡献者 trait 矩阵</td></tr>
+<tr><td>exec</td><td>exec, exec-server, exec-server-protocol</td><td><span class="badge b-reuse">可直接复用</span></td><td>非交互执行 + 远程执行</td></tr>
+<tr><td>TUI</td><td>tui</td><td><span class="badge b-shell">不直接搬 Web</span></td><td>Web 前端需自建</td></tr>
+<tr><td>可观测</td><td>otel, analytics, feedback</td><td><span class="badge b-reuse">可直接复用+自建汇聚</span></td><td>OTel provider 可复用</td></tr>
+<tr><td>语音</td><td>realtime-webrtc, voice-host</td><td><span class="badge b-reuse">可直接复用</span></td><td>WebRTC + GStreamer</td></tr>
+<tr><td>code-mode</td><td>code-mode*(4)</td><td><span class="badge b-reuse">可直接复用</span></td><td>协议与 V8 运行时</td></tr>
+<tr><td>CLI</td><td>cli</td><td><span class="badge b-reuse">可直接复用</span></td><td>codex 二进制入口</td></tr>
+</table>
+</section>
+
+<!-- §10 Nexus 落地启示 -->
+<section id="s10">
+<h2>§10 Nexus 落地启示</h2>
+
+<h3>10.1 控制/执行分离</h3>
+<div class="callout gold"><strong>最关键设计判断</strong>：Codex Harness 是「单用户、本地、可打断的 Agent 引擎」；Nexus 要建的是「让这台引擎变成多租户、可计量、可审计、崩溃不丢会话的企业服务」。控制面长期有状态、多租户、强一致；执行面无状态、一次性、可随时销毁。仅经 app-server 协议与对象存储通信。</div>
+
+<h3>10.2 app-server 集成</h3>
+<ul>
+<li><strong>唯一集成面</strong>：通过 app-server JSON-RPC 集成，不通过 codex exec 或 in-process SDK</li>
+<li><strong>Thread 生命周期</strong>：消费 thread/turn/item 事件流</li>
+<li><strong>审批桥接</strong>：消费 Server→Client 审批请求，持久化到 DB，在 thread/resume 时回放</li>
+<li><strong>Thread 操作</strong>：thread/start/resume/fork/revert 支持会话恢复、分支、回退</li>
+</ul>
+
+<h3>10.3 会话云端化</h3>
+<ul>
+<li>控制面消费 app-server 事件流 → Postgres（权威元数据）</li>
+<li>rollout JSONL 同步到对象存储（可重建的执行态）</li>
+<li><code>ThreadStore</code> trait 屏蔽本地/云端差异</li>
+<li>Pod 死亡：从 Postgres 恢复元数据 → 从对象存储拉 rollout → thread/resume 重建</li>
+</ul>
+
+<h3>10.4 execpolicy 承接策略</h3>
+<ul>
+<li>控制平面为租户生成 overlay 规则文件（Starlark）</li>
+<li>执行器加载 overlay → <code>merge_overlay</code> 到基础 policy</li>
+<li><code>Policy::check</code> 评估 allow/prompt/deny</li>
+<li><code>RequirementsExecPolicy</code> 可序列化，跨控制平面/执行器传输</li>
+</ul>
+
+<h3>10.5 不改内核</h3>
+<ul>
+<li>上游日均 10+ commit、111+ crate——修改内核导致 merge 冲突无法收口</li>
+<li>租户/角色差异表达为生成的 <code>config.toml</code> + <code>execpolicy</code> 规则集</li>
+<li>事件桥接消费 app-server 事件流</li>
+<li>不可避免的内核 patch 放 <code>patches/</code> + 上游追踪看板</li>
+</ul>
+
+<h3>10.6 四重隔离</h3>
+<table>
+<tr><th>隔离层</th><th>机制</th><th>对应 crate</th></tr>
+<tr><td>容器层</td><td>K8s Pod + NetworkPolicy + 资源限制</td><td>Nexus 自建</td></tr>
+<tr><td>OS 沙箱层</td><td>Seatbelt / Landlock+seccomp+bubblewrap / Windows token</td><td>sandboxing, linux-sandbox, windows-sandbox-rs</td></tr>
+<tr><td>策略层</td><td>execpolicy Starlark 规则引擎 + approval_policy</td><td>execpolicy</td></tr>
+<tr><td>网络层</td><td>NetworkPolicy + 进程级网络策略决策</td><td>exec-server-protocol/network_policy.rs</td></tr>
+</table>
+
+<div class="callout gold">
+<strong>报告总结</strong>：Codex Harness 提供了完备的 Agent 执行内核（Turn 七阶段 + 五原语）、成熟的 JSON-RPC 协议层（双向事件流 + 协议级审批）、可靠的本地持久化（SQLite 镜像 + JSONL rollout）、强力的命令级安全（execpolicy + 三平台 OS 沙箱）和灵活的扩展机制（贡献者矩阵）。Nexus 落地路径：以 app-server 为唯一集成面，消费事件流写云端 Postgres，下发 config.toml + execpolicy 表达租户差异，不改内核，四重隔离保障安全。核心自建项：多租户控制平面（L1-L3）、执行面托管外壳（L4）、Model Gateway（L6）、存储与治理（L7）。
+</div>
+</section>
+
+</main>
+</div>
+
+<script>
+// 主题切换
+function toggleTheme(){
+  const html=document.documentElement;
+  const cur=html.getAttribute('data-theme');
+  const next=cur==='dark'?'light':'dark';
+  html.setAttribute('data-theme',next);
+  localStorage.setItem('nexus-research-theme',next);
+}
+(function(){
+  const saved=localStorage.getItem('nexus-research-theme');
+  if(saved)document.documentElement.setAttribute('data-theme',saved);
+})();
+
+// 滚动进度条
+const progress=document.getElementById('progress');
+window.addEventListener('scroll',()=>{
+  const h=document.documentElement.scrollHeight-window.innerHeight;
+  const p=h>0?(window.scrollY/h*100):0;
+  progress.style.width=p+'%';
+});
+
+// TOC 生成
+const sections=document.querySelectorAll('section[id]');
+const toc=document.getElementById('toc');
+const frag=document.createDocumentFragment();
+sections.forEach(s=>{
+  const h2=s.querySelector('h2');
+  if(!h2)return;
+  const id=s.id;
+  const text=h2.textContent.replace(/^§\d+\.\s*/,'');
+  const a=document.createElement('a');
+  a.href='#'+id;
+  a.textContent=text;
+  a.dataset.target=id;
+  frag.appendChild(a);
+  // sub items
+  const h3s=s.querySelectorAll('h3');
+  h3s.forEach(h3=>{
+    if(h3s.length<2)return;
+    const sa=document.createElement('a');
+    sa.href='#'+id;
+    sa.textContent='  '+h3.textContent.replace(/^\d+\.\d+\s*/,'');
+    sa.className='toc-sub';
+    sa.dataset.target=id;
+    frag.appendChild(sa);
+  });
+});
+toc.appendChild(frag);
+
+// 当前节高亮
+const tocLinks=toc.querySelectorAll('a');
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(l=>{
+        if(l.dataset.target===e.target.id){
+          l.classList.add('active');
+        }else{
+          l.classList.remove('active');
+        }
+      });
+    }
+  });
+},{rootMargin:'-120px 0px -70% 0px'});
+sections.forEach(s=>observer.observe(s));
+</script>
+</body>
+</html>

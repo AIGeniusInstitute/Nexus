@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus 自动化运维与 K8s 弹性部署方案 · 交互报告</title>
+<style>
+:root{--bg:#0b141a;--panel:#13242e;--panel2:#173341;--text:#e8f2f0;--muted:#9db8b4;--line:#24414e;--accent:#35c2b0;--gold:#e8b64c;--blue:#3b82f6;--red:#ef4444;--purple:#a855f7;--code-bg:#0d1b20}
+[data-theme="light"]{--bg:#f6f8f9;--panel:#fff;--panel2:#eef2f4;--text:#16202a;--muted:#5a6b72;--line:#d4dde0;--accent:#028090;--gold:#b07d1a;--blue:#2563eb;--red:#dc2626;--purple:#7c3aed;--code-bg:#f1f3f4}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px}
+.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--gold));z-index:1000;width:0}
+header{padding:32px 40px 16px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
+header h1{color:var(--accent);font-size:24px;margin-bottom:4px}
+header .sub{color:var(--muted);font-size:13px}
+.theme-btn{position:absolute;right:40px;top:30px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px}
+.theme-btn:hover{border-color:var(--accent)}
+.layout{display:flex;max-width:1600px;margin:0 auto}
+nav.toc{width:260px;position:sticky;top:120px;height:calc(100vh - 140px);overflow-y:auto;padding:24px 12px;flex-shrink:0}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;font-size:13px;padding:5px 12px;border-radius:6px;border-left:2px solid transparent}
+nav.toc a:hover,nav.toc a.active{color:var(--accent);background:var(--panel);border-left-color:var(--accent)}
+main{flex:1;padding:24px 40px;min-width:0}
+section{margin-bottom:48px;padding-bottom:16px;border-bottom:1px dashed var(--line)}
+section:last-child{border-bottom:none}
+h2{color:var(--accent);font-size:20px;margin-bottom:14px;padding-bottom:6px;border-bottom:2px solid var(--accent)}
+h3{color:var(--gold);font-size:16px;margin:18px 0 10px}
+h4{color:var(--blue);font-size:14px;margin:14px 0 8px}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;background:var(--panel)}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--panel2);color:var(--accent);font-weight:600}
+img.diagram{width:100%;border:1px solid var(--line);border-radius:10px;margin:14px 0;background:var(--panel)}
+.cap{color:var(--muted);font-size:12px;text-align:center;margin-top:-6px;margin-bottom:14px}
+code{background:var(--code-bg);padding:2px 6px;border-radius:4px;font-family:Consolas,'Courier New',monospace;font-size:12.5px;color:var(--gold)}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;margin:12px 0}
+pre code{background:none;padding:0;color:var(--text);font-size:12px;line-height:1.5}
+details{border:1px solid var(--line);border-radius:8px;margin:10px 0;background:var(--panel)}
+summary{cursor:pointer;padding:10px 14px;font-weight:600;color:var(--accent);user-select:none}
+summary:hover{background:var(--panel2);border-radius:8px}
+details[open] summary{border-bottom:1px solid var(--line)}
+.detail-body{padding:12px 14px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.b-codex{background:rgba(53,194,176,.18);color:var(--accent)}
+.b-self{background:rgba(232,182,76,.18);color:var(--gold)}
+.b-partial{background:rgba(59,130,246,.18);color:var(--blue)}
+.b-danger{background:rgba(239,68,68,.18);color:var(--red)}
+.b-purple{background:rgba(168,85,247,.18);color:var(--purple)}
+.callout{border-left:4px solid var(--accent);background:var(--panel);padding:12px 16px;margin:14px 0;border-radius:0 8px 8px 0}
+.callout.gold{border-color:var(--gold)}
+.callout.red{border-color:var(--red)}
+.callout.blue{border-color:var(--blue)}
+ul,ol{margin:8px 0 8px 22px}
+li{margin:4px 0}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+@media(max-width:980px){.layout{flex-direction:column}nav.toc{position:static;width:auto;height:auto}.grid-2{grid-template-columns:1fr}}
+.kbd{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12px;font-family:monospace}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<header>
+  <h1>Nexus 自动化运维与 K8s 弹性部署方案</h1>
+  <div class="sub">控制面/执行面分命名空间 · HPA+warm pool 弹性 · GitOps+沙箱自检 · 任务二-8</div>
+  <button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+</header>
+<div class="layout">
+<nav class="toc" id="toc"></nav>
+<main>
+
+<section id="s0">
+<h2>0. 核心判断（结论先行）</h2>
+<div class="callout gold"><strong>一句话</strong>：控制面跑在 <code>nexus-control</code> 命名空间（长期有状态、多租户、强一致），执行面跑在 <code>nexus-exec-{tenant}</code> 命名空间（一次性、单租户单任务、无状态、可销毁），仅经 app-server JSON-RPC 与对象存储通信。</div>
+<h3>五个决定成败的运维判断</h3>
+<table>
+<tr><th>#</th><th>判断</th><th>理由</th></tr>
+<tr><td>1</td><td>控制面与执行面必须分命名空间部署</td><td>沙箱跑不受信代码（依赖安装、用户脚本、MCP stdio）；混在一起等于把整个平台暴露</td></tr>
+<tr><td>2</td><td>Sandbox Pod 池必须 warm pool 预热</td><td>冷启动目标 &lt; 5s 靠 PVC snapshot + 预热空闲 Pod；不预热则首次任务体验极差</td></tr>
+<tr><td>3</td><td>沙箱启动自检不过禁止调度生产任务</td><td>Linux 容器可能因宿主不支持 Landlock/seccomp 致 Codex OS 沙箱失效（路线图 §3.4.2）</td></tr>
+<tr><td>4</td><td>出站 NetworkPolicy 默认全禁，仅放行两个白名单</td><td>执行面 Pod 出站只能到 Model Gateway 和 MCP Gateway；防数据外泄、C2 回连</td></tr>
+<tr><td>5</td><td>配置即政策：运行时注入，任务结束即焚</td><td>沙箱内零长期密钥（路线图 §4.5）；配置不落盘到镜像</td></tr>
+</table>
+</section>
+
+<section id="s1">
+<h2>1. K8s 部署拓扑</h2>
+<img class="diagram" src="k8s-topology.svg" alt="K8s 部署拓扑图">
+<div class="cap">图 · Nexus K8s 部署拓扑全景（控制面 nexus-control ↔ 执行面 nexus-exec-{tenant}，三档隔离矩阵，NetworkPolicy 全标注）</div>
+
+<h3>1.1 命名空间规划</h3>
+<table>
+<tr><th>命名空间</th><th>角色</th><th>生命周期</th><th>安全级别</th></tr>
+<tr><td><code>nexus-control</code></td><td>控制平面</td><td>长期驻留</td><td><span class="badge b-self">restricted PSA</span></td></tr>
+<tr><td><code>nexus-exec-shared</code></td><td>共享池执行面</td><td>分钟-小时级</td><td><span class="badge b-danger">restricted+NetworkPolicy</span></td></tr>
+<tr><td><code>nexus-exec-{tenant}</code></td><td>专属池执行面</td><td>分钟-小时级</td><td><span class="badge b-partial">restricted+独立密钥</span></td></tr>
+<tr><td><code>nexus-infra</code></td><td>基础设施（Ingress/ArgoCD）</td><td>长期驻留</td><td><span class="badge b-purple">privileged(管理员)</span></td></tr>
+<tr><td><code>nexus-monitor</code></td><td>可观测</td><td>长期驻留</td><td><span class="badge b-self">restricted PSA</span></td></tr>
+</table>
+
+<h3>1.2 控制面部署清单</h3>
+<details open><summary>nexus-control 命名空间组件全览</summary><div class="detail-body">
+<table>
+<tr><th>组件</th><th>类型</th><th>弹性</th><th>职责</th></tr>
+<tr><td>API Gateway + WS 网关</td><td>Deployment</td><td>HPA 3-20</td><td>南北向流量、鉴权、WS 推送</td></tr>
+<tr><td>Temporal Worker</td><td>Deployment</td><td>HPA 2-10</td><td>任务编排、Workflow 队列</td></tr>
+<tr><td>审批中心 HITL</td><td>Deployment</td><td>HPA 2-8</td><td>审批工单生命周期</td></tr>
+<tr><td>策略中心 execpolicy</td><td>Deployment</td><td>HPA 2-6</td><td>策略下发、配置生成</td></tr>
+<tr><td>配额计费</td><td>Deployment</td><td>HPA 2-6</td><td>四维成本归因</td></tr>
+<tr><td>连接器治理</td><td>Deployment</td><td>HPA 2-8</td><td>MCP Registry、凭据代理</td></tr>
+<tr><td>知识库 RAG</td><td>Deployment</td><td>HPA 2-10</td><td>向量检索+ACL过滤</td></tr>
+<tr><td>Postgres 主从+pgvector</td><td>StatefulSet</td><td>1+2 只读</td><td>结构化元数据、会话事件</td></tr>
+<tr><td>Redis 事件总线</td><td>StatefulSet</td><td>3+Sentinel</td><td>pub/sub、Leader选举、IPC</td></tr>
+<tr><td>MinIO 对象存储</td><td>StatefulSet</td><td>4节点</td><td>rollout/产物/snapshots</td></tr>
+<tr><td>OTel Collector</td><td>Deployment</td><td>2-5</td><td>OTLP→ClickHouse+Prom+Loki</td></tr>
+</table>
+</div></details>
+
+<h3>1.3 三档部署矩阵</h3>
+<div class="grid-2">
+<div class="callout"><strong>① 共享池</strong>（<span class="badge b-self">低成本</span>）<br>逻辑隔离：namespace + tenant_id + NetworkPolicy<br>适用：中小客户/非敏感数据<br>隔离：RLS 兜底 + 共享 CMK + 共享桶+前缀</div>
+<div class="callout gold"><strong>② 专属池</strong>（<span class="badge b-partial">中成本</span>）<br>独立节点池(污点+tolerations) + 独立 ns + 独立密钥<br>适用：大客户/合规要求<br>隔离：按租户 CMK + 独立桶/前缀</div>
+<div class="callout red"><strong>③ 私有化</strong>（<span class="badge b-danger">高成本</span>）<br>独立 VPC / 独立集群 / 数据不出域<br>适用：金融/政务/国企<br>隔离：Kata/Firecracker + 独立 KMS/HSM + 本地模型</div>
+</div>
+
+<h3>1.4 隔离四重取证</h3>
+<ol>
+<li><strong>逻辑</strong>：所有查询强制带 <code>tenant_id</code>，Postgres RLS 兜底</li>
+<li><strong>运行时</strong>：namespace + 节点亲和性 + NetworkPolicy</li>
+<li><strong>密钥</strong>：按租户 CMK，租户禁用后其数据不可解密</li>
+<li><strong>存储</strong>：对象存储按租户前缀 + 独立桶策略，禁止跨前缀列举</li>
+</ol>
+<div class="callout red">每季度做一次跨租户越权演练（从 A 租户沙箱尝试访问 B 的资源），结果作为准入条件，不是可选项。</div>
+
+<h3>1.5 高敏租户：Kata / Firecracker</h3>
+<table>
+<tr><th>运行时</th><th>隔离级别</th><th>启动延迟</th><th>适用</th></tr>
+<tr><td>runc（默认）</td><td>命名空间+cgroups</td><td>~1s</td><td>共享池</td></tr>
+<tr><td>gVisor</td><td>系统调用拦截</td><td>~2s</td><td>中等敏感</td></tr>
+<tr><td>Kata Containers</td><td>硬件级（QEMU轻量VM）</td><td>~3s</td><td>高敏租户</td></tr>
+<tr><td>Firecracker</td><td>微虚拟机（Rust）</td><td>~2s</td><td>高敏+高密度</td></tr>
+</table>
+</section>
+
+<section id="s2">
+<h2>2. 弹性伸缩</h2>
+
+<h3>2.1 控制面 HPA 策略</h3>
+<table>
+<tr><th>Deployment</th><th>扩缩指标</th><th>min</th><th>max</th><th>目标值</th></tr>
+<tr><td>API Gateway</td><td>CPU 70% + QPS</td><td>3</td><td>20</td><td>CPU&lt;70%, QPS&lt;800/pod</td></tr>
+<tr><td>Temporal Worker</td><td>队列深度</td><td>2</td><td>10</td><td>&lt;50/pod</td></tr>
+<tr><td>审批中心</td><td>活跃Ticket数</td><td>2</td><td>8</td><td>&lt;30/pod</td></tr>
+<tr><td>知识库 RAG</td><td>查询延迟P95</td><td>2</td><td>10</td><td>&lt;200ms</td></tr>
+</table>
+<details><summary>HPA 关键 YAML（API Gateway）</summary><div class="detail-body">
+<pre><code>apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nexus-api-gateway-hpa
+  namespace: nexus-control
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nexus-api-gateway
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Pods
+    pods:
+      metric:
+        name: http_requests_per_second
+      target:
+        type: AverageValue
+        averageValue: "800"
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 25
+        periodSeconds: 60</code></pre>
+</div></details>
+
+<h3>2.2 Sandbox Pod 池弹性</h3>
+<div class="callout"><strong>warm pool 机制</strong>：sandbox-pool-controller 维持 N 个空闲 Pod（默认 N=5）。任务到达时选取空闲 Pod → 注入配置/凭据 → 启动。任务结束 → 上传 rollout → 结算 → 审计 → Pod 销毁 → 补充新 Pod。</div>
+<table>
+<tr><th>参数</th><th>值</th><th>理由</th></tr>
+<tr><td>warm pool 大小</td><td>N=5（按租户权重）</td><td>小租户共享，大租户专属</td></tr>
+<tr><td>冷启动目标</td><td>&lt; 5s</td><td>warm pool + PVC snapshot + 预热镜像</td></tr>
+<tr><td>空闲超时</td><td>15-30 min</td><td>平衡预热成本与响应速度</td></tr>
+<tr><td>队列调度</td><td>按租户权重+优先级+FIFO</td><td>大客户高权重</td></tr>
+</table>
+
+<h3>2.3 多集群灾备</h3>
+<table>
+<tr><th>组件</th><th>灾备策略</th><th>RPO</th><th>RTO</th></tr>
+<tr><td>Postgres</td><td>同步流复制→跨AZ只读+异步异地</td><td>&lt;1s（同步）</td><td>&lt;30s</td></tr>
+<tr><td>Redis</td><td>Sentinel自动故障转移+AOF</td><td>&lt;1s</td><td>&lt;10s</td></tr>
+<tr><td>MinIO</td><td>跨区复制（bucket replication）</td><td>&lt;1min</td><td>即时(只读降级)</td></tr>
+<tr><td>K8s 集群</td><td>跨AZ多节点+Velero备份</td><td>—</td><td>&lt;5min</td></tr>
+</table>
+</section>
+
+<section id="s3">
+<h2>3. 自动化运维</h2>
+
+<h3>3.1 CI/CD：GitOps（ArgoCD）</h3>
+<div class="callout blue">Git 仓库是单一真相源 → ArgoCD 检测变更 → 生成 diff → 人工审批 → 同步 → 金丝雀(10%) → 验证 → 全量 → 异常则 <code>argocd app rollback</code></div>
+<table>
+<tr><th>镜像</th><th>基础</th><th>大小</th></tr>
+<tr><td>nexus-control</td><td>distroless/nodejs20</td><td>~150MB</td></tr>
+<tr><td>nexus-sandbox-python</td><td>python:3.12-slim + codex</td><td>~800MB</td></tr>
+<tr><td>nexus-sandbox-node</td><td>node:20-slim + codex</td><td>~700MB</td></tr>
+<tr><td>nexus-sandbox-rust</td><td>rust:1.75-slim + codex</td><td>~1.2GB</td></tr>
+<tr><td>nexus-sandbox-full</td><td>ubuntu:22.04 + 多语言</td><td>~2.5GB</td></tr>
+</table>
+<details><summary>多阶段 Dockerfile 示例（Python sandbox）</summary><div class="detail-body">
+<pre><code># Stage 1: 构建 Codex 二进制
+FROM rust:1.75 AS codex-builder
+WORKDIR /build
+COPY codex-rs/ .
+RUN cargo build --release -p codex-app-server
+
+# Stage 2: 运行时镜像
+FROM python:3.12-slim AS runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git ca-certificates bubblewrap && \
+    rm -rf /var/lib/apt/lists/*
+COPY --from=codex-builder /build/target/release/codex-app-server /usr/local/bin/
+RUN useradd -m -s /bin/bash nexus
+USER nexus
+WORKDIR /workspace
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD pgrep codex-app-server || exit 1
+ENTRYPOINT ["codex-app-server"]</code></pre>
+</div></details>
+
+<h3>3.2 配置注入（任务级即焚）</h3>
+<div class="callout">控制面按 <code>租户+角色+工作区+风险等级</code> 生成 config.toml + execpolicy + enabled_tools + AGENTS.md，以 K8s Projected Volume 投射卷注入 Pod，任务结束 Pod 销毁后 Secret/CM 自动回收。配置不落盘到镜像。</div>
+<details><summary>config.toml 生成示例（无真实密钥）</summary><div class="detail-body">
+<pre><code># 生成时间: 2026-09-06T12:00:00Z
+# 绑定: tenant=acme-corp, thread=th_abc, turn=tn_123
+# TTL: 3600s
+
+[model]
+provider = "openai-compatible"
+base_url = "http://model-gateway.nexus-control:8080/v1"
+auth_token_env = "NEXUS_TASK_TOKEN"  # 不写 API Key
+
+[sandbox]
+mode = "workspace-write"    # 按角色 × 风险等级
+linux = "landlock"          # Codex OS 沙箱
+
+[approval]
+policy = "on-failure"       # 失败才审批
+
+[mcp]
+server_config_dir = "/etc/codex/mcp"  # 指向 sidecar，不写凭据</code></pre>
+</div></details>
+
+<h3>3.3 沙箱启动自检</h3>
+<table>
+<tr><th>#</th><th>检查项</th><th>失败动作</th></tr>
+<tr><td>1</td><td>Landlock/seccomp/Seatbelt 可用性</td><td>标记节点不可调度</td></tr>
+<tr><td>2</td><td>出站仅两白名单地址</td><td>拒绝启动</td></tr>
+<tr><td>3</td><td>镜像无长期密钥（Trivy扫描）</td><td>镜像拒推</td></tr>
+<tr><td>4</td><td>只读 rootfs + 非 root</td><td>Pod 拒启</td></tr>
+<tr><td>5</td><td>资源限额已生效</td><td>拒绝调度</td></tr>
+<tr><td>6</td><td>NetworkPolicy 已附加</td><td>拒绝调度</td></tr>
+<tr><td>7</td><td>seccomp profile 已加载</td><td>拒绝调度</td></tr>
+</table>
+<details><summary>沙箱自检 initContainer YAML</summary><div class="detail-body">
+<pre><code>initContainers:
+- name: preflight-check
+  image: nexus-sandbox-python:latest
+  command:
+  - bash
+  - -c
+  - |
+    set -e
+    codex --sandbox-check || { echo "SANDBOX_CHECK_FAILED"; exit 1; }
+    curl -sSf --max-time 3 http://model-gateway.nexus-control:8080/health || exit 1
+    curl -sSf --max-time 3 http://localhost:9090/health || exit 1
+    [ "$(id -u)" -ne 0 ] || { echo "RUNNING_AS_ROOT"; exit 1; }
+    touch /test-write 2>/dev/null && { echo "ROOTFS_WRITABLE"; exit 1; } || true
+    [ -f /sys/fs/cgroup/memory.max ] || { echo "NO_MEM_LIMIT"; exit 1; }
+    echo "PREFLIGHT_OK"
+  securityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]</code></pre>
+</div></details>
+
+<h3>3.4 备份灾备</h3>
+<table>
+<tr><th>备份对象</th><th>方法</th><th>频率</th><th>恢复目标</th></tr>
+<tr><td>Postgres</td><td>pg_dump + CronJob → MinIO</td><td>每日全备+每小时增量</td><td>&lt;30min</td></tr>
+<tr><td>MinIO 对象</td><td>跨区复制</td><td>实时</td><td>即时</td></tr>
+<tr><td>PV 快照</td><td>Velero + CSI snapshot</td><td>每日</td><td>&lt;5min</td></tr>
+<tr><td>K8s 资源</td><td>Velero backup</td><td>每日</td><td>&lt;10min</td></tr>
+<tr><td>Redis</td><td>AOF + RDB → MinIO</td><td>每5min</td><td>&lt;1min</td></tr>
+</table>
+
+<h3>3.5 监控告警</h3>
+<div class="callout blue"><strong>全链路 Trace</strong>：OTel → ClickHouse + Grafana，串联「用户请求 → API Gateway → Temporal → Sandbox Pod → codex → 工具 → 模型」完整 span，按 tenant_id→thread_id→turn_id→item_seq 定位。</div>
+<table>
+<tr><th>指标</th><th>类型</th><th>告警阈值</th></tr>
+<tr><td>concurrent_tasks</td><td>Gauge</td><td>&gt;租户上限 → 超限</td></tr>
+<tr><td>task_duration_p95</td><td>Histogram</td><td>&gt;300s → 延迟</td></tr>
+<tr><td>task_error_rate</td><td>Counter</td><td>&gt;5% → 错误率</td></tr>
+<tr><td>cost_per_task</td><td>Gauge</td><td>&gt;日均3σ → 成本异常</td></tr>
+<tr><td>sandbox_escape_attempts</td><td>Counter</td><td>&gt;0 → 沙箱逃逸(P0)</td></tr>
+<tr><td>cross_tenant_access_denied</td><td>Counter</td><td>&gt;0 → 跨租户越权(P0)</td></tr>
+<tr><td>warm_pool_size</td><td>Gauge</td><td>&lt;2 → warm pool不足</td></tr>
+<tr><td>pg_replication_lag</td><td>Gauge</td><td>&gt;5s → 复制延迟</td></tr>
+</table>
+<table>
+<tr><th>级别</th><th>触发</th><th>通知</th><th>响应</th></tr>
+<tr><td><span class="badge b-danger">P0</span></td><td>沙箱逃逸/跨租户越权</td><td>PagerDuty+IM+电话</td><td>&lt;5min</td></tr>
+<tr><td><span class="badge b-partial">P1</span></td><td>控制面宕机/PG不可用</td><td>PagerDuty+IM</td><td>&lt;15min</td></tr>
+<tr><td><span class="badge b-self">P2</span></td><td>并发超限/延迟P95&gt;300s</td><td>IM群</td><td>&lt;1h</td></tr>
+<tr><td>P3</td><td>成本异常/资源&gt;85%</td><td>日报</td><td>&lt;1d</td></tr>
+</table>
+
+<h3>3.6 安全运维</h3>
+<table>
+<tr><th>维度</th><th>措施</th></tr>
+<tr><td>镜像安全</td><td>Trivy扫描(CI门禁)+Cosign签名</td></tr>
+<tr><td>网络策略</td><td>执行面默认全禁出站，仅放行Model Gateway+MCP Gateway</td></tr>
+<tr><td>Seccomp</td><td>RuntimeDefault或自定义nexus-sandbox profile</td></tr>
+<tr><td>PSA</td><td>restricted级别（禁止privileged/hostPath）</td></tr>
+<tr><td>密钥管理</td><td>Vault/云KMS，按租户CMK，IRSA短期凭证</td></tr>
+<tr><td>审计</td><td>API调用+工具执行+模型采样→WORM日志</td></tr>
+<tr><td>红队演练</td><td>每季度跨租户越权演练</td></tr>
+</table>
+</section>
+
+<section id="s4">
+<h2>4. 关键 K8s 清单概要</h2>
+
+<details><summary>4.1 Namespace + PSA</summary><div class="detail-body">
+<pre><code>apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexus-control
+  labels:
+    name: nexus-control
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexus-exec-shared
+  labels:
+    name: nexus-exec-shared
+    pod-security.kubernetes.io/enforce: restricted</code></pre>
+</div></details>
+
+<details><summary>4.2 控制面 Deployment（API Gateway）</summary><div class="detail-body">
+<pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-api-gateway
+  namespace: nexus-control
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 1, maxUnavailable: 0}
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+      terminationGracePeriodSeconds: 120</code></pre>
+</div></details>
+
+<details><summary>4.3 Postgres StatefulSet</summary><div class="detail-body">
+<pre><code>apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-primary
+  namespace: nexus-control
+spec:
+  serviceName: postgres-primary
+  replicas: 1
+  volumeClaimTemplates:
+  - metadata: {name: data}
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: fast-ssd
+      resources:
+        requests: {storage: 50Gi}</code></pre>
+</div></details>
+
+<details><summary>4.4 NetworkPolicy（执行面默认全禁+白名单）</summary><div class="detail-body">
+<pre><code># 默认全禁出站
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-default-deny-egress
+  namespace: nexus-exec-shared
+spec:
+  podSelector:
+    matchLabels: {app: sandbox-pod}
+  policyTypes: [Egress]
+  egress: []
+---
+# 仅放行 Model Gateway + MCP Gateway + DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-egress-allow
+  namespace: nexus-exec-shared
+spec:
+  podSelector:
+    matchLabels: {app: sandbox-pod}
+  policyTypes: [Egress]
+  egress:
+  - to:    # Model Gateway
+    - namespaceSelector:
+        matchLabels: {name: nexus-control}
+      podSelector:
+        matchLabels: {app: model-gateway}
+    ports: [{protocol: TCP, port: 8080}]
+  - to:    # DNS
+    - namespaceSelector:
+        matchLabels: {name: kube-system}
+    ports: [{protocol: UDP, port: 53}]</code></pre>
+</div></details>
+
+<details><summary>4.5 Sandbox Pod（warm pool + 三容器+三卷）</summary><div class="detail-body">
+<pre><code>apiVersion: v1
+kind: Pod
+metadata:
+  name: sandbox-pod-warm-001
+  namespace: nexus-exec-shared
+  labels:
+    app: sandbox-pod
+    nexus.io/status: warm
+spec:
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: Localhost
+      localhostProfile: nexus-sandbox
+  initContainers:
+  - name: preflight-check
+    # ...（见 §3.3）
+  containers:
+  - name: codex-app-server
+    image: nexus-sandbox-python:latest
+    securityContext:
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities: {drop: ["ALL"]}
+    env:
+    - name: NEXUS_TASK_TOKEN
+      valueFrom: {secretKeyRef: {name: task-token-001, key: token}}
+    volumeMounts:
+    - {name: config, mountPath: /etc/codex, readOnly: true}
+    - {name: workspace, mountPath: /workspace}
+  - name: mcp-gateway-sidecar
+    image: nexus-mcp-gateway:latest
+    ports: [{containerPort: 9090}]
+  volumes:
+  - name: config
+    projected:
+      sources:
+      - secret: {name: codex-config-001}
+      - secret: {name: execpolicy-001}
+      - configMap: {name: agents-md-001}
+  - name: workspace
+    persistentVolumeClaim: {claimName: workspace-pvc-001}
+  - name: tmp
+    emptyDir: {medium: Memory, sizeLimit: 512Mi}
+  tolerations:
+  - {key: nexus-exec, operator: Equal, value: "true", effect: NoSchedule}</code></pre>
+</div></details>
+
+<details><summary>4.6 Service + Ingress</summary><div class="detail-body">
+<pre><code>apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nexus-ingress
+  namespace: nexus-control
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts: [nexus.example.com]
+    secretName: nexus-tls
+  rules:
+  - host: nexus.example.com
+    http:
+      paths:
+      - {path: /api, pathType: Prefix, backend: {service: {name: nexus-api-gateway, port: {name: http}}}}
+      - {path: /ws, pathType: Prefix, backend: {service: {name: nexus-api-gateway, port: {name: ws}}}}</code></pre>
+</div></details>
+
+<details><summary>4.7 CronJob（Postgres 备份）</summary><div class="detail-body">
+<pre><code>apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pg-backup
+  namespace: nexus-control
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: pg-backup
+            image: postgres:16-alpine
+            command:
+            - bash
+            - -c
+            - |
+              pg_dump -h postgres-primary -U nexus nexus | gzip > /backup/nexus-$(date +%Y%m%d-%H%M%S).sql.gz
+              mc cp /backup/nexus-*.sql.gz minio/backups/postgres/
+              find /backup -name "nexus-*.sql.gz" -mtime +30 -delete</code></pre>
+</div></details>
+
+<details><summary>4.8 ResourceQuota + PodDisruptionBudget</summary><div class="detail-body">
+<pre><code># 租户配额
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tenant-quota-shared
+  namespace: nexus-exec-shared
+spec:
+  hard:
+    requests.cpu: "32"
+    requests.memory: 64Gi
+    pods: "50"
+---
+# PDB（控制面不可同时不可用）
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-pdb
+  namespace: nexus-control
+spec:
+  maxUnavailable: 0
+  selector:
+    matchLabels: {app: postgres, role: primary}</code></pre>
+</div></details>
+</section>
+
+<section id="s5">
+<h2>5. 运维流程</h2>
+
+<h3>5.1 发布流程</h3>
+<div class="callout">开发 → CI(测试+镜像构建) → 推送镜像 → 更新 GitOps 仓库 → ArgoCD 检测 → diff审批 → 同步 → 金丝雀(10%) → 验证 → 全量 → 异常回滚</div>
+
+<h3>5.2 沙箱生命周期</h3>
+<ol>
+<li>warm pool 控制器维持 N 个空闲 Pod</li>
+<li>任务到达 → controller 选取空闲 Pod → 注入 config/凭据/AGENTS.md</li>
+<li>initContainer 自检 → 通过 → 启动 codex app-server</li>
+<li>事件流回传 → 控制面消费 → 写 Postgres → 推 WS</li>
+<li>任务完成 → 上传 rollout → 结算 → 审计</li>
+<li>Pod 销毁 → Secret/CM 回收 → warm pool 补充</li>
+</ol>
+
+<h3>5.3 故障应急</h3>
+<table>
+<tr><th>场景</th><th>检测</th><th>响应</th></tr>
+<tr><td>沙箱Pod OOM</td><td>liveness失败</td><td>重启→持续则驱逐节点</td></tr>
+<tr><td>PG主库宕机</td><td>复制延迟告警</td><td>提升只读副本→更新Service</td></tr>
+<tr><td>网络策略误配</td><td>跨租户越权告警</td><td>隔离ns→紧急修复→红队验证</td></tr>
+<tr><td>镜像投毒</td><td>Trivy扫描</td><td>阻止部署→下架→审计</td></tr>
+<tr><td>模型API限流</td><td>4xx/5xx</td><td>降级备模型→排队→告知用户</td></tr>
+</table>
+</section>
+
+<section id="s6">
+<h2>6. 与八层架构对齐</h2>
+<table>
+<tr><th>层</th><th>K8s 对应</th><th>运维职责</th></tr>
+<tr><td>L1 接入</td><td>Ingress + Cert-Manager</td><td>TLS轮转、域名管理</td></tr>
+<tr><td>L2 网关</td><td>Deployment(API Gateway)+HPA</td><td>流量管理、限流</td></tr>
+<tr><td>L3 控制面</td><td>Deployment(Temporal等)+HPA</td><td>编排、策略下发</td></tr>
+<tr><td>L4 执行面</td><td>Pod(sandbox)+warm pool+NetworkPolicy</td><td>沙箱调度、自检、销毁</td></tr>
+<tr><td>L5 Harness</td><td>容器内 codex app-server</td><td>镜像构建、版本管理</td></tr>
+<tr><td>L6 模型</td><td>Deployment(Model Gateway)</td><td>模型路由、故障转移</td></tr>
+<tr><td>L7 存储</td><td>StatefulSet(PG/Redis/MinIO)+CronJob</td><td>备份灾备、容量</td></tr>
+<tr><td>贯穿安全</td><td>NetworkPolicy+Seccomp+PSA+KMS</td><td>红队、密钥轮转</td></tr>
+</table>
+</section>
+
+<section id="s7">
+<h2>7. 验收清单</h2>
+<table>
+<tr><th>#</th><th>验收项</th><th>方法</th></tr>
+<tr><td>1</td><td>控制面3副本跨AZ部署</td><td>kubectl get pods -o wide</td></tr>
+<tr><td>2</td><td>HPA生效(CPU&gt;70%扩容)</td><td>压测+kubectl get hpa</td></tr>
+<tr><td>3</td><td>warm pool维持N空闲Pod</td><td>kubectl get pods -l nexus.io/status=warm</td></tr>
+<tr><td>4</td><td>冷启动&lt;5s</td><td>端到端计时</td></tr>
+<tr><td>5</td><td>沙箱自检阻断不合规Pod</td><td>故意配错→自检失败</td></tr>
+<tr><td>6</td><td>NetworkPolicy阻断出站</td><td>curl非白名单超时</td></tr>
+<tr><td>7</td><td>PG流复制可用</td><td>主库写→只读读一致</td></tr>
+<tr><td>8</td><td>备份可恢复</td><td>velero restore+校验</td></tr>
+<tr><td>9</td><td>OTel trace全链路</td><td>span完整(用户→模型)</td></tr>
+<tr><td>10</td><td>跨租户越权告警</td><td>红队演练→P0触发</td></tr>
+<tr><td>11</td><td>GitOps发布+回滚</td><td>ArgoCD发布+rollback</td></tr>
+<tr><td>12</td><td>三档隔离矩阵验证</td><td>共享/专属/私有各一次</td></tr>
+</table>
+</section>
+
+</main>
+</div>
+<script>
+function toggleTheme(){
+  const h=document.documentElement;
+  h.dataset.theme = h.dataset.theme==='dark'?'light':'dark';
+  localStorage.setItem('nexus-theme',h.dataset.theme);
+}
+const saved=localStorage.getItem('nexus-theme');
+if(saved)document.documentElement.dataset.theme=saved;
+
+// TOC generation
+const sections=document.querySelectorAll('section[id]');
+const toc=document.getElementById('toc');
+sections.forEach(s=>{
+  const h=s.querySelector('h2');
+  if(h){
+    const a=document.createElement('a');
+    a.href='#'+s.id;
+    a.textContent=h.textContent.replace(/^\d+\.\s*/,'').substring(0,20);
+    a.dataset.target=s.id;
+    toc.appendChild(a);
+  }
+});
+
+// Scroll progress + TOC highlight
+const progress=document.getElementById('progress');
+const tocLinks=document.querySelectorAll('nav.toc a');
+window.addEventListener('scroll',()=>{
+  const h=document.documentElement;
+  const pct=h.scrollTop/(h.scrollHeight-h.clientHeight)*100;
+  progress.style.width=pct+'%';
+  // highlight current
+  let current='';
+  sections.forEach(s=>{
+    if(s.offsetTop-140<=h.scrollTop)current=s.id;
+  });
+  tocLinks.forEach(a=>{
+    a.classList.toggle('active',a.dataset.target===current);
+  });
+});
+</script>
+</body>
+</html>

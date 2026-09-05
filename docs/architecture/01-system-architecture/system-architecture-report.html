@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus 系统架构设计方案 · 交互报告</title>
+<style>
+:root{--bg:#0b141a;--panel:#13242e;--panel2:#173341;--text:#e8f2f0;--muted:#9db8b4;--line:#24414e;--accent:#35c2b0;--gold:#e8b64c;--blue:#3b82f6;--red:#ef4444;--code-bg:#0d1b20}
+[data-theme="light"]{--bg:#f6f8f9;--panel:#fff;--panel2:#eef2f4;--text:#16202a;--muted:#5a6b72;--line:#d4dde0;--accent:#028090;--gold:#b07d1a;--blue:#2563eb;--red:#dc2626;--code-bg:#f1f3f4}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px}
+.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--gold));z-index:1000;width:0}
+header{padding:32px 40px 16px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
+header h1{color:var(--accent);font-size:24px;margin-bottom:4px}
+header .sub{color:var(--muted);font-size:13px}
+.theme-btn{position:absolute;right:40px;top:30px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px}
+.theme-btn:hover{border-color:var(--accent)}
+.layout{display:flex;max-width:1600px;margin:0 auto}
+nav.toc{width:240px;position:sticky;top:120px;height:calc(100vh-140px);overflow-y:auto;padding:24px 12px;flex-shrink:0}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;font-size:13px;padding:5px 12px;border-radius:6px;border-left:2px solid transparent}
+nav.toc a:hover,nav.toc a.active{color:var(--accent);background:var(--panel);border-left-color:var(--accent)}
+main{flex:1;padding:24px 40px;min-width:0}
+section{margin-bottom:48px;padding-bottom:16px;border-bottom:1px dashed var(--line)}
+section:last-child{border-bottom:none}
+h2{color:var(--accent);font-size:20px;margin-bottom:14px;padding-bottom:6px;border-bottom:2px solid var(--accent)}
+h3{color:var(--gold);font-size:16px;margin:18px 0 10px}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;background:var(--panel)}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--panel2);color:var(--accent);font-weight:600}
+img.diagram{width:100%;border:1px solid var(--line);border-radius:10px;margin:14px 0;background:var(--panel)}
+.cap{color:var(--muted);font-size:12px;text-align:center;margin-top:-6px;margin-bottom:14px}
+code{background:var(--code-bg);padding:2px 6px;border-radius:4px;font-family:Consolas,monospace;font-size:12.5px;color:var(--gold)}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;margin:12px 0}
+pre code{background:none;padding:0;color:var(--text);font-size:12.5px}
+details{border:1px solid var(--line);border-radius:8px;margin:10px 0;background:var(--panel)}
+summary{cursor:pointer;padding:10px 14px;font-weight:600;color:var(--accent);user-select:none}
+summary:hover{background:var(--panel2);border-radius:8px}
+details[open] summary{border-bottom:1px solid var(--line)}
+.detail-body{padding:12px 14px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.b-codex{background:rgba(53,194,176,.18);color:var(--accent)}
+.b-self{background:rgba(232,182,76,.18);color:var(--gold)}
+.b-partial{background:rgba(59,130,246,.18);color:var(--blue)}
+.b-danger{background:rgba(239,68,68,.18);color:var(--red)}
+.callout{border-left:4px solid var(--accent);background:var(--panel);padding:12px 16px;margin:14px 0;border-radius:0 8px 8px 0}
+.callout.gold{border-color:var(--gold)}
+.callout.red{border-color:var(--red)}
+.callout.blue{border-color:var(--blue)}
+ul,ol{margin:8px 0 8px 22px}
+li{margin:4px 0}
+@media(max-width:980px){.layout{flex-direction:column}nav.toc{position:static;width:auto;height:auto}}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<header>
+  <h1>Nexus 企业级 AI Agent 平台 · 系统架构设计方案</h1>
+  <div class="sub">基于 OpenAI Codex Harness（codex-rs 106 crate）· 控制平面/执行平面分离 · 任务二-1</div>
+  <button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+</header>
+<div class="layout">
+<nav class="toc" id="toc"></nav>
+<main>
+
+<section id="s0">
+<h2>0. 架构判断（结论先行）</h2>
+<div class="callout gold"><strong>一句话</strong>：Codex Harness 给的是「单用户、本地、可打断的 Agent 引擎」；Nexus 要建的是「让这台引擎变成多租户、可计量、可审计、崩溃不丢会话的企业服务」。前者是执行内核（L5），后者是控制平面（L1–L4 + L6–L7），两者必须严格分离，且不改内核。</div>
+<h3>五个决定成败的设计判断</h3>
+<table>
+<tr><th>#</th><th>判断</th><th>理由</th></tr>
+<tr><td>1</td><td>必须走 <code>app-server</code>（JSON-RPC）集成</td><td>只有 app-server 提供长生命周期 Thread、双向事件流、<code>turn/interrupt</code>、协议级审批回写、<code>thread/resume/fork/revert</code></td></tr>
+<tr><td>2</td><td>会话真相在云端 DB，Harness 只持有"可重建的执行态"</td><td>控制面消费 app-server 事件流写 Postgres，rollout 同步对象存储，Pod 死不丢会话</td></tr>
+<tr><td>3</td><td>沙箱内零长期密钥</td><td>短期、按任务绑定、可撤销令牌；模型调用经 Model Gateway，MCP 凭据由 MCP Gateway 侧车注入</td></tr>
+<tr><td>4</td><td>权限分三层，execpolicy 是天然政策下发载体</td><td>平台身份→工作区/环境→工具与命令；Codex execpolicy（Starlark）+ approval_policy + sandbox.mode 承接第三层</td></tr>
+<tr><td>5</td><td>不改 Harness 内核</td><td>上游日均 10+ commit、106 crate；配置驱动+事件桥接+外壳包装</td></tr>
+</table>
+</section>
+
+<section id="s1">
+<h2>1. 八层分层架构</h2>
+<p>Nexus 采用「控制平面/执行平面物理分离」的八层架构。L1–L3 与 L6–L7 自建，L4 是自建外壳，L5 复用 Codex Harness（黑盒不改）。</p>
+<img class="diagram" src="system-architecture.svg" alt="八层分层架构">
+<div class="cap">图 1 · 八层分层架构（L1-L3/L6-L7 自建，L4 薄壳，L5 复用 Codex Harness 黑盒）</div>
+<details open><summary>八层职责速览</summary><div class="detail-body">
+<table>
+<tr><th>层</th><th>职责</th><th>复用</th></tr>
+<tr><td>L1 接入层</td><td>Web 门户 · IM Bot(飞书/钉钉/企微/Slack) · IDE 插件 · OpenAPI+Webhook · CLI</td><td><span class="badge b-self">自建</span></td></tr>
+<tr><td>L2 网关层</td><td>API Gateway · WS 网关 · 认证中间件(OIDC/SAML/SCIM) · 限流</td><td><span class="badge b-self">自建</span></td></tr>
+<tr><td>L3 控制面</td><td>身份租户 · 任务编排(Temporal) · 审批中心 · 策略中心 · 配额计费 · 连接器治理 · 知识库/RAG</td><td><span class="badge b-self">自建核心</span></td></tr>
+<tr><td>L4 执行面</td><td>Runtime 池 · 沙箱 Pod · MCP Gateway 侧车 · Workspace 供给 · 凭据代理</td><td><span class="badge b-partial">薄壳+复用</span></td></tr>
+<tr><td>L5 Harness</td><td>Agent Loop(run_turn七阶段) · Tool Router · ExecPolicy · OS 沙箱 · 压缩 · Skills/Hooks</td><td><span class="badge b-codex">黑盒不改</span></td></tr>
+<tr><td>L6 模型层</td><td>Model Gateway · 多模型路由 · Responses 代理 · Token 计量</td><td><span class="badge b-partial">部分复用</span></td></tr>
+<tr><td>L7 存储</td><td>Postgres(RLS+分区) · 对象存储 · 向量库 · 审计(WORM) · OTel · 评测</td><td><span class="badge b-self">自建</span></td></tr>
+<tr><td>贯穿</td><td>租户隔离(四重取证) · KMS(按租户CMK) · 网络策略 · 审计 · 内容安全 · 红队</td><td><span class="badge b-danger">自建</span></td></tr>
+</table>
+</div></details>
+</section>
+
+<section id="s2">
+<h2>2. 控制平面 / 执行平面物理切分</h2>
+<p>这是整个架构里<strong>最关键的一条线</strong>：长期有状态多租户控制面 ↔ 一次性单任务可销毁执行面，仅经 app-server 协议与对象存储通信。</p>
+<img class="diagram" src="control-execution-plane.svg" alt="控制/执行平面切分">
+<div class="cap">图 2 · 控制平面/执行平面物理切分（三重取证：网络策略+独立密钥+独立存储前缀）</div>
+<div class="callout red"><strong>为什么必须物理切分</strong>：沙箱一定跑不受信代码（依赖安装、用户脚本、MCP 子进程 stdio）——放进控制面等于把整个平台暴露；沙箱生命周期是分钟到小时级，控制面是年计；只有物理隔离才能对"租户 A 的 Agent 拿到租户 B 的数据"给出可验证答案。</div>
+<details><summary>六条设计原则</summary><div class="detail-body">
+<ol>
+<li><strong>控制/执行分离</strong>：控制面长期有状态、多租户、强一致；执行面无状态、一次性、可随时销毁</li>
+<li><strong>Harness 不持有企业真相</strong>：租户/权限/凭据/计费/审计全在控制面</li>
+<li><strong>事件即事实</strong>：所有对用户可见状态都来自 app-server 事件流；前端不直连 Harness</li>
+<li><strong>默认最小权限</strong>：新租户默认只读沙箱+全量审批；权限只能显式提升</li>
+<li><strong>可重建优于高可用</strong>：任何 Pod 死亡都能从云端状态重建</li>
+<li><strong>配置即政策</strong>：租户差异表达为下发的 config.toml + execpolicy 规则集</li>
+</ol>
+</div></details>
+</section>
+
+<section id="s3">
+<h2>3. 一次任务完整生命周期（13 步）</h2>
+<img class="diagram" src="task-lifecycle.svg" alt="13步生命周期">
+<div class="cap">图 3 · 13 步任务生命周期（Pod 随时可死，云端状态可重建 resume）</div>
+<details><summary>逐步说明</summary><div class="detail-body">
+<table>
+<tr><th>步</th><th>动作</th><th>关键设计点</th></tr>
+<tr><td>①</td><td>客户端提交任务</td><td>幂等键 <code>Idempotency-Key</code>，避免重复计费</td></tr>
+<tr><td>②</td><td>鉴权+策略求值+配额预扣</td><td>先扣后跑防超卖；策略快照入任务上下文防漂移</td></tr>
+<tr><td>③</td><td>调度沙箱 Pod</td><td>注入 config.toml、execpolicy、短期令牌；Workspace 由快照/克隆生成</td></tr>
+<tr><td>④</td><td>启动 app-server，下发 rollout 恢复</td><td>首次 <code>thread/start</code>；恢复先下载 rollout 再 <code>thread/resume</code></td></tr>
+<tr><td>⑤</td><td>模型采样</td><td>沙箱出站只到 Model Gateway，令牌按任务绑定</td></tr>
+<tr><td>⑥</td><td>app-server 回吐事件流</td><td><code>turn/started</code>、<code>item/*</code>、text delta、工具进度、审批请求</td></tr>
+<tr><td>⑦</td><td>控制面消费事件→写云端 Postgres+WS 推前端</td><td>会话持久化主通道；先落库后推，可回放</td></tr>
+<tr><td>⑧</td><td>审批请求→落 ApprovalTicket→推用户</td><td>最复杂桥接</td></tr>
+<tr><td>⑨</td><td>用户决策回写→app-server 继续</td><td>决策先落库再回写，宕机可重放</td></tr>
+<tr><td>⑩</td><td>工具执行</td><td>shell 走 execpolicy+OS 沙箱；MCP 走 Gateway 注入凭据；都记 Item</td></tr>
+<tr><td>⑪</td><td>上下文将满→auto compact</td><td>复用 Harness 压缩；压缩前完整上下文已落云端可回溯</td></tr>
+<tr><td>⑫</td><td><code>turn/completed</code>→产物与 rollout 上传对象存储</td><td>产物扫描后才对用户可见</td></tr>
+<tr><td>⑬</td><td>用量结算+审计→Pod 销毁</td><td>归还配额、写 usage、审计留痕；会话留云端可随时 resume</td></tr>
+</table>
+</div></details>
+</section>
+
+<section id="s4">
+<h2>4. 六个硬骨头专题</h2>
+<details open><summary>4.1 会话云端持久化：三写一致与 resume</summary><div class="detail-body">
+<div class="callout">以控制面写入为准，Harness 本地状态视为"可丢弃缓存"。</div>
+<p><strong>幂等</strong>：<code>thread_id+turn_id+item_seq</code> 唯一键，重复事件丢弃。<strong>顺序</strong>：维护期望 seq；缺口→暂停推送、拉 rollout 补齐。<strong>不阻塞 Harness</strong>：写库失败不反压 app-server；降级本地队列+告警。<strong>大字段</strong>：shell 输出/diff 超 64KB 只存对象存储引用+摘要。<strong>resume</strong>：新 Pod→下载 rollout→<code>thread/resume</code>；新事件 seq 从云端最大值继续。</p>
+</div></details>
+<details><summary>4.2 权限模型：三层授权</summary><div class="detail-body">
+<pre><code>第一层 平台身份层  用户/服务账号/Agent 身份，SSO+SCIM+RBAC/ABAC
+         ↓（能不能进这个工作区）
+第二层 工作区层    仓库、数据集、连接器、知识库范围；环境标签 prod/staging
+         ↓（这个环境里能碰什么）
+第三层 工具与命令层 execpolicy 规则 + approval_policy + MCP 白名单 + sandbox.mode
+         ↓（具体能执行什么动作）
+     执行，并全量记录</code></pre>
+<p><strong>四层交集规则</strong>：<code>Agent 可用权限 = 用户权限 ∩ 工作区权限 ∩ Agent 角色上限 ∩ 策略中心允许</code></p>
+</div></details>
+<details><summary>4.3 审批流：跨进程 HITL 桥接（最复杂）</summary><div class="detail-body">
+<p>app-server 发审批请求事件 → 适配层创建 <code>ApprovalTicket(pending)</code>（含工具名/参数脱敏/diff预览/风险/上下文快照）→ 推 Web/IM/邮件 → 用户决策 → <strong>先落库(decided)再回写</strong> → app-server 继续/中止。</p>
+<p>六个边界：Pod 等待时崩溃（DB 存状态，item_seq 去重，已决策直接重放）、审批超时（默认拒绝）、审批期间权限撤销（决策时重校验）、修改参数后批准（重新走策略求值）、批量相似请求（作用域有限定）、审计（请求快照+决策人+时间+理由不可篡改）。</p>
+</div></details>
+<details><summary>4.4 多租户隔离三档矩阵</summary><div class="detail-body">
+<table>
+<tr><th>档位</th><th>隔离方式</th><th>适用</th><th>成本</th></tr>
+<tr><td>共享池</td><td>逻辑隔离（namespace+行级 tenant_id+网络策略）</td><td>中小客户、非敏感</td><td>低</td></tr>
+<tr><td>专属池</td><td>独立节点池+独立命名空间+独立密钥</td><td>大客户、合规要求</td><td>中</td></tr>
+<tr><td>私有化</td><td>独立 VPC/独立集群/数据不出域</td><td>金融、政务、国企</td><td>高</td></tr>
+</table>
+<p><strong>四重取证</strong>：逻辑（Postgres RLS 兜底）+ 运行时（namespace+节点亲和+NetworkPolicy）+ 密钥（按租户 CMK，禁用后不可解密）+ 存储（按租户前缀+独立桶策略）。季度跨租户越权红队演练。</p>
+</div></details>
+<details><summary>4.5 沙箱内零长期密钥 / 4.6 成本控制</summary><div class="detail-body">
+<p><strong>零长期密钥</strong>：模型 API Key 绝不进沙箱（只到 Model Gateway）；MCP 凭据 MCP Gateway 侧车持有；Git 凭据凭据代理+只读分支；云厂商 AK/SK 用 IRSA/Workload Identity 换短期凭证。</p>
+<p><strong>沙箱启动自检清单</strong>：Landlock/seccomp/Seatbelt 可用性 ✓ · 出站仅两白名单地址 ✓ · 镜像无长期密钥 ✓ · 只读 rootfs+非 root ✓ · 资源限额生效 ✓（自检不过禁止调度生产任务）。</p>
+<p><strong>成本控制</strong>：模型分档路由 · Prompt Caching · 复用 Harness 压缩（保留推理轨迹）· 步数与预算上限 · 沙箱空闲超时回收 · 缓存任务结果 · 归因看板。</p>
+</div></details>
+</section>
+
+<section id="s5">
+<h2>5. 技术选型与实施路线图</h2>
+<details><summary>技术选型表</summary><div class="detail-body">
+<table>
+<tr><th>领域</th><th>方案</th><th>理由</th></tr>
+<tr><td>Agent 内核</td><td>Codex Harness（app-server）</td><td>Apache-2.0、生产验证、沙箱与策略引擎现成</td></tr>
+<tr><td>集成方式</td><td>app-server JSON-RPC</td><td>唯一支持长会话+事件流+中断+审批回写</td></tr>
+<tr><td>编排引擎</td><td>Temporal/Cadence</td><td>审批跨小时，需可持久化可恢复 Workflow</td></tr>
+<tr><td>主库</td><td>PostgreSQL（RLS+分区）</td><td>RLS 是租户隔离最后兜底</td></tr>
+<tr><td>对象存储</td><td>S3/MinIO（按租户前缀+CMK）</td><td>rollout/产物按租户加密隔离</td></tr>
+<tr><td>命令策略</td><td>Codex execpolicy（Starlark）</td><td>规则语言与求值器已与会话层解耦</td></tr>
+<tr><td>可观测</td><td>OpenTelemetry + ClickHouse + Grafana</td><td>trace 串"用户→任务→工具→模型"</td></tr>
+</table>
+</div></details>
+<details><summary>四阶段实施路线</summary><div class="detail-body">
+<table>
+<tr><th>阶段</th><th>周期</th><th>验收</th></tr>
+<tr><td>0. PoC</td><td>4 周</td><td>一任务端到端跑通，会话可新 Pod 恢复</td></tr>
+<tr><td>1. 单租户 MVP</td><td>M1-M4</td><td>P0 完成率 ≥ 70%</td></tr>
+<tr><td>2. 多租户与隔离</td><td>M5-M7</td><td>跨租户越权演练 0 通过</td></tr>
+<tr><td>3. 可靠性与治理</td><td>M8-M10</td><td>任务成功率 ≥ 85%</td></tr>
+<tr><td>4. 规模化与生态</td><td>M11-M12+</td><td>100+ 并发稳定</td></tr>
+</table>
+</div></details>
+</section>
+
+<section id="s6">
+<h2>6. 八条高危反模式</h2>
+<table>
+<tr><th>反模式</th><th>后果</th><th>正解</th></tr>
+<tr><td>前端直连 Harness</td><td>绕过审计配额</td><td>所有流量经网关</td></tr>
+<tr><td>API Key 打进沙箱镜像</td><td>逃逸=全量泄漏</td><td>短期令牌+Gateway</td></tr>
+<tr><td>改 Harness 内核实现企业特性</td><td>数周无法跟随上游</td><td>配置驱动+事件桥接</td></tr>
+<tr><td>用 LLM 判权限</td><td>提示注入即提权</td><td>权限判定用代码策略</td></tr>
+<tr><td>只做逻辑隔离</td><td>一个 SQL 注入跨租户</td><td>四重隔离</td></tr>
+<tr><td>审批状态存 Harness</td><td>Pod 崩审批丢</td><td>控制面一等资源先落库</td></tr>
+<tr><td>会话只存本地 rollout</td><td>机器故障全丢</td><td>事件流落云端为真相</td></tr>
+<tr><td>先做通用助手再找场景</td><td>无切换价值</td><td>绑定高价值场景切入</td></tr>
+</table>
+</section>
+
+<section id="s7">
+<h2>7. 配套产物索引</h2>
+<table>
+<tr><th>产物</th><th>文件</th></tr>
+<tr><td>详细方案</td><td><code>system-architecture.md</code></td></tr>
+<tr><td>八层分层架构图</td><td><code>system-architecture.svg</code> / <code>.png</code></td></tr>
+<tr><td>控制/执行平面切分图</td><td><code>control-execution-plane.svg</code> / <code>.png</code></td></tr>
+<tr><td>13 步生命周期图</td><td><code>task-lifecycle.svg</code> / <code>.png</code></td></tr>
+<tr><td>SVG 生成脚本</td><td><code>_gen_svg.py</code></td></tr>
+</table>
+<div class="callout blue">本方案与 <code>../Nexus 基于CodexHarness的企业级Agent平台_系统设计与实施路线图.md</code> 对齐，为其工程化落地版。</div>
+</section>
+
+</main>
+</div>
+<script>
+function toggleTheme(){const h=document.documentElement;h.dataset.theme=h.dataset.theme==='dark'?'light':'dark';localStorage.setItem('theme',h.dataset.theme)}
+(function(){const t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t})();
+const sections=[...document.querySelectorAll('main section')];
+const toc=document.getElementById('toc');
+sections.forEach(s=>{const h=s.querySelector('h2');if(!h)return;const a=document.createElement('a');a.href='#'+s.id;a.textContent=h.textContent.replace(/^\d+\.\s*/,'');toc.appendChild(a);s.querySelectorAll('h3').forEach(h3=>{h3.id='h-'+Math.random().toString(36).slice(2,7);const sa=document.createElement('a');sa.className='sub';sa.href='#'+h3.id;sa.textContent='↳ '+h3.textContent;toc.appendChild(sa)})});
+const prog=document.getElementById('progress');
+window.addEventListener('scroll',()=>{const st=window.scrollY;const dh=document.documentElement.scrollHeight-window.innerHeight;prog.style.width=(st/dh*100)+'%';let cur=sections[0];sections.forEach(s=>{if(s.offsetTop<=st+120)cur=s});toc.querySelectorAll('a').forEach(a=>a.classList.remove('active'));const a=toc.querySelector('a[href="#'+cur.id+'"]');if(a)a.classList.add('active')});
+</script>
+</body>
+</html>

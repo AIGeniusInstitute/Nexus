@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus 全部系统 API 清单 · 交互报告</title>
+<style>
+:root[data-theme="dark"]{
+  --bg:#0b141a;--panel:#13242e;--panel2:#173341;--text:#e8f2f0;--muted:#9db8b4;
+  --line:#24414e;--line2:#2e5a68;--accent:#35c2b0;--accent2:#028090;--gold:#e8b64c;
+  --blue:#3b82f6;--red:#ef4444;--purple:#a855f7;--code-bg:#0d1a20;--border:#24414e;
+  --table-hover:#1a3540;--link:#35c2b0;--shadow:0 4px 12px rgba(0,0,0,0.3);
+}
+:root[data-theme="light"]{
+  --bg:#f7f9fa;--panel:#ffffff;--panel2:#f0f4f6;--text:#1a2a2e;--muted:#5a7080;
+  --line:#d0dde2;--line2:#c0d0d6;--accent:#028090;--accent2:#02606e;--gold:#b8860b;
+  --blue:#2563eb;--red:#dc2626;--purple:#9333ea;--code-bg:#f0f4f6;--border:#d0dde2;
+  --table-hover:#e8f0f4;--link:#028090;--shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.6;font-size:14px}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+#progress-bar{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:9999;transition:width 0.1s}
+#theme-toggle{position:fixed;top:16px;right:20px;z-index:1000;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px}
+#theme-toggle:hover{background:var(--panel2)}
+.layout{display:flex;max-width:1600px;margin:0 auto}
+.sidebar{width:280px;position:fixed;top:0;left:0;height:100vh;overflow-y:auto;background:var(--panel);border-right:1px solid var(--border);padding:20px 12px;z-index:100}
+.sidebar h3{color:var(--accent);font-size:13px;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
+.sidebar ul{list-style:none;margin-bottom:16px}
+.sidebar li a{display:block;padding:4px 10px;color:var(--muted);font-size:12.5px;border-radius:4px;transition:all 0.2s}
+.sidebar li a:hover{color:var(--text);background:var(--panel2)}
+.sidebar li a.active{color:var(--accent);font-weight:600;background:var(--panel2)}
+.main{margin-left:280px;padding:40px 48px;flex:1;min-width:0}
+.hero{margin-bottom:40px}
+.hero h1{font-size:28px;color:var(--accent);margin-bottom:8px}
+.hero p{color:var(--muted);font-size:15px}
+.hero .meta{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+.hero .meta span{background:var(--panel2);padding:4px 12px;border-radius:20px;font-size:12px;color:var(--muted)}
+.section{margin-bottom:48px}
+.section h2{font-size:22px;color:var(--accent);border-bottom:2px solid var(--border);padding-bottom:8px;margin-bottom:20px}
+.section h3{font-size:17px;color:var(--text);margin:24px 0 12px}
+.section h4{font-size:15px;color:var(--accent2);margin:16px 0 8px}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:20px;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--panel2);color:var(--accent);font-weight:600;text-align:left;padding:10px 12px;white-space:nowrap;border-bottom:1px solid var(--border)}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top}
+tr:hover td{background:var(--table-hover)}
+tr:last-child td{border-bottom:none}
+code{background:var(--code-bg);padding:2px 6px;border-radius:3px;font-family:'SF Mono','Fira Code',monospace;font-size:12px;color:var(--gold)}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-reuse{background:rgba(53,194,176,0.15);color:var(--accent);border:1px solid var(--accent)}
+.badge-nexus{background:rgba(59,130,246,0.15);color:var(--blue);border:1px solid var(--blue)}
+.badge-exp{background:rgba(232,182,76,0.15);color:var(--gold);border:1px solid var(--gold)}
+.badge-s2c{background:rgba(168,85,247,0.15);color:var(--purple);border:1px solid var(--purple)}
+.badge-dep{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid var(--red)}
+details{margin-bottom:12px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--panel)}
+summary{padding:12px 16px;cursor:pointer;font-weight:600;color:var(--accent);user-select:none;display:flex;align-items:center;gap:8px}
+summary::before{content:'▶';font-size:10px;transition:transform 0.2s}
+details[open] summary::before{transform:rotate(90deg)}
+details[open] summary{border-bottom:1px solid var(--border)}
+.detail-content{padding:16px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;box-shadow:var(--shadow)}
+.stat-card .num{font-size:32px;font-weight:700;color:var(--accent)}
+.stat-card .label{color:var(--muted);font-size:12px;margin-top:4px}
+.img-wrap{margin:20px 0;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:var(--shadow)}
+.img-wrap img{width:100%;height:auto;display:block}
+.img-wrap .cap{padding:8px 12px;background:var(--panel2);color:var(--muted);font-size:12px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.legend-color{width:14px;height:10px;border-radius:2px}
+pre{background:var(--code-bg);padding:14px;border-radius:6px;overflow-x:auto;font-size:12px;line-height:1.5;border:1px solid var(--border)}
+.json-key{color:var(--blue)}
+.json-str{color:var(--gold)}
+.json-bool{color:var(--purple)}
+.note{background:var(--panel2);border-left:3px solid var(--accent);padding:12px 16px;border-radius:0 6px 6px 0;margin:12px 0;font-size:13px}
+.note.warn{border-left-color:var(--gold)}
+.note.danger{border-left-color:var(--red)}
+@media(max-width:1024px){.sidebar{display:none}.main{margin-left:0;padding:20px}}
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+<button id="theme-toggle" onclick="toggleTheme()">🌙 Dark</button>
+<div class="layout">
+<aside class="sidebar" id="toc">
+  <h3>导航</h3>
+  <ul>
+    <li><a href="#overview" class="active">概览</a></li>
+    <li><a href="#lane-a">A. Codex JSON-RPC</a></li>
+    <li><a href="#a-lifecycle">A.1 生命周期</a></li>
+    <li><a href="#a-thread">A.2 Thread</a></li>
+    <li><a href="#a-sections">A.4 Sections/Queue/Goal</a></li>
+    <li><a href="#a-turn">A.6 Turn</a></li>
+    <li><a href="#a-events">A.7 事件通知</a></li>
+    <li><a href="#a-approvals">A.8 审批 HITL</a></li>
+    <li><a href="#a-tools">A.9 工具/FS/MCP</a></li>
+    <li><a href="#a-config">A.10 配置/账户</a></li>
+    <li><a href="#a-errors">A.11 错误码</a></li>
+  </ul>
+  <h3>REST API</h3>
+  <ul>
+    <li><a href="#lane-b">B. Nexus REST</a></li>
+    <li><a href="#b-auth">B.1 认证</a></li>
+    <li><a href="#b-tenant">B.2 租户/RBAC</a></li>
+    <li><a href="#b-workspace">B.3 工作区</a></li>
+    <li><a href="#b-threads">B.4 会话</a></li>
+    <li><a href="#b-approvals">B.5 审批</a></li>
+    <li><a href="#b-connectors">B.6 连接器</a></li>
+    <li><a href="#b-usage">B.7 计量/审计</a></li>
+    <li><a href="#b-kb">B.8 知识库</a></li>
+  </ul>
+  <h3>Webhook/WS</h3>
+  <ul>
+    <li><a href="#lane-c">C. Webhook/WS</a></li>
+    <li><a href="#c-webhook">C.1 Webhook</a></li>
+    <li><a href="#c-ws">C.3 WebSocket</a></li>
+    <li><a href="#c-sse">C.4 SSE 降级</a></li>
+  </ul>
+  <h3>设计</h3>
+  <ul>
+    <li><a href="#auth-design">鉴权与幂等</a></li>
+    <li><a href="#rate-limits">速率限制</a></li>
+  </ul>
+</aside>
+
+<main class="main">
+<div class="hero">
+  <h1>Nexus 企业级 AI Agent 平台 · 全部系统 API 清单</h1>
+  <p>维度 05 · API 架构规格 · 三大类 API 全量清单（Codex JSON-RPC 复用 + Nexus REST 自建 + Webhook/WS）</p>
+  <div class="meta">
+    <span>L5 Harness 集成面</span>
+    <span>L2 网关</span>
+    <span>JSON-RPC 2.0</span>
+    <span>REST + WS</span>
+    <span>RBAC + HMAC</span>
+  </div>
+</div>
+
+<div class="section" id="overview">
+  <h2>概览</h2>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="num">~180</div><div class="label">Codex JSON-RPC 方法</div></div>
+    <div class="stat-card"><div class="num">~85</div><div class="label">Nexus REST 路由</div></div>
+    <div class="stat-card"><div class="num">16</div><div class="label">Webhook/WS/SSE 通道</div></div>
+    <div class="stat-card"><div class="num">3</div><div class="label">API 类别</div></div>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>类别</th><th>层级</th><th>协议</th><th>鉴权</th><th>来源</th><th>方法数</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge badge-reuse">A. Codex JSON-RPC</span></td><td>L5 Harness</td><td>JSON-RPC 2.0</td><td>连接级（Pod 内）</td><td>复用 Codex 黑盒</td><td>~180</td></tr>
+      <tr><td><span class="badge badge-nexus">B. Nexus REST</span></td><td>L2 网关</td><td>HTTPS REST</td><td>Bearer JWT + RBAC</td><td>自建</td><td>~85</td></tr>
+      <tr><td><span class="badge badge-exp">C. Webhook/WS</span></td><td>L1/L2</td><td>HTTP 回调 / WS</td><td>HMAC / JWT</td><td>自建</td><td>16</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-color" style="background:#35c2b0"></div>复用 Codex</div>
+    <div class="legend-item"><div class="legend-color" style="background:#3b82f6"></div>Nexus 自建</div>
+    <div class="legend-item"><div class="legend-color" style="background:#e8b64c"></div>实验性</div>
+    <div class="legend-item"><div class="legend-color" style="background:#a855f7"></div>Server→Client 请求</div>
+    <div class="legend-item"><div class="legend-color" style="background:#ef4444"></div>已废弃</div>
+  </div>
+  <div class="img-wrap">
+    <img src="api-overview.svg" alt="Nexus API 总览图">
+    <div class="cap">图 · Nexus 全部系统 API 总览（三大类分泳道）</div>
+  </div>
+</div>
+
+<!-- Lane A -->
+<div class="section" id="lane-a">
+  <h2>A. Codex app-server JSON-RPC API <span class="badge badge-reuse">L5 复用</span></h2>
+  <p style="color:var(--muted)">源码：<code>~/Nexus/codex-rs/app-server/</code> · 文档：<code>~/Nexus/codex-rs/app-server/README.md</code> · 传输：stdio / ws / unix socket · 不对外暴露</p>
+</div>
+
+<div class="section" id="a-lifecycle">
+  <h3>A.1 生命周期 Lifecycle</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>方法</th><th>方向</th><th>参数</th><th>响应</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>initialize</code></td><td>Client→Server</td><td><code>clientInfo{name,title,version}</code>, <code>capabilities{experimentalApi, optOutNotificationMethods, extensions}</code></td><td><code>userAgent, codexHome, platformFamily, platformOs</code></td><td>每连接一次。声明 MCP 扩展</td></tr>
+      <tr><td><code>initialized</code></td><td>Client→Server</td><td>—</td><td>—（通知）</td><td>完成握手</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="section" id="a-thread">
+  <h3>A.2 Thread（会话）API</h3>
+  <details open><summary>Thread 核心 API（25 方法）</summary>
+  <div class="detail-content">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>方法</th><th>说明</th><th>标签</th></tr></thead>
+    <tbody>
+      <tr><td><code>thread/start</code></td><td>创建新会话。支持 ephemeral/permissions/dynamicTools/environments</td><td></td></tr>
+      <tr><td><code>thread/resume</code></td><td>恢复已存会话。excludeTurns 分页模式</td><td></td></tr>
+      <tr><td><code>thread/fork</code></td><td>从已有会话分叉。lastTurnId/beforeTurnId 边界</td><td></td></tr>
+      <tr><td><code>thread/archive</code></td><td>归档会话</td><td></td></tr>
+      <tr><td><code>thread/unarchive</code></td><td>取消归档</td><td></td></tr>
+      <tr><td><code>thread/delete</code></td><td>硬删除会话及后代</td><td></td></tr>
+      <tr><td><code>thread/read</code></td><td>只读读取会话</td><td></td></tr>
+      <tr><td><code>thread/list</code></td><td>分页列举会话。多维度过滤</td><td></td></tr>
+      <tr><td><code>thread/search</code></td><td>搜索会话标题</td><td></td></tr>
+      <tr><td><code>thread/searchOccurrences</code></td><td>会话内搜索文本</td><td><span class="badge badge-exp">实验性</span></td></tr>
+      <tr><td><code>thread/loaded/list</code></td><td>列出内存中已加载会话</td><td></td></tr>
+      <tr><td><code>thread/turns/list</code></td><td>分页列举 turn 历史</td><td></td></tr>
+      <tr><td><code>thread/items/list</code></td><td>分页列举 item</td><td></td></tr>
+      <tr><td><code>thread/inject_items</code></td><td>注入原始 Responses items</td><td></td></tr>
+      <tr><td><code>thread/timeline/list</code></td><td>分页时间线（items + realtime + turn 边界）</td><td><span class="badge badge-exp">实验性</span></td></tr>
+      <tr><td><code>thread/unsubscribe</code></td><td>取消订阅。60s 后卸载</td><td></td></tr>
+      <tr><td><code>thread/rollback</code></td><td>移除最后 N 个 turn</td><td><span class="badge badge-dep">已废弃</span></td></tr>
+      <tr><td><code>thread/revert</code></td><td>恢复到指定 turn 前缀</td><td></td></tr>
+      <tr><td><code>thread/compact/start</code></td><td>触发历史压缩</td><td></td></tr>
+      <tr><td><code>thread/shellCommand</code></td><td>运行用户 ! 命令（unsandboxed）</td><td></td></tr>
+      <tr><td><code>thread/approveGuardianDeniedAction</code></td><td>手动批准 Guardian 拒绝的操作</td><td></td></tr>
+      <tr><td><code>thread/metadata/update</code></td><td>更新元数据</td><td></td></tr>
+      <tr><td><code>thread/name/set</code></td><td>设置会话名称</td><td></td></tr>
+      <tr><td><code>thread/memoryMode/set</code></td><td>设置内存资格</td><td><span class="badge badge-exp">实验性</span></td></tr>
+      <tr><td><code>memory/reset</code></td><td>清除内存数据</td><td><span class="badge badge-exp">实验性</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  </div>
+  </details>
+</div>
+
+<div class="section" id="a-sections">
+  <h3>A.4 Thread Sections / Queue / Goal</h3>
+  <details><summary>展开 16 方法</summary>
+  <div class="detail-content">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>方法</th><th>说明</th><th>标签</th></tr></thead>
+    <tbody>
+      <tr><td><code>threadSection/list</code></td><td>分页列举分区</td><td></td></tr>
+      <tr><td><code>threadSection/create</code></td><td>创建自定义分区</td><td></td></tr>
+      <tr><td><code>threadSection/update</code></td><td>重命名/更新分区</td><td></td></tr>
+      <tr><td><code>threadSection/delete</code></td><td>删除分区</td><td></td></tr>
+      <tr><td><code>thread/section/move</code></td><td>移动 thread 到分区</td><td></td></tr>
+      <tr><td><code>thread/settings/update</code></td><td>排队更新设置</td><td><span class="badge badge-exp">实验性</span></td></tr>
+      <tr><td><code>thread/queue/add</code></td><td>排队用户 turn</td><td><span class="badge badge-exp">实验性</span></td></tr>
+      <tr><td><code>thread/queue/list</code></td><td>列出排队 turn</td><td><span class="badge badge-exp">实验性</span></td></tr>
+      <tr><td><code>thread/queue/update</code></td><td>编辑排队 turn</td><td><span class="badge badge-exp">实验性</span></td></tr>
+      <tr><td><code>thread/queue/delete</code></td><td>删除排队 turn</td><td><span class="badge badge-exp">实验性</span></td></tr>
+      <tr><td><code>thread/queue/reorder</code></td><td>替换排队顺序</td><td><span class="badge badge-exp">实验性</span></td></tr>
+      <tr><td><code>thread/queue/start</code></td><td>启动队列 turn</td><td><span class="badge badge-exp">实验性</span></td></tr>
+      <tr><td><code>thread/goal/set</code></td><td>创建/更新目标</td><td></td></tr>
+      <tr><td><code>thread/goal/get</code></td><td>读取目标</td><td></td></tr>
+      <tr><td><code>thread/goal/clear</code></td><td>清除目标</td><td></td></tr>
+    </tbody>
+  </table>
+  </div>
+  </div>
+  </details>
+</div>
+
+<div class="section" id="a-turn">
+  <h3>A.6 Turn（对话轮次）API</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>方法</th><th>参数</th><th>响应</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>turn/start</code></td><td><code>threadId, input[], clientUserMessageId?, model?, effort?, cwd?, permissions?/sandboxPolicy?, approvalPolicy?, outputSchema?</code></td><td><code>{turn{id,status,items[],error}}</code></td><td>发送用户输入启动 Codex 生成</td></tr>
+      <tr><td><code>turn/settings/update</code></td><td><code>threadId, turnId, model?, effort?, serviceTier?</code></td><td><code>{status:"applied"|"targetUnavailable"}</code></td><td>实验性：发布设置到活跃 turn <span class="badge badge-exp">实验性</span></td></tr>
+      <tr><td><code>turn/steer</code></td><td><code>threadId, input[], expectedTurnId</code></td><td><code>{turnId}</code></td><td>向活动 turn 追加输入</td></tr>
+      <tr><td><code>turn/interrupt</code></td><td><code>threadId, turnId</code></td><td><code>{}</code></td><td>取消活动 turn</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="section" id="a-events">
+  <h3>A.7 事件 ServerNotification（服务器推送通知）</h3>
+  <details><summary>Thread 生命周期事件（17 事件）</summary>
+  <div class="detail-content">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>事件</th><th>参数</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>thread/started</code></td><td><code>{thread}</code></td><td>会话启动/分叉/取消归档</td></tr>
+      <tr><td><code>thread/status/changed</code></td><td><code>{threadId, status}</code></td><td>状态：notLoaded/idle/active/systemError</td></tr>
+      <tr><td><code>thread/archived</code></td><td><code>{threadId}</code></td><td>归档</td></tr>
+      <tr><td><code>thread/unarchived</code></td><td><code>{threadId}</code></td><td>取消归档</td></tr>
+      <tr><td><code>thread/closed</code></td><td><code>{threadId}</code></td><td>卸载关闭</td></tr>
+      <tr><td><code>thread/deleted</code></td><td><code>{threadId}</code></td><td>删除</td></tr>
+      <tr><td><code>thread/name/updated</code></td><td><code>{threadId, name}</code></td><td>名称更新</td></tr>
+      <tr><td><code>thread/settings/updated</code></td><td><code>{threadId, threadSettings}</code></td><td>设置变更</td></tr>
+      <tr><td><code>thread/tokenUsage/updated</code></td><td><code>{threadId, tokenUsage}</code></td><td>Token 用量</td></tr>
+      <tr><td><code>thread/goal/updated</code></td><td><code>{threadId, goal}</code></td><td>目标变更</td></tr>
+      <tr><td><code>thread/goal/cleared</code></td><td><code>{threadId}</code></td><td>目标清除</td></tr>
+      <tr><td><code>thread/queue/changed</code></td><td><code>{threadId}</code></td><td>排队 turn 变化</td></tr>
+      <tr><td><code>thread/reverted</code></td><td><code>{threadId}</code></td><td>会话恢复</td></tr>
+      <tr><td><code>thread/environment/connected</code></td><td><code>{threadId, environmentId}</code></td><td>环境连接</td></tr>
+      <tr><td><code>thread/environment/disconnected</code></td><td><code>{threadId, environmentId}</code></td><td>环境断开</td></tr>
+      <tr><td><code>thread/project/updated</code></td><td><code>{...}</code></td><td>项目分配变更</td></tr>
+      <tr><td><code>project/changed</code></td><td><code>{...}</code></td><td>项目提交变更</td></tr>
+    </tbody>
+  </table>
+  </div>
+  </div>
+  </details>
+  <details><summary>Turn 事件（11 事件）</summary>
+  <div class="detail-content">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>事件</th><th>参数</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>turn/started</code></td><td><code>{turn}</code></td><td>Turn 开始运行</td></tr>
+      <tr><td><code>turn/completed</code></td><td><code>{turn}</code></td><td>Turn 完成（completed/interrupted/failed）</td></tr>
+      <tr><td><code>turn/diff/updated</code></td><td><code>{threadId, turnId, diff}</code></td><td>Turn 级统一 diff</td></tr>
+      <tr><td><code>turn/plan/updated</code></td><td><code>{turnId, explanation?, plan[]}</code></td><td>Agent 计划</td></tr>
+      <tr><td><code>turn/moderationMetadata</code></td><td><code>{threadId, turnId, metadata}</code></td><td>审核元数据</td></tr>
+      <tr><td><code>rawResponse/completed</code></td><td><code>{threadId, turnId, responseId, usage}</code></td><td>原始 Responses 完成</td></tr>
+      <tr><td><code>model/safetyBuffering/updated</code></td><td><code>{threadId, turnId, ...}</code></td><td>安全缓冲中</td></tr>
+      <tr><td><code>model/rerouted</code></td><td><code>{threadId, turnId, fromModel, toModel, reason}</code></td><td>模型重新路由</td></tr>
+      <tr><td><code>model/verification</code></td><td><code>{threadId, turnId, verifications}</code></td><td>账户验证</td></tr>
+      <tr><td><code>modelProvider/authRecoveryStarted</code></td><td><code>{threadId, turnId, provider, message}</code></td><td>认证恢复开始</td></tr>
+      <tr><td><code>modelProvider/authRecoveryCompleted</code></td><td><code>{threadId, turnId, provider, message}</code></td><td>认证恢复完成</td></tr>
+    </tbody>
+  </table>
+  </div>
+  </div>
+  </details>
+  <details><summary>Item 事件 + Realtime 事件（25+ 事件）</summary>
+  <div class="detail-content">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>事件</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>item/started</code></td><td>新工作单元开始</td></tr>
+      <tr><td><code>item/completed</code></td><td>工作单元完成（权威结果）</td></tr>
+      <tr><td><code>item/agentMessage/delta</code></td><td>Agent 消息流式文本</td></tr>
+      <tr><td><code>item/plan/delta</code></td><td>Plan 内容流式</td></tr>
+      <tr><td><code>item/reasoning/summaryTextDelta</code></td><td>推理摘要流式</td></tr>
+      <tr><td><code>item/reasoning/summaryPartAdded</code></td><td>推理摘要分段</td></tr>
+      <tr><td><code>item/reasoning/textDelta</code></td><td>原始推理文本流式</td></tr>
+      <tr><td><code>item/commandExecution/outputDelta</code></td><td>命令输出流式</td></tr>
+      <tr><td><code>item/fileChange/patchUpdated</code></td><td>文件变更补丁流式</td></tr>
+      <tr><td><code>item/fileChange/outputDelta</code></td><td><span class="badge badge-dep">已废弃</span> 旧版 apply_patch 输出</td></tr>
+      <tr><td><code>item/autoApprovalReview/started</code></td><td>[不稳定] 自动审批审查开始</td></tr>
+      <tr><td><code>item/autoApprovalReview/completed</code></td><td>[不稳定] 自动审批审查完成</td></tr>
+      <tr><td><code>autoApprovalReview/strictReviewRequired</code></td><td>需同步审批审查</td></tr>
+      <tr><td><code>compacted</code></td><td><span class="badge badge-dep">已废弃</span> 用 contextCompaction 替代</td></tr>
+      <tr><td><code>thread/realtime/started</code></td><td>实时会话开始</td></tr>
+      <tr><td><code>thread/realtime/itemAdded</code></td><td>非音频实时 item</td></tr>
+      <tr><td><code>thread/realtime/transcript/delta</code></td><td>实时转录增量</td></tr>
+      <tr><td><code>thread/realtime/transcript/done</code></td><td>实时转录完成</td></tr>
+      <tr><td><code>thread/realtime/item/started</code></td><td>实时 item 开始</td></tr>
+      <tr><td><code>thread/realtime/item/transcript/delta</code></td><td>转录段增量</td></tr>
+      <tr><td><code>thread/realtime/item/completed</code></td><td>实时 item 完成</td></tr>
+      <tr><td><code>thread/realtime/outputAudio/delta</code></td><td>输出音频块</td></tr>
+      <tr><td><code>thread/realtime/error</code></td><td>实时错误</td></tr>
+      <tr><td><code>thread/realtime/closed</code></td><td>实时传输关闭</td></tr>
+      <tr><td><code>thread/realtime/sdp</code></td><td>WebRTC SDP 应答</td></tr>
+    </tbody>
+  </table>
+  </div>
+  </div>
+  </details>
+</div>
+
+<div class="section" id="a-approvals">
+  <h3>A.8 审批 Server→Client 请求 <span class="badge badge-s2c">HITL</span></h3>
+  <div class="note">这些是 Server 主动发送给 Client 的 JSON-RPC <strong>request</strong>（带 id），Client 必须响应。</div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>方法</th><th>参数</th><th>Client 响应</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>item/commandExecution/requestApproval</code></td><td><code>threadId, turnId, itemId, environmentId, kind, command?, cwd?</code></td><td><code>{decision: "accept"|"acceptForSession"|{acceptWithExecpolicyAmendment}|{applyNetworkPolicyAmendment}|"decline"|"cancel"}</code></td><td>命令执行审批</td></tr>
+      <tr><td><code>item/fileChange/requestApproval</code></td><td><code>threadId, turnId, itemId, reason?</code></td><td><code>{decision: "accept"|"acceptForSession"|"decline"|"cancel"}</code></td><td>文件变更审批</td></tr>
+      <tr><td><code>item/permissions/requestApproval</code></td><td><code>threadId, turnId, itemId, environmentId, cwd, permissions</code></td><td><code>{scope?, permissions{granted subset}}</code></td><td>权限请求</td></tr>
+      <tr><td><code>item/tool/requestUserInput</code></td><td><code>threadId, turnId, itemId, isBlocking, questions[]</code></td><td><code>{answers[]}</code></td><td>工具请求用户输入</td></tr>
+      <tr><td><code>mcpServer/elicitation/request</code></td><td><code>threadId, serverName, mode, message, requestedSchema?/url?</code></td><td><code>{action:"accept",content}|{action:"decline"|"cancel",content:null}</code></td><td>MCP 结构化输入</td></tr>
+      <tr><td><code>item/tool/call</code> (DynamicToolCall)</td><td><code>threadId, turnId, callId, namespace, tool, arguments</code></td><td><code>{contentItems[], success}</code></td><td>动态工具调用 <span class="badge badge-exp">实验性</span></td></tr>
+      <tr><td><code>attestation/generate</code></td><td><code>{threadId}</code></td><td><code>{token: "v1.<opaque>"}</code></td><td>客户端证明</td></tr>
+      <tr><td><code>currentTime/read</code></td><td><code>{threadId}</code></td><td><code>{currentTimeAt: <unix_seconds>}</code></td><td>外部时钟 <span class="badge badge-exp">实验性</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="section" id="a-tools">
+  <h3>A.9 工具/文件/MCP/插件/Skills/Hooks</h3>
+  <details><summary>文件系统 fs/* （13 方法）</summary>
+  <div class="detail-content">
+  <div class="table-wrap">
+  <table><thead><tr><th>方法</th><th>说明</th></tr></thead><tbody>
+    <tr><td><code>fs/readFile</code></td><td>读取绝对路径文件 → <code>{dataBase64}</code></td></tr>
+    <tr><td><code>fs/writeFile</code></td><td>写入绝对路径文件</td></tr>
+    <tr><td><code>fs/createDirectory</code></td><td>创建目录（recursive 默认 true）</td></tr>
+    <tr><td><code>fs/getMetadata</code></td><td>获取路径元数据</td></tr>
+    <tr><td><code>fs/readDirectory</code></td><td>列出直接子条目</td></tr>
+    <tr><td><code>fs/remove</code></td><td>删除文件/目录树</td></tr>
+    <tr><td><code>fs/copy</code></td><td>复制文件/目录</td></tr>
+    <tr><td><code>fs/watch</code></td><td>订阅文件变更通知</td></tr>
+    <tr><td><code>fs/unwatch</code></td><td>停止变更通知</td></tr>
+    <tr><td><code>fs/changed</code></td><td>文件变更通知</td></tr>
+  </tbody></table>
+  </div>
+  </div>
+  </details>
+  <details><summary>Plugin/MCP/Skills/Hooks/Marketplace（25+ 方法）</summary>
+  <div class="detail-content">
+  <div class="table-wrap">
+  <table><thead><tr><th>方法</th><th>说明</th></tr></thead><tbody>
+    <tr><td><code>plugin/list</code></td><td>列出插件市场与状态</td></tr>
+    <tr><td><code>plugin/search</code></td><td>搜索插件</td></tr>
+    <tr><td><code>plugin/installed</code></td><td>列出已安装插件</td></tr>
+    <tr><td><code>plugin/reconcile</code></td><td>同步远程插件状态</td></tr>
+    <tr><td><code>plugin/read</code></td><td>读取插件详情</td></tr>
+    <tr><td><code>plugin/install</code></td><td>安装插件</td></tr>
+    <tr><td><code>plugin/uninstall</code></td><td>卸载插件</td></tr>
+    <tr><td><code>skills/list</code></td><td>列出技能</td></tr>
+    <tr><td><code>skills/extraRoots/set</code></td><td>设置额外技能根</td></tr>
+    <tr><td><code>skills/config/write</code></td><td>写入技能配置</td></tr>
+    <tr><td><code>hooks/list</code></td><td>列出发现的 hooks</td></tr>
+    <tr><td><code>marketplace/add</code></td><td>添加远程插件市场</td></tr>
+    <tr><td><code>marketplace/remove</code></td><td>移除插件市场</td></tr>
+    <tr><td><code>marketplace/upgrade</code></td><td>升级插件市场</td></tr>
+    <tr><td><code>mcpServer/oauth/login</code></td><td>MCP OAuth 登录</td></tr>
+    <tr><td><code>mcpServer/tool/call</code></td><td>调用 MCP 工具</td></tr>
+    <tr><td><code>mcpServer/resource/read</code></td><td>读取 MCP 资源</td></tr>
+    <tr><td><code>mcpServerStatus/list</code></td><td>列出 MCP 服务器状态</td></tr>
+    <tr><td><code>config/mcpServer/reload</code></td><td>重载 MCP 配置</td></tr>
+    <tr><td><code>mcpServer/event/stream/start</code></td><td>订阅 MCP 事件 <span class="badge badge-exp">实验性</span></td></tr>
+    <tr><td><code>mcpServer/event/stream/stop</code></td><td>停止 MCP 事件 <span class="badge badge-exp">实验性</span></td></tr>
+  </tbody></table>
+  </div>
+  </div>
+  </details>
+  <details><summary>Command/Process 执行（11 方法）</summary>
+  <div class="detail-content">
+  <div class="table-wrap">
+  <table><thead><tr><th>方法</th><th>说明</th></tr></thead><tbody>
+    <tr><td><code>command/exec</code></td><td>沙箱内执行命令</td></tr>
+    <tr><td><code>command/exec/write</code></td><td>写入命令 stdin</td></tr>
+    <tr><td><code>command/exec/resize</code></td><td>调整 PTY 大小</td></tr>
+    <tr><td><code>command/exec/terminate</code></td><td>终止命令</td></tr>
+    <tr><td><code>command/exec/outputDelta</code></td><td>命令输出增量通知</td></tr>
+    <tr><td><code>process/spawn</code></td><td>非沙箱进程启动 <span class="badge badge-exp">实验性</span></td></tr>
+    <tr><td><code>process/writeStdin</code></td><td>写进程 stdin <span class="badge badge-exp">实验性</span></td></tr>
+    <tr><td><code>process/resizePty</code></td><td>调整 PTY <span class="badge badge-exp">实验性</span></td></tr>
+    <tr><td><code>process/kill</code></td><td>终止进程 <span class="badge badge-exp">实验性</span></td></tr>
+    <tr><td><code>process/outputDelta</code></td><td>进程输出增量 <span class="badge badge-exp">实验性</span></td></tr>
+    <tr><td><code>process/exited</code></td><td>进程退出 <span class="badge badge-exp">实验性</span></td></tr>
+  </tbody></table>
+  </div>
+  </div>
+  </details>
+</div>
+
+<div class="section" id="a-config">
+  <h3>A.10 配置/模型/账户</h3>
+  <details><summary>展开 40+ 方法</summary>
+  <div class="detail-content">
+  <div class="table-wrap">
+  <table><thead><tr><th>方法</th><th>说明</th></tr></thead><tbody>
+    <tr><td><code>config/read</code></td><td>读取运行时有效配置</td></tr>
+    <tr><td><code>config/value/write</code></td><td>写入单个配置键</td></tr>
+    <tr><td><code>config/batchWrite</code></td><td>原子批量写入配置</td></tr>
+    <tr><td><code>configRequirements/read</code></td><td>读取受管要求约束</td></tr>
+    <tr><td><code>model/list</code></td><td>列出可用模型</td></tr>
+    <tr><td><code>modelProvider/capabilities/read</code></td><td>读取供应商能力</td></tr>
+    <tr><td><code>permissionProfile/list</code></td><td>列出权限配置</td></tr>
+    <tr><td><code>experimentalFeature/list</code></td><td>列出功能标志</td></tr>
+    <tr><td><code>experimentalFeature/enablement/set</code></td><td>设置功能开关</td></tr>
+    <tr><td><code>collaborationMode/list</code></td><td>列出协作模式</td></tr>
+    <tr><td><code>environment/add</code></td><td>添加远程环境</td></tr>
+    <tr><td><code>environment/info</code></td><td>环境信息</td></tr>
+    <tr><td><code>environment/status</code></td><td>环境状态</td></tr>
+    <tr><td><code>account/read</code></td><td>读取当前账户</td></tr>
+    <tr><td><code>account/login/start</code></td><td>开始登录（apiKey/chatgpt/bedrock）</td></tr>
+    <tr><td><code>account/login/cancel</code></td><td>取消登录</td></tr>
+    <tr><td><code>account/logout</code></td><td>登出</td></tr>
+    <tr><td><code>account/rateLimits/read</code></td><td>读取速率限制</td></tr>
+    <tr><td><code>account/usage/read</code></td><td>读取用量</td></tr>
+    <tr><td><code>review/start</code></td><td>启动代码审查</td></tr>
+    <tr><td><code>server/diagnostics</code></td><td>服务器诊断</td></tr>
+    <tr><td><code>feedback/upload</code></td><td>上传反馈报告</td></tr>
+    <tr><td><code>remoteControl/*</code></td><td>远程控制（8 方法）</td></tr>
+    <tr><td><code>windowsSandbox/setupStart</code></td><td>Windows 沙箱设置</td></tr>
+    <tr><td><code>externalAgentConfig/detect</code></td><td>检测外部 Agent 配置</td></tr>
+    <tr><td><code>externalAgentConfig/import</code></td><td>导入外部 Agent 配置</td></tr>
+    <tr><td><code>project/list|read|create|import|update|move|delete</code></td><td>项目管理（7 方法）</td></tr>
+  </tbody></table>
+  </div>
+  </div>
+  </details>
+</div>
+
+<div class="section" id="a-errors">
+  <h3>A.11 错误码</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>错误码</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>-32001</code></td><td>服务器过载，稍后重试</td></tr>
+      <tr><td><code>-32600</code></td><td>请求无效（V2 子 agent 拒绝直接输入）</td></tr>
+      <tr><td><code>-32601</code></td><td>方法不存在</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h4>codexErrorInfo 枚举</h4>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>值</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>ContextWindowExceeded</code></td><td>上下文窗口超限</td></tr>
+      <tr><td><code>SessionBudgetExceeded</code></td><td>会话预算超限</td></tr>
+      <tr><td><code>UsageLimitExceeded</code></td><td>用量限制</td></tr>
+      <tr><td><code>rateLimitExceeded</code></td><td>上游速率限制</td></tr>
+      <tr><td><code>misalignmentPolicyViolation</code></td><td>对齐策略违规（非重试）</td></tr>
+      <tr><td><code>HttpConnectionFailed</code></td><td>HTTP 连接失败</td></tr>
+      <tr><td><code>ResponseStreamConnectionFailed</code></td><td>响应流连接失败</td></tr>
+      <tr><td><code>ResponseStreamDisconnected</code></td><td>响应流中断</td></tr>
+      <tr><td><code>ActiveTurnNotSteerable</code></td><td>活动 turn 不可 steer</td></tr>
+      <tr><td><code>BadRequest</code></td><td>请求格式错误</td></tr>
+      <tr><td><code>Unauthorized</code></td><td>未授权</td></tr>
+      <tr><td><code>SandboxError</code></td><td>沙箱错误</td></tr>
+      <tr><td><code>InternalServerError</code></td><td>内部错误</td></tr>
+      <tr><td><code>Other</code></td><td>未分类</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<!-- Lane B -->
+<div class="section" id="lane-b">
+  <h2>B. Nexus 控制平面 REST API <span class="badge badge-nexus">L2 自建</span></h2>
+  <p style="color:var(--muted)">协议：HTTPS REST · 鉴权：Bearer JWT + RBAC · 幂等：Idempotency-Key header · 分页：cursor+limit</p>
+</div>
+
+<div class="section" id="b-auth">
+  <h3>B.1 认证 Auth</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>参数</th><th>鉴权</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>POST</td><td><code>/auth/login</code></td><td><code>{email, password, mfaCode?}</code></td><td>—</td><td>用户名密码登录</td></tr>
+      <tr><td>POST</td><td><code>/auth/refresh</code></td><td><code>{refreshToken}</code></td><td>refreshToken</td><td>刷新令牌</td></tr>
+      <tr><td>POST</td><td><code>/auth/logout</code></td><td>—</td><td>Bearer</td><td>登出</td></tr>
+      <tr><td>GET</td><td><code>/auth/me</code></td><td>—</td><td>Bearer</td><td>当前用户信息</td></tr>
+      <tr><td>POST</td><td><code>/auth/api-keys</code></td><td><code>{name, scopes[], expiresIn?}</code></td><td>Bearer</td><td>创建 API Key</td></tr>
+      <tr><td>DELETE</td><td><code>/auth/api-keys/{id}</code></td><td>—</td><td>Bearer</td><td>撤销 API Key</td></tr>
+      <tr><td>GET</td><td><code>/auth/sessions</code></td><td>—</td><td>Bearer</td><td>列出活跃会话</td></tr>
+      <tr><td>DELETE</td><td><code>/auth/sessions/{id}</code></td><td>—</td><td>Bearer</td><td>撤销会话</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="section" id="b-tenant">
+  <h3>B.2 租户/组织/用户/RBAC</h3>
+  <details><summary>展开 19 路由</summary>
+  <div class="detail-content">
+  <div class="table-wrap">
+  <table><thead><tr><th>Method</th><th>Path</th><th>鉴权</th><th>说明</th></tr></thead><tbody>
+    <tr><td>GET</td><td><code>/tenants</code></td><td><code>tenant:read</code></td><td>列出租户</td></tr>
+    <tr><td>POST</td><td><code>/tenants</code></td><td><code>tenant:create</code></td><td>创建租户</td></tr>
+    <tr><td>GET</td><td><code>/tenants/{id}</code></td><td><code>tenant:read</code></td><td>读取租户</td></tr>
+    <tr><td>PUT</td><td><code>/tenants/{id}</code></td><td><code>tenant:update</code></td><td>更新租户</td></tr>
+    <tr><td>GET</td><td><code>/org-units</code></td><td><code>org:read</code></td><td>列出组织单元</td></tr>
+    <tr><td>POST</td><td><code>/org-units</code></td><td><code>org:create</code></td><td>创建组织单元</td></tr>
+    <tr><td>PUT</td><td><code>/org-units/{id}</code></td><td><code>org:update</code></td><td>更新组织单元</td></tr>
+    <tr><td>DELETE</td><td><code>/org-units/{id}</code></td><td><code>org:delete</code></td><td>删除组织单元</td></tr>
+    <tr><td>GET</td><td><code>/users</code></td><td><code>user:read</code></td><td>列出用户</td></tr>
+    <tr><td>POST</td><td><code>/users</code></td><td><code>user:create</code></td><td>创建用户</td></tr>
+    <tr><td>GET</td><td><code>/users/{id}</code></td><td><code>user:read</code></td><td>读取用户</td></tr>
+    <tr><td>PUT</td><td><code>/users/{id}</code></td><td><code>user:update</code></td><td>更新用户</td></tr>
+    <tr><td>DELETE</td><td><code>/users/{id}</code></td><td><code>user:delete</code></td><td>删除用户</td></tr>
+    <tr><td>GET</td><td><code>/roles</code></td><td><code>role:read</code></td><td>列出角色</td></tr>
+    <tr><td>POST</td><td><code>/roles</code></td><td><code>role:create</code></td><td>创建角色</td></tr>
+    <tr><td>PUT</td><td><code>/roles/{id}</code></td><td><code>role:update</code></td><td>更新角色</td></tr>
+    <tr><td>DELETE</td><td><code>/roles/{id}</code></td><td><code>role:delete</code></td><td>删除角色</td></tr>
+    <tr><td>GET</td><td><code>/users/{id}/memberships</code></td><td><code>membership:read</code></td><td>列出成员关系</td></tr>
+    <tr><td>POST</td><td><code>/users/{id}/memberships</code></td><td><code>membership:create</code></td><td>添加成员关系</td></tr>
+  </tbody></table>
+  </div>
+  </div>
+  </details>
+</div>
+
+<div class="section" id="b-workspace">
+  <h3>B.3 工作区 Workspaces</h3>
+  <details><summary>展开 11 路由</summary>
+  <div class="detail-content">
+  <div class="table-wrap">
+  <table><thead><tr><th>Method</th><th>Path</th><th>说明</th></tr></thead><tbody>
+    <tr><td>GET</td><td><code>/workspaces</code></td><td>列出工作区</td></tr>
+    <tr><td>POST</td><td><code>/workspaces</code></td><td>创建工作区</td></tr>
+    <tr><td>GET</td><td><code>/workspaces/{id}</code></td><td>读取工作区</td></tr>
+    <tr><td>PUT</td><td><code>/workspaces/{id}</code></td><td>更新工作区</td></tr>
+    <tr><td>DELETE</td><td><code>/workspaces/{id}</code></td><td>删除工作区</td></tr>
+    <tr><td>GET</td><td><code>/workspaces/{id}/members</code></td><td>列出成员</td></tr>
+    <tr><td>POST</td><td><code>/workspaces/{id}/members</code></td><td>添加成员</td></tr>
+    <tr><td>PUT</td><td><code>/workspaces/{id}/members/{uid}</code></td><td>更新角色</td></tr>
+    <tr><td>DELETE</td><td><code>/workspaces/{id}/members/{uid}</code></td><td>移除成员</td></tr>
+    <tr><td>GET</td><td><code>/workspaces/{id}/settings</code></td><td>读取设置</td></tr>
+    <tr><td>PUT</td><td><code>/workspaces/{id}/settings</code></td><td>更新设置</td></tr>
+  </tbody></table>
+  </div>
+  </div>
+  </details>
+</div>
+
+<div class="section" id="b-threads">
+  <h3>B.4 会话 Threads（REST → JSON-RPC 映射）</h3>
+  <div class="note">Nexus REST 网关接收 HTTP 请求，内部通过 JSON-RPC 桥接调用 L5 app-server。<code>→</code> 表示映射。</div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>JSON-RPC 映射</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td><code>/threads</code></td><td>→ <code>thread/list</code></td><td>分页列举</td></tr>
+      <tr><td>POST</td><td><code>/threads</code></td><td>→ <code>thread/start</code> + <code>turn/start</code></td><td>创建会话并启动首轮</td></tr>
+      <tr><td>GET</td><td><code>/threads/{id}</code></td><td>→ <code>thread/read</code></td><td>读取会话</td></tr>
+      <tr><td>DELETE</td><td><code>/threads/{id}</code></td><td>→ <code>thread/delete</code></td><td>删除</td></tr>
+      <tr><td>POST</td><td><code>/threads/{id}/resume</code></td><td>→ <code>thread/resume</code></td><td>恢复</td></tr>
+      <tr><td>POST</td><td><code>/threads/{id}/fork</code></td><td>→ <code>thread/fork</code></td><td>分叉</td></tr>
+      <tr><td>POST</td><td><code>/threads/{id}/archive</code></td><td>→ <code>thread/archive</code></td><td>归档</td></tr>
+      <tr><td>GET</td><td><code>/threads/{id}/turns</code></td><td>→ <code>thread/turns/list</code></td><td>分页 turn</td></tr>
+      <tr><td>POST</td><td><code>/threads/{id}/turns</code></td><td>→ <code>turn/start</code></td><td>启动新 turn</td></tr>
+      <tr><td>POST</td><td><code>/threads/{id}/interrupt</code></td><td>→ <code>turn/interrupt</code></td><td>中断 turn</td></tr>
+      <tr><td>POST</td><td><code>/threads/{id}/steer</code></td><td>→ <code>turn/steer</code></td><td>追加输入</td></tr>
+      <tr><td>GET</td><td><code>/threads/{id}/items</code></td><td>→ <code>thread/items/list</code></td><td>分页 item</td></tr>
+      <tr><td>POST</td><td><code>/threads/{id}/messages</code></td><td>→ <code>turn/start</code>（包装）</td><td>快捷文本消息</td></tr>
+      <tr><td>GET</td><td><code>/threads/{id}/timeline</code></td><td>→ <code>thread/timeline/list</code></td><td>时间线</td></tr>
+      <tr><td>POST</td><td><code>/threads/{id}/compact</code></td><td>→ <code>thread/compact/start</code></td><td>压缩</td></tr>
+      <tr><td>GET</td><td><code>/threads/{id}/search</code></td><td>→ <code>thread/searchOccurrences</code></td><td>会话内搜索</td></tr>
+      <tr><td>PUT</td><td><code>/threads/{id}/metadata</code></td><td>→ <code>thread/metadata/update</code></td><td>更新元数据</td></tr>
+      <tr><td>PUT</td><td><code>/threads/{id}/settings</code></td><td>→ <code>thread/settings/update</code></td><td>更新设置</td></tr>
+      <tr><td>POST</td><td><code>/threads/{id}/shell</code></td><td>→ <code>thread/shellCommand</code></td><td>Shell 命令</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="section" id="b-approvals">
+  <h3>B.5 审批中心 Approvals</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td><code>/approvals</code></td><td>列出审批</td></tr>
+      <tr><td>GET</td><td><code>/approvals/pending</code></td><td>待处理审批</td></tr>
+      <tr><td>POST</td><td><code>/approvals</code></td><td>提交审批决策</td></tr>
+      <tr><td>GET</td><td><code>/approvals/{id}</code></td><td>审批详情</td></tr>
+      <tr><td>POST</td><td><code>/approvals/{id}/decide</code></td><td>做出决策</td></tr>
+      <tr><td>GET</td><td><code>/approvals/stats</code></td><td>审批统计</td></tr>
+      <tr><td>GET</td><td><code>/approvals/rules</code></td><td>审批规则</td></tr>
+      <tr><td>PUT</td><td><code>/approvals/rules</code></td><td>更新规则</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="section" id="b-connectors">
+  <h3>B.6 连接器 Connectors / MCP Gateway</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td><code>/connectors</code></td><td>列出连接器</td></tr>
+      <tr><td>POST</td><td><code>/connectors</code></td><td>注册连接器</td></tr>
+      <tr><td>GET/PUT/DELETE</td><td><code>/connectors/{id}</code></td><td>CRUD</td></tr>
+      <tr><td>GET</td><td><code>/connectors/{id}/tools</code></td><td>列出工具</td></tr>
+      <tr><td>POST</td><td><code>/connectors/{id}/tools/call</code></td><td>调用工具</td></tr>
+      <tr><td>GET</td><td><code>/connectors/{id}/health</code></td><td>健康检查</td></tr>
+      <tr><td>GET</td><td><code>/connectors/{id}/resources</code></td><td>MCP 资源</td></tr>
+      <tr><td>POST</td><td><code>/connectors/{id}/oauth/start</code></td><td>OAuth 授权</td></tr>
+      <tr><td>POST</td><td><code>/connectors/{id}/oauth/callback</code></td><td>OAuth 回调</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="section" id="b-usage">
+  <h3>B.7 计量/审计/成本</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td><code>/usage</code></td><td>多维归因用量查询</td></tr>
+      <tr><td>GET</td><td><code>/usage/breakdown</code></td><td>用量维度分解</td></tr>
+      <tr><td>GET</td><td><code>/usage/export</code></td><td>导出报表</td></tr>
+      <tr><td>GET</td><td><code>/usage/realtime</code></td><td>实时监控</td></tr>
+      <tr><td>GET</td><td><code>/audit-logs</code></td><td>审计日志查询（WORM）</td></tr>
+      <tr><td>GET</td><td><code>/audit-logs/{id}</code></td><td>审计详情</td></tr>
+      <tr><td>POST</td><td><code>/audit-logs/export</code></td><td>导出审计</td></tr>
+      <tr><td>GET</td><td><code>/cost-dashboard</code></td><td>成本仪表盘</td></tr>
+      <tr><td>GET</td><td><code>/cost-dashboard/by-tenant</code></td><td>按租户</td></tr>
+      <tr><td>GET</td><td><code>/cost-dashboard/by-workspace</code></td><td>按工作区</td></tr>
+      <tr><td>GET</td><td><code>/cost-dashboard/by-model</code></td><td>按模型</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="section" id="b-kb">
+  <h3>B.8 知识库 Knowledge Base / RAG</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>GET/POST</td><td><code>/kb/documents</code></td><td>列出/上传文档</td></tr>
+      <tr><td>GET/PUT/DELETE</td><td><code>/kb/documents/{id}</code></td><td>文档 CRUD</td></tr>
+      <tr><td>POST</td><td><code>/kb/search</code></td><td>语义搜索（ACL 过滤）</td></tr>
+      <tr><td>POST</td><td><code>/kb/embeddings</code></td><td>生成嵌入向量</td></tr>
+      <tr><td>GET/POST</td><td><code>/kb/collections</code></td><td>集合管理</td></tr>
+      <tr><td>DELETE</td><td><code>/kb/collections/{id}</code></td><td>删除集合</td></tr>
+      <tr><td>POST</td><td><code>/kb/ingest</code></td><td>批量摄取</td></tr>
+      <tr><td>GET</td><td><code>/kb/stats</code></td><td>统计</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<!-- Lane C -->
+<div class="section" id="lane-c">
+  <h2>C. Webhook 与 WebSocket <span class="badge badge-exp">事件推送</span></h2>
+</div>
+
+<div class="section" id="c-webhook">
+  <h3>C.1 任务完成 Webhook</h3>
+  <div class="note">用户注册 Webhook URL，Nexus 在事件发生时 POST 回调。HMAC-SHA256 签名验证。</div>
+  <pre>{
+  <span class="json-key">"event"</span>: <span class="json-str">"turn.completed"</span>,
+  <span class="json-key">"tenantId"</span>: <span class="json-str">"..."</span>,
+  <span class="json-key">"workspaceId"</span>: <span class="json-str">"..."</span>,
+  <span class="json-key">"threadId"</span>: <span class="json-str">"..."</span>,
+  <span class="json-key">"turnId"</span>: <span class="json-str">"..."</span>,
+  <span class="json-key">"status"</span>: <span class="json-str">"completed"</span>,
+  <span class="json-key">"tokenUsage"</span>: {...},
+  <span class="json-key">"deliveryId"</span>: <span class="json-str">"..."</span>
+}</pre>
+  <h4>请求头</h4>
+  <pre>X-Nexus-Signature: hmac_sha256(body, secret)
+X-Nexus-Event: turn.completed
+X-Nexus-Delivery: {delivery_id}
+X-Nexus-Timestamp: {unix_timestamp}</pre>
+  <h4>支持的事件类型</h4>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>事件</th><th>触发条件</th><th>载荷</th></tr></thead>
+    <tbody>
+      <tr><td><code>turn.completed</code></td><td>Turn 完成</td><td><code>{threadId, turnId, status, tokenUsage, items[]}</code></td></tr>
+      <tr><td><code>approval.requested</code></td><td>审批请求产生</td><td><code>{threadId, turnId, itemId, kind}</code></td></tr>
+      <tr><td><code>thread.archived</code></td><td>会话归档</td><td><code>{threadId}</code></td></tr>
+      <tr><td><code>goal.blocked</code></td><td>目标 blocked</td><td><code>{threadId, goal}</code></td></tr>
+      <tr><td><code>usage.threshold_exceeded</code></td><td>用量阈值</td><td><code>{tenantId, currentUsage, threshold}</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="note warn">幂等性：每个 delivery 有唯一 deliveryId。5xx 自动重试（指数退避，最多 5 次）。</div>
+</div>
+
+<div class="section" id="c-ws">
+  <h3>C.3 WebSocket 事件推送</h3>
+  <div class="note">权限驱动订阅：客户端只能收到其有权访问的会话/工作区的事件。</div>
+  <pre>WS /ws/threads/{threadId}/events
+Authorization: Bearer {jwt}</pre>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>通道</th><th>推送内容</th></tr></thead>
+    <tbody>
+      <tr><td><code>thread/{id}/events</code></td><td>thread/turn/item 事件实时推送</td></tr>
+      <tr><td><code>item/agentMessage/delta</code></td><td>低延迟文本流</td></tr>
+      <tr><td><code>item/commandExecution/outputDelta</code></td><td>命令输出流</td></tr>
+      <tr><td><code>turn/started</code> / <code>turn/completed</code></td><td>Turn 生命周期</td></tr>
+      <tr><td><code>approval</code></td><td>审批请求推送 + 响应</td></tr>
+      <tr><td><code>dashboard</code></td><td>全局用量/状态/告警</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h4>服务器→客户端</h4>
+  <pre>{
+  <span class="json-key">"type"</span>: <span class="json-str">"notification"</span>,
+  <span class="json-key">"method"</span>: <span class="json-str">"item/agentMessage/delta"</span>,
+  <span class="json-key">"params"</span>: {<span class="json-key">"threadId"</span>: <span class="json-str">"thr_123"</span>, <span class="json-key">"delta"</span>: <span class="json-str">"Hello"</span>}
+}</pre>
+  <h4>客户端→服务器（审批决策）</h4>
+  <pre>{
+  <span class="json-key">"type"</span>: <span class="json-str">"response"</span>,
+  <span class="json-key">"id"</span>: <span class="json-str">"req_789"</span>,
+  <span class="json-key">"result"</span>: {<span class="json-key">"decision"</span>: <span class="json-str">"accept"</span>}
+}</pre>
+</div>
+
+<div class="section" id="c-sse">
+  <h3>C.4 SSE 降级</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td><code>/threads/{id}/events/stream</code></td><td>SSE 降级（text/event-stream）</td></tr>
+      <tr><td>GET</td><td><code>/dashboard/stream</code></td><td>仪表盘 SSE 降级</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="section" id="auth-design">
+  <h2>鉴权与幂等设计</h2>
+  <h3>鉴权层级</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>层级</th><th>机制</th><th>适用范围</th></tr></thead>
+    <tbody>
+      <tr><td>连接级</td><td>app-server stdio/unix（无鉴权，Pod 内）</td><td>L5 Harness 内部</td></tr>
+      <tr><td>网关级</td><td>Bearer JWT（15min access / 7d refresh）</td><td>L2 REST API</td></tr>
+      <tr><td>API Key</td><td><code>X-API-Key</code> header，绑定 scopes</td><td>外部系统集成</td></tr>
+      <tr><td>Webhook</td><td>HMAC-SHA256 签名验证</td><td>回调请求</td></tr>
+      <tr><td>WebSocket</td><td>JWT 握手 + 权限驱动订阅</td><td>实时事件</td></tr>
+      <tr><td>RBAC</td><td>角色权限矩阵</td><td>所有 REST 路由</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h3>RBAC 权限矩阵</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>角色</th><th>关键权限</th></tr></thead>
+    <tbody>
+      <tr><td>platform_admin</td><td><code>tenant:*, org:*, user:*, role:*, cost:read</code></td></tr>
+      <tr><td>tenant_admin</td><td><code>org:*, user:*, workspace:*, connector:*, usage:read, audit:read</code></td></tr>
+      <tr><td>workspace_owner</td><td><code>workspace:*, thread:*, connector:*, kb:*, webhook:*, approval:*</code></td></tr>
+      <tr><td>workspace_member</td><td><code>thread:read/create/update, kb:read, approval:read/update</code></td></tr>
+      <tr><td>workspace_viewer</td><td><code>thread:read, kb:read, usage:read</code></td></tr>
+      <tr><td>api_client</td><td>自定义 scopes</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="section" id="rate-limits">
+  <h2>速率限制与配额</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>维度</th><th>限制</th><th>超限行为</th></tr></thead>
+    <tbody>
+      <tr><td>全局 QPS</td><td>100 req/s（per tenant）</td><td>429 + Retry-After</td></tr>
+      <tr><td>并发会话</td><td>10 active threads（per workspace）</td><td>429 + 排队提示</td></tr>
+      <tr><td>并发 Turn</td><td>1 active turn（per thread）</td><td>429 + "turn already active"</td></tr>
+      <tr><td>模型调用</td><td>按 tenant+model 配额预扣</td><td>UsageLimitExceeded</td></tr>
+      <tr><td>Webhook 投递</td><td>5 次重试（指数退避）</td><td>标记 failed</td></tr>
+      <tr><td>WebSocket</td><td>50 concurrent WS（per user）</td><td>拒绝新连接</td></tr>
+      <tr><td>API Key</td><td>1000 req/h（per key）</td><td>429 + X-RateLimit-Reset</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="note">配额预扣：Turn 启动前根据模型和历史用量预扣 token 配额。完成后按实际用量结算差额。预扣不足时拒绝启动。</div>
+</div>
+
+</main>
+</div>
+
+<script>
+// Theme toggle
+function toggleTheme(){
+  var h=document.documentElement;
+  var t=h.getAttribute('data-theme')==='dark'?'light':'dark';
+  h.setAttribute('data-theme',t);
+  localStorage.setItem('nexus-theme',t);
+  document.getElementById('theme-toggle').textContent=t==='dark'?'🌙 Dark':'☀ Light';
+}
+(function(){
+  var s=localStorage.getItem('nexus-theme');
+  if(s){document.documentElement.setAttribute('data-theme',s);document.getElementById('theme-toggle').textContent=s==='dark'?'🌙 Dark':'☀ Light';}
+})();
+
+// Progress bar
+window.addEventListener('scroll',function(){
+  var st=document.documentElement.scrollTop||document.body.scrollTop;
+  var sh=(document.documentElement.scrollHeight||document.body.scrollHeight)-window.innerHeight;
+  var p=sh>0?(st/sh*100):0;
+  document.getElementById('progress-bar').style.width=p+'%';
+});
+
+// TOC active highlight
+var sections=document.querySelectorAll('.section[id]');
+var links=document.querySelectorAll('.sidebar a');
+var observer=new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if(e.isIntersecting){
+      links.forEach(function(l){l.classList.remove('active');if(l.getAttribute('href')==='#'+e.target.id)l.classList.add('active');});
+    }
+  });
+},{rootMargin:'-80px 0px -70% 0px'});
+sections.forEach(function(s){observer.observe(s);});
+</script>
+</body>
+</html>

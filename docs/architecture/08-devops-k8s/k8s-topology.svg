@@ -1,0 +1,243 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1180">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+<linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#991b1b"/><stop offset="1" stop-color="#ef4444"/></linearGradient>
+</defs>
+<rect width="1600" height="1180" fill="#0b141a"/>
+<text x="40" y="40" fill="#35c2b0" font-size="22" font-weight="700">Nexus 自动化运维与 K8s 弹性部署 · 拓扑全景</text>
+<text x="40" y="64" fill="#9db8b4" font-size="13">控制面 ns nexus-control（上）↔ 执行面 ns nexus-exec-{tenant}（下）· 三档隔离矩阵侧栏 · NetworkPolicy 标注</text>
+<rect x="40" y="90" width="1120" height="430" rx="14" fill="#13242e" stroke="#028090" stroke-width="2"/>
+<rect x="40" y="90" width="1120" height="34" rx="14" fill="url(#gt)"/>
+<rect x="40" y="110" width="1120" height="14" fill="url(#gt)"/>
+<text x="60" y="113" fill="#e8f2f0" font-size="14" font-weight="700">控制平面 namespace: nexus-control（长期有状态 · 多租户 · 强一致）</text>
+<rect x="70" y="140" width="140" height="72" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.2"/>
+<text x="140.0" y="180.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="140" y="162" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="700">API Gateway</text>
+<text x="140" y="177" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">+WS 网关</text>
+<text x="140" y="192" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">(HPA)</text>
+<rect x="220" y="140" width="140" height="72" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.2"/>
+<text x="290.0" y="180.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="290" y="162" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="700">任务编排器</text>
+<text x="290" y="177" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">Temporal Worker</text>
+<text x="290" y="192" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">(HPA)</text>
+<rect x="370" y="140" width="140" height="72" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.2"/>
+<text x="440.0" y="180.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="440" y="162" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="700">审批中心</text>
+<text x="440" y="177" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">HITL</text>
+<text x="440" y="192" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">(HPA)</text>
+<rect x="520" y="140" width="140" height="72" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.2"/>
+<text x="590.0" y="180.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="590" y="162" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="700">策略中心</text>
+<text x="590" y="177" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">execpolicy</text>
+<text x="590" y="192" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">(HPA)</text>
+<rect x="670" y="140" width="140" height="72" rx="8" fill="#173341" stroke="#e8b64c" stroke-width="1.2"/>
+<text x="740.0" y="180.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="740" y="162" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="700">配额计费</text>
+<text x="740" y="177" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">四维归因</text>
+<text x="740" y="192" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">(HPA)</text>
+<rect x="820" y="140" width="140" height="72" rx="8" fill="#173341" stroke="#a855f7" stroke-width="1.2"/>
+<text x="890.0" y="180.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="890" y="162" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="700">连接器治理</text>
+<text x="890" y="177" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">MCP Registry</text>
+<text x="890" y="192" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">(HPA)</text>
+<rect x="970" y="140" width="140" height="72" rx="8" fill="#173341" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="1040.0" y="180.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="1040" y="162" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="700">知识库</text>
+<text x="1040" y="177" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">RAG+ACL</text>
+<text x="1040" y="192" text-anchor="middle" fill="#9db8b4" font-size="10.5" font-weight="400">(HPA)</text>
+<rect x="70" y="230" width="340" height="120" rx="8" fill="#173341" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="240" y="258" text-anchor="middle" fill="#3b82f6" font-size="13" font-weight="700">Postgres 主从 + pgvector</text>
+<text x="240" y="278" text-anchor="middle" fill="#9db8b4" font-size="10.5">StatefulSet · 流复制 · RLS · 分区表</text>
+<text x="240" y="295" text-anchor="middle" fill="#9db8b4" font-size="10.5">tenant/user/thread/turn/item</text>
+<text x="240" y="312" text-anchor="middle" fill="#9db8b4" font-size="10.5">approval/usage/audit(WORM)</text>
+<text x="240" y="335" text-anchor="middle" fill="#35c2b0" font-size="9.5">PVC 50Gi · StorageClass fast-ssd</text>
+<rect x="430" y="230" width="300" height="120" rx="8" fill="#173341" stroke="#ef4444" stroke-width="1.4"/>
+<text x="580" y="258" text-anchor="middle" fill="#ef4444" font-size="13" font-weight="700">Redis 事件总线</text>
+<text x="580" y="278" text-anchor="middle" fill="#9db8b4" font-size="10.5">StatefulSet · Sentinel 哨兵</text>
+<text x="580" y="295" text-anchor="middle" fill="#9db8b4" font-size="10.5">pub/sub · Leader 选举</text>
+<text x="580" y="312" text-anchor="middle" fill="#9db8b4" font-size="10.5">Agent IPC · 并发计数器</text>
+<text x="580" y="335" text-anchor="middle" fill="#35c2b0" font-size="9.5">PVC 10Gi</text>
+<rect x="750" y="230" width="360" height="120" rx="8" fill="#173341" stroke="#e8b64c" stroke-width="1.4"/>
+<text x="930" y="258" text-anchor="middle" fill="#e8b64c" font-size="13" font-weight="700">MinIO 对象存储</text>
+<text x="930" y="278" text-anchor="middle" fill="#9db8b4" font-size="10.5">StatefulSet · 跨区复制</text>
+<text x="930" y="295" text-anchor="middle" fill="#9db8b4" font-size="10.5">artifacts/rollouts/snapshots</text>
+<text x="930" y="312" text-anchor="middle" fill="#9db8b4" font-size="10.5">按租户前缀 + 按租户 CMK</text>
+<text x="930" y="335" text-anchor="middle" fill="#35c2b0" font-size="9.5">PVC 200Gi · 跨区复制</text>
+<rect x="70" y="370" width="140" height="56" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.2"/>
+<text x="140.0" y="402.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="140" y="388" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">OTel Collector</text>
+<text x="140" y="402" text-anchor="middle" fill="#9db8b4" font-size="10" font-weight="400">→ ClickHouse</text>
+<text x="140" y="416" text-anchor="middle" fill="#9db8b4" font-size="10" font-weight="400">+Grafana</text>
+<rect x="230" y="370" width="140" height="56" rx="8" fill="#173341" stroke="#35c2b0" stroke-width="1.2"/>
+<text x="300.0" y="402.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="300" y="388" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">Prometheus</text>
+<text x="300" y="402" text-anchor="middle" fill="#9db8b4" font-size="10" font-weight="400">指标+告警</text>
+<rect x="390" y="370" width="140" height="56" rx="8" fill="#173341" stroke="#9db8b4" stroke-width="1.2"/>
+<text x="460.0" y="402.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="460" y="388" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">Loki</text>
+<text x="460" y="402" text-anchor="middle" fill="#9db8b4" font-size="10" font-weight="400">日志聚合</text>
+<rect x="550" y="370" width="140" height="56" rx="8" fill="#173341" stroke="#a855f7" stroke-width="1.2"/>
+<text x="620.0" y="402.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="620" y="388" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">ArgoCD</text>
+<text x="620" y="402" text-anchor="middle" fill="#9db8b4" font-size="10" font-weight="400">GitOps</text>
+<rect x="710" y="370" width="140" height="56" rx="8" fill="#173341" stroke="#e8b64c" stroke-width="1.2"/>
+<text x="780.0" y="402.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="780" y="388" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">Vault/KMS</text>
+<text x="780" y="402" text-anchor="middle" fill="#9db8b4" font-size="10" font-weight="400">按租户CMK</text>
+<rect x="70" y="440" width="1040" height="60" rx="6" fill="#173341" stroke="#028090" stroke-width="1"/>
+<text x="580" y="465" text-anchor="middle" fill="#35c2b0" font-size="11.5" font-weight="700">NetworkPolicy: 控制面内部全通 + 入站仅 Ingress Controller + 执行面出站仅→Model Gateway/MCP Gateway</text>
+<text x="580" y="485" text-anchor="middle" fill="#9db8b4" font-size="10.5">PodSecurity: restricted · Seccomp(Default) · AppArmor · PSA enforce</text>
+<path d="M320 520 L320 560" fill="none" stroke="#e8b64c" stroke-width="2.2" marker-end="url(#ag)"/>
+<path d="M600 520 L600 560" fill="none" stroke="#e8b64c" stroke-width="2.2" marker-end="url(#ag)"/>
+<path d="M880 520 L880 560" fill="none" stroke="#e8b64c" stroke-width="2.2" marker-end="url(#ag)"/>
+<text x="600" y="550" text-anchor="middle" fill="#e8b64c" font-size="11" font-weight="700">① 调度指令(K8s Job/BLPOP 队列)  ② app-server JSON-RPC  ③ 事件流回吐</text>
+<rect x="40" y="560" width="1120" height="340" rx="14" fill="#13242e" stroke="#e8b64c" stroke-width="2"/>
+<rect x="40" y="560" width="1120" height="34" rx="14" fill="url(#gg)"/>
+<rect x="40" y="580" width="1120" height="14" fill="url(#gg)"/>
+<text x="60" y="583" fill="#e8f2f0" font-size="14" font-weight="700">执行平面 namespace: nexus-exec-{tenant}（一次性 · 单租户单任务 · 无状态 · 可销毁）</text>
+<rect x="70" y="606" width="1060" height="280" rx="10" fill="#1a2210" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="6,4"/>
+<text x="90" y="628" fill="#fecaca" font-size="12.5" font-weight="700">Sandbox Pod 池（warm pool 预热 N 空闲 Pod · 冷启动 &lt; 5s · 空闲超时 15-30min 销毁）</text>
+<rect x="90" y="640" width="470" height="110" rx="8" fill="#173341" stroke="#028090" stroke-width="1.2"/>
+<text x="105" y="660" fill="#35c2b0" font-size="11" font-weight="700">Pod: 共享池（逻辑隔离）</text>
+<rect x="100" y="668" width="130" height="70" rx="8" fill="#0d1b20" stroke="#35c2b0" stroke-width="1.2"/>
+<text x="165.0" y="707.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="165" y="682" text-anchor="middle" fill="#e8f2f0" font-size="9.5" font-weight="700">codex</text>
+<text x="165" y="694" text-anchor="middle" fill="#e8f2f0" font-size="9.5" font-weight="700">app-server</text>
+<text x="165" y="706" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">config.toml</text>
+<text x="165" y="718" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">+execpolicy</text>
+<text x="165" y="730" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">运行时注入</text>
+<rect x="240" y="668" width="130" height="70" rx="8" fill="#1a1224" stroke="#a855f7" stroke-width="1.2"/>
+<text x="305.0" y="707.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="305" y="682" text-anchor="middle" fill="#e8f2f0" font-size="9.5" font-weight="700">MCP Gateway</text>
+<text x="305" y="694" text-anchor="middle" fill="#e8f2f0" font-size="9.5" font-weight="700">sidecar</text>
+<text x="305" y="706" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">凭据注入</text>
+<text x="305" y="718" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">工具白名单</text>
+<text x="305" y="730" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">出站代理</text>
+<rect x="380" y="668" width="80" height="70" rx="8" fill="#0d1820" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="420.0" y="707.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="420" y="682" text-anchor="middle" fill="#e8f2f0" font-size="9" font-weight="700">Workspace</text>
+<text x="420" y="694" text-anchor="middle" fill="#9db8b4" font-size="9" font-weight="400">git</text>
+<text x="420" y="706" text-anchor="middle" fill="#9db8b4" font-size="9" font-weight="400">worktree</text>
+<text x="420" y="718" text-anchor="middle" fill="#9db8b4" font-size="9" font-weight="400">+PVC</text>
+<text x="420" y="730" text-anchor="middle" fill="#9db8b4" font-size="9" font-weight="400">snapshot</text>
+<path d="M230 703 L240 703" fill="none" stroke="#9db8b4" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M370 703 L380 703" fill="none" stroke="#9db8b4" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="580" y="640" width="470" height="110" rx="8" fill="#173341" stroke="#e8b64c" stroke-width="1.2"/>
+<text x="595" y="660" fill="#e8b64c" font-size="11" font-weight="700">Pod: 专属池（独立节点池+独立 ns+独立密钥）</text>
+<rect x="590" y="668" width="130" height="70" rx="8" fill="#0d1b20" stroke="#35c2b0" stroke-width="1.2"/>
+<text x="655.0" y="707.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="655" y="682" text-anchor="middle" fill="#e8f2f0" font-size="9.5" font-weight="700">codex</text>
+<text x="655" y="694" text-anchor="middle" fill="#e8f2f0" font-size="9.5" font-weight="700">app-server</text>
+<text x="655" y="706" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">独立镜像</text>
+<text x="655" y="718" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">独立 config</text>
+<text x="655" y="730" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">独立 execpolicy</text>
+<rect x="730" y="668" width="130" height="70" rx="8" fill="#1a1224" stroke="#a855f7" stroke-width="1.2"/>
+<text x="795.0" y="707.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="795" y="682" text-anchor="middle" fill="#e8f2f0" font-size="9.5" font-weight="700">MCP Gateway</text>
+<text x="795" y="694" text-anchor="middle" fill="#e8f2f0" font-size="9.5" font-weight="700">独立凭据域</text>
+<text x="795" y="706" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">专属 CMK</text>
+<text x="795" y="718" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">工具白名单</text>
+<text x="795" y="730" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">审计脱敏</text>
+<rect x="870" y="668" width="80" height="70" rx="8" fill="#0d1820" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="910.0" y="707.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="910" y="682" text-anchor="middle" fill="#e8f2f0" font-size="9" font-weight="700">Workspace</text>
+<text x="910" y="694" text-anchor="middle" fill="#9db8b4" font-size="9" font-weight="400">专属 PVC</text>
+<text x="910" y="706" text-anchor="middle" fill="#9db8b4" font-size="9" font-weight="400">独立</text>
+<text x="910" y="718" text-anchor="middle" fill="#9db8b4" font-size="9" font-weight="400">StorageClass</text>
+<text x="910" y="730" text-anchor="middle" fill="#9db8b4" font-size="9" font-weight="400">节点亲和</text>
+<path d="M720 703 L730 703" fill="none" stroke="#9db8b4" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M860 703 L870 703" fill="none" stroke="#9db8b4" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="90" y="760" width="960" height="110" rx="8" fill="#173341" stroke="#ef4444" stroke-width="1.2"/>
+<text x="105" y="780" fill="#ef4444" font-size="11" font-weight="700">Pod: 高敏租户（Kata Containers / Firecracker 微虚拟机 · 独立 VPC · 数据不出域）</text>
+<rect x="100" y="788" width="150" height="70" rx="8" fill="#1a0d0d" stroke="#ef4444" stroke-width="1.2"/>
+<text x="175.0" y="827.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="175" y="802" text-anchor="middle" fill="#fecaca" font-size="9.5" font-weight="700">Kata/Firecracker</text>
+<text x="175" y="814" text-anchor="middle" fill="#fecaca" font-size="9.5" font-weight="700">微虚拟机</text>
+<text x="175" y="826" text-anchor="middle" fill="#fecaca" font-size="9.5" font-weight="700">内核级隔离</text>
+<text x="175" y="838" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">codex app-server</text>
+<text x="175" y="850" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">+沙箱自检</text>
+<rect x="260" y="788" width="140" height="70" rx="8" fill="#1a1224" stroke="#a855f7" stroke-width="1.2"/>
+<text x="330.0" y="827.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="330" y="802" text-anchor="middle" fill="#e8f2f0" font-size="9.5" font-weight="700">MCP Gateway</text>
+<text x="330" y="814" text-anchor="middle" fill="#e8f2f0" font-size="9.5" font-weight="700">硬件级隔离</text>
+<text x="330" y="826" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">独立 VPC</text>
+<text x="330" y="838" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">KMS 专属 CMK</text>
+<text x="330" y="850" text-anchor="middle" fill="#9db8b4" font-size="9.5" font-weight="400">数据不出域</text>
+<rect x="410" y="788" width="100" height="70" rx="8" fill="#0d1820" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="460.0" y="827.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="460" y="802" text-anchor="middle" fill="#e8f2f0" font-size="9" font-weight="700">Workspace</text>
+<text x="460" y="816" text-anchor="middle" fill="#9db8b4" font-size="9" font-weight="400">加密 PVC</text>
+<text x="460" y="830" text-anchor="middle" fill="#9db8b4" font-size="9" font-weight="400">独立集群</text>
+<text x="460" y="844" text-anchor="middle" fill="#9db8b4" font-size="9" font-weight="400">不出域</text>
+<rect x="520" y="788" width="500" height="70" rx="8" fill="#1a2210" stroke="#028090" stroke-width="1.2"/>
+<text x="770.0" y="827.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="770" y="815" text-anchor="middle" fill="#35c2b0" font-size="11" font-weight="700">出站 NetworkPolicy（三档统一）</text>
+<text x="770" y="833" text-anchor="middle" fill="#9db8b4" font-size="10">默认全禁出站 → 仅放行 Model Gateway + MCP Gateway 两个白名单地址</text>
+<text x="770" y="850" text-anchor="middle" fill="#9db8b4" font-size="10">Seccomp/AppArmor · 只读 rootfs · 非 root · 资源限额(CPU/Mem/PID/FD)</text>
+<path d="M250 823 L260 823" fill="none" stroke="#9db8b4" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M400 823 L410 823" fill="none" stroke="#9db8b4" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M510 823 L520 823" fill="none" stroke="#9db8b4" stroke-width="1.2" marker-end="url(#a)"/>
+<rect x="1180" y="90" width="380" height="810" rx="14" fill="#13242e" stroke="#2e5a68" stroke-width="1.6"/>
+<rect x="1180" y="90" width="380" height="34" rx="14" fill="#173341"/>
+<rect x="1180" y="110" width="380" height="14" fill="#173341"/>
+<text x="1370" y="113" text-anchor="middle" fill="#35c2b0" font-size="13" font-weight="700">三档部署矩阵</text>
+<rect x="1200" y="140" width="340" height="200" rx="8" fill="#173341" stroke="#028090" stroke-width="1.2"/>
+<text x="1215" y="162" fill="#35c2b0" font-size="12" font-weight="700">① 共享池</text>
+<text x="1215" y="180" fill="#9db8b4" font-size="10">逻辑隔离：namespace + tenant_id + NetworkPolicy</text>
+<text x="1215" y="196" fill="#e8f2f0" font-size="10">• namespace: nexus-exec-shared</text>
+<text x="1215" y="214" fill="#e8f2f0" font-size="10">• 行级 RLS(tenant_id) 兜底</text>
+<text x="1215" y="232" fill="#e8f2f0" font-size="10">• 共享 Pod 池 + 租户权重队列</text>
+<text x="1215" y="250" fill="#e8f2f0" font-size="10">• 网络策略：出站两白名单</text>
+<text x="1215" y="268" fill="#e8f2f0" font-size="10">• KMS: 共享 CMK 或按租户派生</text>
+<text x="1215" y="286" fill="#9db8b4" font-size="10">• 适用：中小客户 / 非敏感数据</text>
+<text x="1215" y="304" fill="#9db8b4" font-size="10">• 成本：低</text>
+<rect x="1200" y="355" width="340" height="200" rx="8" fill="#173341" stroke="#e8b64c" stroke-width="1.2"/>
+<text x="1215" y="377" fill="#e8b64c" font-size="12" font-weight="700">② 专属池</text>
+<text x="1215" y="395" fill="#9db8b4" font-size="10">独立节点池 + 独立 ns + 独立密钥</text>
+<text x="1215" y="411" fill="#e8f2f0" font-size="10">• namespace: nexus-exec-{tenant}</text>
+<text x="1215" y="429" fill="#e8f2f0" font-size="10">• 独立节点池(污点+tolerations)</text>
+<text x="1215" y="447" fill="#e8f2f0" font-size="10">• 独立 Secret(按租户 CMK)</text>
+<text x="1215" y="465" fill="#e8f2f0" font-size="10">• 专用 HPA + 并发上限</text>
+<text x="1215" y="483" fill="#e8f2f0" font-size="10">• 对象存储独立桶/前缀</text>
+<text x="1215" y="501" fill="#9db8b4" font-size="10">• 适用：大客户 / 有合规要求</text>
+<text x="1215" y="519" fill="#9db8b4" font-size="10">• 成本：中</text>
+<rect x="1200" y="570" width="340" height="200" rx="8" fill="#173341" stroke="#ef4444" stroke-width="1.2"/>
+<text x="1215" y="592" fill="#ef4444" font-size="12" font-weight="700">③ 私有化</text>
+<text x="1215" y="610" fill="#9db8b4" font-size="10">独立 VPC / 独立集群 / 数据不出域</text>
+<text x="1215" y="626" fill="#e8f2f0" font-size="10">• 独立 K8s 集群(VPC 内)</text>
+<text x="1215" y="644" fill="#e8f2f0" font-size="10">• Kata/Firecracker 微虚拟机</text>
+<text x="1215" y="662" fill="#e8f2f0" font-size="10">• 独立 KMS / HSM</text>
+<text x="1215" y="680" fill="#e8f2f0" font-size="10">• 本地模型(vLLM/Ollama)</text>
+<text x="1215" y="698" fill="#e8f2f0" font-size="10">• 数据完全不出域</text>
+<text x="1215" y="716" fill="#9db8b4" font-size="10">• 适用：金融/政务/国企</text>
+<text x="1215" y="734" fill="#9db8b4" font-size="10">• 成本：高</text>
+<rect x="1200" y="785" width="340" height="100" rx="8" fill="#173341" stroke="#ef4444" stroke-width="1.4"/>
+<text x="1215" y="807" fill="#ef4444" font-size="11.5" font-weight="700">四重隔离取证</text>
+<text x="1215" y="823" fill="#e8f2f0" font-size="10">• 1. 逻辑: RLS(tenant_id) 兜底</text>
+<text x="1215" y="839" fill="#e8f2f0" font-size="10">• 2. 运行时: ns+节点亲和+NetworkPolicy</text>
+<text x="1215" y="855" fill="#e8f2f0" font-size="10">• 3. 密钥: 按租户 CMK，禁用不可解密</text>
+<text x="1215" y="871" fill="#e8f2f0" font-size="10">• 4. 存储: 独立前缀+禁止跨列举</text>
+<rect x="40" y="920" width="1520" height="38" rx="8" fill="#173341" stroke="#2e5a68"/>
+<text x="60" y="944" fill="#9db8b4" font-size="11">图例：</text>
+<rect x="110" y="932" width="16" height="14" fill="#173341" stroke="#028090"/>
+<text x="132" y="944" fill="#9db8b4" font-size="10.5">控制面 Deployment(HPA)</text>
+<rect x="290" y="932" width="16" height="14" fill="#173341" stroke="#3b82f6"/>
+<text x="312" y="944" fill="#9db8b4" font-size="10.5">StatefulSet(有状态)</text>
+<rect x="440" y="932" width="16" height="14" fill="#173341" stroke="#ef4444" stroke-dasharray="4,3"/>
+<text x="462" y="944" fill="#9db8b4" font-size="10.5">Sandbox Pod(可销毁)</text>
+<rect x="600" y="932" width="16" height="14" fill="#173341" stroke="#a855f7"/>
+<text x="622" y="944" fill="#9db8b4" font-size="10.5">MCP Gateway 侧车</text>
+<rect x="760" y="932" width="16" height="14" fill="#173341" stroke="#e8b64c"/>
+<text x="782" y="944" fill="#9db8b4" font-size="10.5">对象存储/CMK</text>
+<rect x="900" y="932" width="16" height="14" fill="#173341" stroke="#ef4444"/>
+<text x="922" y="944" fill="#9db8b4" font-size="10.5">高敏/Kata</text>
+<text x="40" y="975" fill="#9db8b4" font-size="11.5">图 · Nexus K8s 部署拓扑全景（控制面 nexus-control ↔ 执行面 nexus-exec-{tenant}，三档隔离矩阵，NetworkPolicy 全标注）</text>
+</svg>

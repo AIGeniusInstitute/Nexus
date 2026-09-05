@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3200 700">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#a855f7"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+<linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7f1d1d"/><stop offset="1" stop-color="#ef4444"/></linearGradient>
+</defs>
+<rect width="3200" height="700" fill="#0b141a"/>
+<text x="40" y="40" fill="#35c2b0" font-size="22" font-weight="700">L5 Harness · 内部 crate 依赖拓扑（复用 Codex 106 crate）</text>
+<text x="40" y="64" fill="#9db8b4" font-size="13">按功能域分组 · 箭头表示编译期依赖 · 紫色=核心 · 金色=持久化/沙箱 · 青色=工具/模型 · 蓝色=执行CLI</text>
+<rect x="80" y="100" width="680" height="340" rx="10" fill="#13242e" stroke="#a855f7" stroke-width="1.6" opacity="0.95"/>
+<rect x="80" y="100" width="680" height="26" rx="10" fill="#a855f7" opacity="0.3"/>
+<text x="420.0" y="118" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">核心引擎 (Core Engine)</text>
+<rect x="160" y="240" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="245.0" y="264.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">core (run_turn)</text>
+<rect x="360" y="240" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="445.0" y="264.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">core-api</text>
+<rect x="560" y="240" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="645.0" y="264.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">core-plugins</text>
+<rect x="160" y="300" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="245.0" y="324.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">protocol</text>
+<rect x="360" y="300" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="445.0" y="324.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">context-fragments</text>
+<rect x="560" y="300" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="645.0" y="324.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">prompts</text>
+<rect x="160" y="360" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="245.0" y="384.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">app-server</text>
+<rect x="360" y="360" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="445.0" y="384.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">app-server-protocol</text>
+<rect x="560" y="360" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="645.0" y="384.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">app-server-client</text>
+<rect x="160" y="420" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="245.0" y="444.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">app-server-transport</text>
+<rect x="360" y="420" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="445.0" y="444.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">app-server-daemon</text>
+<rect x="560" y="420" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="645.0" y="444.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">codex-api</text>
+<rect x="800" y="100" width="500" height="340" rx="10" fill="#13242e" stroke="#e8b64c" stroke-width="1.6" opacity="0.95"/>
+<rect x="800" y="100" width="500" height="26" rx="10" fill="#e8b64c" opacity="0.3"/>
+<text x="1050.0" y="118" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">持久化与沙箱 (Persist+Sandbox)</text>
+<rect x="880" y="240" width="170" height="40" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="965.0" y="264.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">state (SQLite)</text>
+<rect x="1080" y="240" width="170" height="40" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="1165.0" y="264.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">thread-store</text>
+<rect x="880" y="300" width="170" height="40" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="965.0" y="324.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">rollout</text>
+<rect x="1080" y="300" width="170" height="40" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="1165.0" y="324.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">history</text>
+<rect x="880" y="360" width="170" height="40" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="965.0" y="384.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">sandboxing</text>
+<rect x="1080" y="360" width="170" height="40" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="1165.0" y="384.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">linux-sandbox</text>
+<rect x="880" y="420" width="170" height="40" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="965.0" y="444.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">bwrap</text>
+<rect x="1080" y="420" width="170" height="40" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="1165.0" y="444.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">windows-sandbox-rs</text>
+<rect x="880" y="480" width="170" height="40" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="965.0" y="504.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">execpolicy (Starlark)</text>
+<rect x="1360" y="100" width="760" height="340" rx="10" fill="#13242e" stroke="#35c2b0" stroke-width="1.6" opacity="0.95"/>
+<rect x="1360" y="100" width="760" height="26" rx="10" fill="#35c2b0" opacity="0.3"/>
+<text x="1740.0" y="118" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">工具·技能·模型 (Tools/Skills/Models)</text>
+<rect x="1440" y="240" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="1525.0" y="264.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">codex-mcp</text>
+<rect x="1640" y="240" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="1725.0" y="264.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">rmcp-client</text>
+<rect x="1840" y="240" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="1925.0" y="264.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">skills</text>
+<rect x="1440" y="300" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="1525.0" y="324.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">hooks</text>
+<rect x="1640" y="300" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="1725.0" y="324.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">tools (ToolRouter)</text>
+<rect x="1840" y="300" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="1925.0" y="324.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">model-provider</text>
+<rect x="1440" y="360" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="1525.0" y="384.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">model-provider-info</text>
+<rect x="1640" y="360" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="1725.0" y="384.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">responses-api-proxy</text>
+<rect x="1840" y="360" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="1925.0" y="384.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">ollama</text>
+<rect x="1440" y="420" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="1525.0" y="444.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">lmstudio</text>
+<rect x="1640" y="420" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="1725.0" y="444.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">models-manager</text>
+<rect x="1840" y="420" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="1925.0" y="444.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">connectors</text>
+<rect x="2180" y="100" width="500" height="200" rx="10" fill="#13242e" stroke="#a855f7" stroke-width="1.6" opacity="0.95"/>
+<rect x="2180" y="100" width="500" height="26" rx="10" fill="#a855f7" opacity="0.3"/>
+<text x="2430.0" y="118" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">多 Agent 协作 (Collaboration)</text>
+<rect x="2260" y="240" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="2345.0" y="264.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">collaboration-mode-templates</text>
+<rect x="2260" y="300" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="2345.0" y="324.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">agent-roles</text>
+<rect x="2460" y="300" width="170" height="40" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="2545.0" y="324.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">agent-identity</text>
+<rect x="2180" y="340" width="500" height="200" rx="10" fill="#13242e" stroke="#3b82f6" stroke-width="1.6" opacity="0.95"/>
+<rect x="2180" y="340" width="500" height="26" rx="10" fill="#3b82f6" opacity="0.3"/>
+<text x="2430.0" y="358" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">执行与 CLI (Exec/CLI)</text>
+<rect x="2260" y="720" width="170" height="40" rx="5" fill="#173341" stroke="#3b82f6" stroke-width="1"/>
+<text x="2345.0" y="744.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">cli</text>
+<rect x="2460" y="720" width="170" height="40" rx="5" fill="#173341" stroke="#3b82f6" stroke-width="1"/>
+<text x="2545.0" y="744.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">tui</text>
+<rect x="2260" y="780" width="170" height="40" rx="5" fill="#173341" stroke="#3b82f6" stroke-width="1"/>
+<text x="2345.0" y="804.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">codex-client</text>
+<rect x="2460" y="780" width="170" height="40" rx="5" fill="#173341" stroke="#3b82f6" stroke-width="1"/>
+<text x="2545.0" y="804.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">exec</text>
+<rect x="2260" y="840" width="170" height="40" rx="5" fill="#173341" stroke="#3b82f6" stroke-width="1"/>
+<text x="2345.0" y="864.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">exec-server</text>
+<rect x="2460" y="840" width="170" height="40" rx="5" fill="#173341" stroke="#3b82f6" stroke-width="1"/>
+<text x="2545.0" y="864.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">exec-server-protocol</text>
+<rect x="2750" y="100" width="400" height="200" rx="10" fill="#13242e" stroke="#35c2b0" stroke-width="1.6" opacity="0.95"/>
+<rect x="2750" y="100" width="400" height="26" rx="10" fill="#35c2b0" opacity="0.3"/>
+<text x="2950.0" y="118" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">可观测 (Observability)</text>
+<rect x="2830" y="240" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="2915.0" y="264.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">otel</text>
+<rect x="2830" y="300" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="2915.0" y="324.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">analytics</text>
+<rect x="3030" y="300" width="170" height="40" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="3115.0" y="324.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">diagnostics</text>
+<path d="M750 160 L800 165" fill="none" stroke="#a855f7" stroke-width="1.5" marker-end="url(#a)"/>
+<path d="M750 175 L800 165" fill="none" stroke="#e8b64c" stroke-width="2.0" marker-end="url(#ag)"/>
+<path d="M750 200 L800 285" fill="none" stroke="#e8b64c" stroke-width="1.8" marker-end="url(#ag)"/>
+<path d="M1350 175 L1360 165" fill="none" stroke="#35c2b0" stroke-width="2.0" marker-end="url(#a)"/>
+<path d="M1350 200 L1360 225" fill="none" stroke="#35c2b0" stroke-width="1.8" marker-end="url(#a)"/>
+<path d="M1350 175 L1360 255" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)" stroke-dasharray="4,2"/>
+<path d="M1350 175 L2180 225" fill="none" stroke="#a855f7" stroke-width="1.5" marker-end="url(#ap)" stroke-dasharray="6,3"/>
+<path d="M1350 175 L2750 165" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)" stroke-dasharray="6,3"/>
+<path d="M900 400 L900 330" fill="none" stroke="#e8b64c" stroke-width="1.5" marker-end="url(#ag)"/>
+<rect x="80" y="560" width="20" height="14" fill="#173341" stroke="#a855f7"/>
+<text x="108" y="572" fill="#9db8b4" font-size="11">核心引擎 crate</text>
+<rect x="260" y="560" width="20" height="14" fill="#173341" stroke="#e8b64c"/>
+<text x="288" y="572" fill="#9db8b4" font-size="11">持久化/沙箱 crate</text>
+<rect x="460" y="560" width="20" height="14" fill="#173341" stroke="#35c2b0"/>
+<text x="488" y="572" fill="#9db8b4" font-size="11">工具/模型 crate</text>
+<rect x="640" y="560" width="20" height="14" fill="#173341" stroke="#3b82f6"/>
+<text x="668" y="572" fill="#9db8b4" font-size="11">执行/CLI crate</text>
+<text x="40" y="610" fill="#9db8b4" font-size="11.5">图 2 · L5 Harness 内部 106 crate 依赖拓扑 — 按功能域分组，箭头表示关键编译期依赖路径</text>
+</svg>

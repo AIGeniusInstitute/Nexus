@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus 核心组件模块分层与模块详细设计 · 交互报告</title>
+<style>
+:root {
+  --bg: #0b141a; --panel: #13242e; --panel2: #173341; --text: #e8f2f0; --muted: #9db8b4;
+  --line: #24414e; --line2: #2e5a68; --accent: #35c2b0; --accent2: #028090; --gold: #e8b64c;
+  --blue: #3b82f6; --red: #ef4444; --purple: #a855f7; --code-bg: #0d1b22;
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --panel: #ffffff; --panel2: #f1f5f9; --text: #1e293b; --muted: #64748b;
+  --line: #cbd5e1; --line2: #94a3b8; --accent: #0d9488; --accent2: #14b8a6; --gold: #ca8a04;
+  --blue: #2563eb; --red: #dc2626; --purple: #9333ea; --code-bg: #f1f5f9;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: 'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif; line-height: 1.6; transition: background .3s, color .3s; }
+.scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--gold)); z-index: 999; transition: width .1s; }
+.header { position: sticky; top: 0; background: var(--panel); border-bottom: 1px solid var(--line); padding: 16px 24px; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
+.header h1 { font-size: 18px; color: var(--accent); font-weight: 700; }
+.header-meta { font-size: 12px; color: var(--muted); }
+.theme-toggle { background: var(--panel2); border: 1px solid var(--line2); color: var(--text); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all .2s; }
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.layout { display: flex; max-width: 1800px; margin: 0 auto; }
+.toc { position: sticky; top: 60px; width: 240px; height: calc(100vh - 60px); overflow-y: auto; padding: 20px 12px; border-right: 1px solid var(--line); flex-shrink: 0; }
+.toc h3 { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.toc a { display: block; padding: 5px 10px; color: var(--muted); text-decoration: none; font-size: 12.5px; border-radius: 4px; transition: all .15s; margin-bottom: 2px; }
+.toc a:hover { background: var(--panel2); color: var(--text); }
+.toc a.active { background: var(--accent2); color: var(--text); font-weight: 600; }
+.content { flex: 1; padding: 24px 32px; min-width: 0; }
+.content section { margin-bottom: 48px; scroll-margin-top: 70px; }
+.content h2 { font-size: 24px; color: var(--accent); border-bottom: 2px solid var(--line2); padding-bottom: 8px; margin-bottom: 16px; }
+.content h3 { font-size: 18px; color: var(--gold); margin-top: 28px; margin-bottom: 12px; }
+.content h4 { font-size: 15px; color: var(--purple); margin-top: 20px; margin-bottom: 8px; }
+.content p { margin-bottom: 12px; color: var(--text); }
+.content ul, .content ol { margin-left: 20px; margin-bottom: 12px; }
+.content li { margin-bottom: 4px; }
+.content code { background: var(--code-bg); padding: 2px 6px; border-radius: 3px; font-family: 'Fira Code','SF Mono',Consolas,monospace; font-size: 0.9em; color: var(--accent); }
+.content pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 16px; overflow-x: auto; margin-bottom: 16px; }
+.content pre code { background: none; padding: 0; color: var(--text); font-size: 0.85em; }
+.content table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
+.content th { background: var(--panel2); color: var(--accent); font-weight: 700; padding: 8px 10px; text-align: left; border: 1px solid var(--line); }
+.content td { padding: 8px 10px; border: 1px solid var(--line); color: var(--text); vertical-align: top; }
+.content tr:hover td { background: var(--panel2); }
+.content blockquote { border-left: 3px solid var(--gold); padding: 8px 16px; margin-bottom: 16px; background: var(--panel); border-radius: 0 6px 6px 0; }
+.content blockquote p { margin: 0; color: var(--muted); font-style: italic; }
+.content strong { color: var(--gold); }
+.content img { max-width: 100%; border-radius: 8px; border: 1px solid var(--line); margin: 12px 0; }
+.content .img-caption { text-align: center; color: var(--muted); font-size: 12px; margin-top: -8px; margin-bottom: 20px; }
+details { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; margin-bottom: 12px; overflow: hidden; }
+details summary { padding: 10px 16px; cursor: pointer; font-weight: 600; color: var(--accent); font-size: 14px; user-select: none; transition: background .2s; }
+details summary:hover { background: var(--panel2); }
+details[open] summary { border-bottom: 1px solid var(--line); }
+details .details-body { padding: 16px; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.badge-blue { background: rgba(59,130,246,.15); color: var(--blue); border: 1px solid rgba(59,130,246,.3); }
+.badge-green { background: rgba(53,194,176,.15); color: var(--accent); border: 1px solid rgba(53,194,176,.3); }
+.badge-gold { background: rgba(232,182,76,.15); color: var(--gold); border: 1px solid rgba(232,182,76,.3); }
+.badge-purple { background: rgba(168,85,247,.15); color: var(--purple); border: 1px solid rgba(168,85,247,.3); }
+.badge-red { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
+.layer-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 12px; transition: border-color .2s; }
+.layer-card:hover { border-color: var(--accent); }
+.layer-card .layer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.layer-card .layer-title { font-size: 16px; font-weight: 700; }
+.crate-tag { display: inline-block; background: var(--code-bg); border: 1px solid var(--purple); border-radius: 3px; padding: 1px 6px; font-size: 11px; color: var(--purple); font-family: monospace; margin: 2px; }
+@media (max-width: 1024px) { .toc { display: none; } .content { padding: 16px; } }
+</style>
+</head>
+<body>
+<div class="scroll-progress" id="progress"></div>
+
+<div class="header">
+  <div>
+    <h1>Nexus 核心组件模块分层与模块详细设计</h1>
+    <div class="header-meta">任务二-2 · 基座 Codex Harness 106 crate · 2026-09-06</div>
+  </div>
+  <button class="theme-toggle" onclick="toggleTheme()">浅色</button>
+</div>
+
+<div class="layout">
+  <nav class="toc" id="toc">
+    <h3>目录</h3>
+    <a href="#sec0">0. 设计判断</a>
+    <a href="#sec1">1. 八层模块总览</a>
+    <a href="#sec2">2. L1 接入层</a>
+    <a href="#sec3">3. L2 网关层</a>
+    <a href="#sec4">4. L3 控制平面</a>
+    <a href="#sec4-1">4.1 身份与租户</a>
+    <a href="#sec4-2">4.2 任务编排</a>
+    <a href="#sec4-3">4.3 审批中心</a>
+    <a href="#sec4-4">4.4 策略中心</a>
+    <a href="#sec4-5">4.5 配额计费</a>
+    <a href="#sec4-6">4.6 连接器治理</a>
+    <a href="#sec4-7">4.7 知识库RAG</a>
+    <a href="#sec5">5. L4 执行平面</a>
+    <a href="#sec6">6. L5 Harness</a>
+    <a href="#sec6-1">6.1 核心引擎</a>
+    <a href="#sec6-2">6.2 持久化沙箱</a>
+    <a href="#sec6-3">6.3 工具技能模型</a>
+    <a href="#sec6-4">6.4 多Agent协作</a>
+    <a href="#sec6-5">6.5 执行CLI</a>
+    <a href="#sec6-6">6.6 可观测</a>
+    <a href="#sec6-7">6.7 适配层</a>
+    <a href="#sec7">7. L6 模型层</a>
+    <a href="#sec8">8. L7 存储治理</a>
+    <a href="#sec9">9. 安全合规</a>
+    <a href="#sec10">10. 依赖关系</a>
+    <a href="#sec11">11. 产物索引</a>
+  </nav>
+
+  <main class="content">
+
+<section id="sec0">
+<h2>0. 设计判断（结论先行）</h2>
+<blockquote><p>八层架构中 L5 复用 Codex Harness 的 106 个 Rust crate 作为黑盒执行内核，L1-L3 与 L6-L7 全自建，L4 是薄壳适配层。模块间依赖严格"上→下"，禁止逆序依赖；L5 与控制面之间仅经 app-server JSON-RPC 协议通信。</p></blockquote>
+<table>
+<tr><th>#</th><th>判断</th><th>理由</th></tr>
+<tr><td>1</td><td>L5 Harness crate 全量复用、零内核改动</td><td><code>core</code>（<code>run_turn</code> 七阶段）、<code>app-server</code>、<code>execpolicy</code>、<code>sandboxing</code> 等 106 crate 已覆盖 Agent 执行全链路</td></tr>
+<tr><td>2</td><td>app-server-protocol 是唯一集成面</td><td>JSON-RPC 2.0 双向事件流、Thread/Turn/Item 三原语、<code>thread/resume</code>/<code>fork</code>/<code>rollback</code>、审批回写</td></tr>
+<tr><td>3</td><td>控制面自建七大子系统，各自独立</td><td>身份租户/任务编排/审批中心/策略中心/配额计费/连接器治理/知识库RAG，经 Temporal 或事件总线松耦合</td></tr>
+<tr><td>4</td><td>模块依赖严格分层，禁止逆序</td><td>L1→L2→L3→L4→L5→L6/L7；L5 不反向依赖任何上层</td></tr>
+<tr><td>5</td><td>配置即政策，不分支化</td><td>租户差异 = 运行时注入 <code>config.toml</code> + <code>execpolicy.rules</code> + <code>enabled_tools</code> + <code>AGENTS.md</code></td></tr>
+</table>
+</section>
+
+<section id="sec1">
+<h2>1. 八层模块清单总览</h2>
+<img src="module-layering.svg" alt="八层模块分层依赖总图">
+<div class="img-caption">图 1 · 八层模块分层依赖总图 — L1-L3/L6-L7 自建(蓝/绿)，L4 薄壳(金)，L5 复用 Codex Harness 106 crate(紫)，安全合规贯穿(红)</div>
+<table>
+<tr><th>层</th><th>职责</th><th>子模块数</th><th>复用Codex</th><th>关键crate/技术</th></tr>
+<tr><td><span class="badge badge-blue">L1</span> 接入层</td><td>多渠道统一入口</td><td>6</td><td>否</td><td>React+WS / IM Bot / IDE / REST / CLI</td></tr>
+<tr><td><span class="badge badge-blue">L2</span> 网关层</td><td>南北向流量、鉴权、实时推送</td><td>5</td><td>否</td><td>API Gateway / WS网关 / OIDC/SAML / 限流</td></tr>
+<tr><td><span class="badge badge-green">L3</span> 控制平面</td><td>平台的大脑与账本</td><td>7子系统×3-4</td><td>否（自建核心）</td><td>Temporal / Postgres RLS / 策略引擎</td></tr>
+<tr><td><span class="badge badge-gold">L4</span> 执行平面</td><td>Harness 托管外壳</td><td>7</td><td>薄壳+复用</td><td>K8s Pod / MCP Gateway / 凭据代理</td></tr>
+<tr><td><span class="badge badge-purple">L5</span> Harness</td><td>Agent 执行内核</td><td>40+ crate</td><td><strong>是（黑盒）</strong></td><td><code>core</code> / <code>app-server</code> / <code>execpolicy</code> / <code>sandboxing</code></td></tr>
+<tr><td><span class="badge badge-green">L6</span> 模型层</td><td>模型访问与计量</td><td>6</td><td>部分复用</td><td><code>model-provider</code> / <code>responses-api-proxy</code> / <code>ollama</code></td></tr>
+<tr><td><span class="badge badge-blue">L7</span> 存储与治理</td><td>持久化与可观测</td><td>6</td><td>否</td><td>Postgres / S3 / pgvector / WORM / OTel</td></tr>
+<tr><td><span class="badge badge-red">贯穿</span></td><td>安全与合规</td><td>6 域</td><td>否</td><td>KMS / NetworkPolicy / 审计 / 红队</td></tr>
+</table>
+</section>
+
+<section id="sec2">
+<h2>2. L1 接入层</h2>
+<details><summary>2.1 模块清单（6 个模块）</summary>
+<div class="details-body">
+<table>
+<tr><th>模块</th><th>形态</th><th>职责</th><th>上游</th><th>下游</th></tr>
+<tr><td>Web 门户</td><td>React + WS</td><td>会话列表、任务时间线、审批抽屉、产物预览、Diff 查看</td><td>无</td><td>L2 API Gateway + WS 网关</td></tr>
+<tr><td>IM Bot</td><td>飞书/钉钉/企微/Slack</td><td>审批推送（卡片消息）、任务通知</td><td>无</td><td>L2 API Gateway</td></tr>
+<tr><td>IDE 插件</td><td>VS Code/JetBrains</td><td>远端 Thread 映射到本地、代码 diff 预览、审批</td><td>无</td><td>L2 网关代理</td></tr>
+<tr><td>OpenAPI</td><td>REST + Webhook</td><td>Agent 能力被业务系统调用、任务完成回调</td><td>无</td><td>L2 API Gateway</td></tr>
+<tr><td>CLI</td><td><code>codex</code> + 自定义登录</td><td>开发者体验入口、批处理脚本</td><td>无</td><td>L2 网关（OAuth device flow）</td></tr>
+<tr><td>Webhook 回调</td><td>REST</td><td>任务完成、审批结果异步通知</td><td>L3 事件总线</td><td>无</td></tr>
+</table>
+</div></details>
+<p><strong>统一约束</strong>：所有入口都不直连 Harness（L5）。必须经 L2 网关，否则审计链路断裂。</p>
+<p><strong>IM Bot 审批卡片</strong>：飞书/钉钉卡片消息承载"批准/拒绝/修改后批准"三按钮，回调经 L2 网关鉴权后写入 L3 审批中心。</p>
+</section>
+
+<section id="sec3">
+<h2>3. L2 网关层</h2>
+<details><summary>3.1 模块清单（5 个模块）</summary>
+<div class="details-body">
+<table>
+<tr><th>模块</th><th>职责</th><th>关键接口</th><th>上游</th><th>下游</th></tr>
+<tr><td>API Gateway</td><td>REST 路由、请求校验、幂等（<code>Idempotency-Key</code>）</td><td>HTTP 路由 → L3 后端</td><td>L1 入口</td><td>L3 控制面各子系统</td></tr>
+<tr><td>WebSocket 网关</td><td>会话事件推送、订阅权限驱动</td><td><code>subscribe(thread_id)</code></td><td>L1 Web 门户</td><td>L3 事件总线 + L7 Postgres</td></tr>
+<tr><td>认证中间件</td><td>OIDC/SAML 对接企业 IdP、SCIM 同步</td><td>token → 注入 tenant_id/user_id/roles</td><td>L1 入口</td><td>L3 身份租户</td></tr>
+<tr><td>限流引擎</td><td>租户级 + 用户级 + IP 级</td><td>放行/拒绝/排队</td><td>L1 入口</td><td>无</td></tr>
+<tr><td>配额预扣</td><td>粗粒度拦截（预估 token + 沙箱时长）</td><td>预扣结果</td><td>L3 配额计费</td><td>L3 配额计费</td></tr>
+</table>
+</div></details>
+<p><strong>WS 网关订阅模型</strong>：<code>subscribe(thread_id)</code> → 校验用户对该 Thread 的读权限 → 建立事件推送通道。权限变更立即断连。</p>
+<p><strong>幂等键</strong>：<code>Idempotency-Key</code> header → Redis SET NX → 重复请求直接返回缓存结果。</p>
+</section>
+
+<section id="sec4">
+<h2>4. L3 控制平面 — 七大自建子系统</h2>
+<img src="control-plane-subsystems.svg" alt="L3 控制平面七大自建子系统">
+<div class="img-caption">图 3 · L3 控制平面七大自建子系统 — 跨子系统依赖：身份→策略→审批、编排→审批→计费、连接器→知识库</div>
+
+<section id="sec4-1">
+<h3>4.1 身份与租户</h3>
+<div class="layer-card">
+<div class="layer-header"><span class="layer-title">Tenant 模型</span><span class="badge badge-green">RBAC+ABAC</span></div>
+<p>Tenant → OrgUnit（多级，映射部门树）→ User/ServiceAccount → Role（owner/admin/developer/auditor/viewer）</p>
+</div>
+<details><summary>权限继承规则与数据模型</summary>
+<div class="details-body">
+<pre><code>Agent 可用权限 = 用户权限 ∩ 工作区权限 ∩ Agent 角色上限 ∩ 策略中心允许</code></pre>
+<p>四者取交集，任一为空即拒绝。<strong>三个必须区分的身份</strong>：</p>
+<ul>
+<li>用户身份（人在用）</li>
+<li>Agent 身份（服务账号，权限是用户的<strong>子集</strong>且需显式授予）</li>
+<li>连接器身份（MCP/OAuth 委托令牌，按租户隔离存储）</li>
+</ul>
+<pre><code>Tenant(id, name, plan, isolation_tier, cmk_id, quota_profile, status)
+  └── OrgUnit(id, tenant_id, parent_id, path, name)
+        └── User(id, tenant_id, idp_subject, email, display_name)
+        └── ServiceAccount(id, tenant_id, name, role_id, cert_fingerprint)
+  └── Workspace(id, tenant_id, name, env_tag, repos_json, ...)
+        └── Membership(id, tenant_id, user_id, org_unit_id, role_id, scope_json)</code></pre>
+</div></details>
+</section>
+
+<section id="sec4-2">
+<h3>4.2 任务编排（Temporal Workflow）</h3>
+<div class="layer-card">
+<div class="layer-header"><span class="layer-title">两层循环设计</span><span class="badge badge-green">可恢复编排</span></div>
+<pre><code>外层（平台）Workflow                    内层（Harness）run_turn
+  ├─ 申请 Pod                             ├─ 准入（策略快照注入）
+  ├─ 建连 app-server                      ├─ 快照（上下文序列化）
+  ├─ 下发任务（thread/start 或 resume）     ├─ 采样（模型调用）
+  ├─ 消费事件流 → 写 Postgres              ├─ 工具调度（ToolRouter）
+  ├─ 处理审批（等几小时）                   ├─ 结果写回（Item 落盘）
+  ├─ 收尾结算（用量+审计）                  ├─ 压缩判定（auto compact）
+  └─ 销毁 Pod                             └─ 完成/中断
+        ↑ 事件流关联，不混为一个循环 ↑</code></pre>
+</div>
+<p><strong>为什么用 Temporal 而非自建状态机</strong>：审批可能等几小时、Pod 会崩、网络会断——只有持久化工作流能天然表达"等三天再继续"。</p>
+</section>
+
+<section id="sec4-3">
+<h3>4.3 审批中心（HITL）</h3>
+<details><summary>审批流程：跨进程 HITL 桥接（最复杂的一处）</summary>
+<div class="details-body">
+<pre><code>① app-server 发出审批请求事件
+   ↓
+② 适配层解析 → 控制面创建 ApprovalTicket（pending）
+   ├─ 内容：thread_id / turn_id / item_seq / 工具名 / 参数(脱敏) / diff预览 / 风险等级
+   ├─ 策略：谁可批（单人/双人/指定角色）、超时动作（默认拒绝）
+   └─ 快照：审批时上下文（事后可看"批的是什么"）
+   ↓
+③ 推送：Web 抽屉 + IM 卡片 + 邮件（按风险选渠道）
+   ↓
+④ 用户决策（批准/拒绝/修改后批准/转交）
+   ↓
+⑤ 决策先落库（decided）再回写 app-server
+   ↓
+⑥ app-server 继续/中止；结果回事件流闭环</code></pre>
+<table>
+<tr><th>边界情况</th><th>处理</th></tr>
+<tr><td>Pod 等待时崩溃</td><td>审批状态在 DB，Pod 重建后 resume，<code>item_seq</code> 去重，已决策直接重放</td></tr>
+<tr><td>审批超时</td><td>默认<strong>拒绝</strong>（非批准），通知申请人</td></tr>
+<tr><td>审批期间权限撤销</td><td>决策时重新校验审批人权限，失效则 ticket 作废</td></tr>
+<tr><td>修改参数后批准</td><td>重新走策略求值（改参数=新请求）</td></tr>
+<tr><td>批量相似请求</td><td>作用域有限定：仅该目录/仅该工具/≤1h</td></tr>
+<tr><td>审计</td><td>请求快照+决策人+时间+理由不可篡改</td></tr>
+</table>
+</div></details>
+</section>
+
+<section id="sec4-4">
+<h3>4.4 策略中心</h3>
+<table>
+<tr><th>模块</th><th>职责</th><th>关键接口</th><th>上下游</th></tr>
+<tr><td>策略对象管理</td><td>策略 CRUD</td><td><code>createPolicy</code> / <code>updatePolicy</code></td><td>L2管理→L7 Postgres</td></tr>
+<tr><td>决策引擎</td><td>求值→allow/deny/require_approval/dual_approval/audit_only</td><td><code>evaluate(tenant,role,workspace,tool,action,risk)</code></td><td>L3编排+审批→L7</td></tr>
+<tr><td>漂移防护</td><td>策略快照写入任务上下文</td><td><code>snapshotPolicy(taskContext)</code></td><td>L3编排→L7</td></tr>
+<tr><td>execpolicy 生成</td><td>按策略生成 Starlark 规则集</td><td><code>generateExecPolicy(tenant,role,riskLevel)</code></td><td>L3配置生成→L4沙箱</td></tr>
+</table>
+<p><strong>求值时机</strong>：任务准入时一次 + <strong>每次高危工具调用前一次</strong>（不把准入当永久通行证）。</p>
+</section>
+
+<section id="sec4-5">
+<h3>4.5 配额与计费</h3>
+<details><summary>四维计量与预算控制</summary>
+<div class="details-body">
+<table>
+<tr><th>维度</th><th>计量内容</th></tr>
+<tr><td>token</td><td>prompt / cached / reasoning / output</td></tr>
+<tr><td>工具调用</td><td>次数 + 类型 + 成本</td></tr>
+<tr><td>沙箱时长</td><td>运行秒数 + 资源规格</td></tr>
+<tr><td>存储流量</td><td>存储字节 + 出站流量</td></tr>
+</table>
+<p><strong>归因维度</strong>：<code>tenant → org_unit → user → thread → turn → model</code></p>
+<p><strong>预算控制</strong>：软阈值告警 → 降档经济模型 → 硬阈值熔断（任务优雅暂停保存 rollout，而非直接杀）</p>
+</div></details>
+</section>
+
+<section id="sec4-6">
+<h3>4.6 连接器治理</h3>
+<details><summary>分级管理与 MCP Gateway</summary>
+<div class="details-body">
+<p><strong>分类分级</strong>：官方认证 / 企业私有 / 社区（默认禁用，需管理员显式开启）</p>
+<p><strong>质量分</strong>：可用性、P95 延迟、错误率、权限最小化 → 低于阈值自动降级或下线</p>
+<p><strong>安全要点</strong>：</p>
+<ul>
+<li>MCP stdio 型服务器是重大风险面（配置即代码执行）</li>
+<li>强制 <code>.codex/config.toml</code> 只在受信任工作区生效</li>
+<li><code>enabled_tools</code> 白名单优先于 <code>disabled_tools</code></li>
+<li>破坏性注解工具恒定需审批</li>
+<li><code>config.toml</code> 里不出现任何真实密钥</li>
+</ul>
+</div></details>
+</section>
+
+<section id="sec4-7">
+<h3>4.7 知识库 / RAG</h3>
+<pre><code>metadata/ACL 过滤 → 稠密+稀疏混合召回 → rerank → 只回填支撑片段（附 chunk_id 与权限版本）</code></pre>
+<p><strong>关键</strong>：先过滤后召回，绝不先召回后过滤。权限在 Gateway 侧强制，不依赖模型自觉遵守。</p>
+<p><strong>与 Harness 的衔接</strong>：知识检索做成 MCP 工具或自定义 Tool，让 Harness 像调其他工具一样调用。</p>
+</section>
+</section>
+
+<section id="sec5">
+<h2>5. L4 执行平面 — 薄壳</h2>
+<details><summary>5.1 模块清单（7 个模块）</summary>
+<div class="details-body">
+<table>
+<tr><th>模块</th><th>职责</th><th>复用Codex</th></tr>
+<tr><td>Runtime 池调度</td><td>K8s Pod 调度 + 预热池 + 销毁回收</td><td>否</td></tr>
+<tr><td>沙箱 Pod</td><td>容器隔离（Seccomp/AppArmor/Kata）</td><td>否（容器层）</td></tr>
+<tr><td>MCP Gateway 侧车</td><td>凭据注入 + 工具白名单 + 出站审计 + 脱敏</td><td>否</td></tr>
+<tr><td>Workspace 供给</td><td>git worktree / PVC 快照 / AGENTS.md 注入</td><td>否</td></tr>
+<tr><td>凭据代理</td><td>短期 JWT 签发/吊销</td><td>否</td></tr>
+<tr><td>健康探针</td><td>app-server 存活探测 + 僵尸进程处理 + rollout 上传</td><td>否</td></tr>
+<tr><td>出站白名单</td><td>NetworkPolicy 默认拒绝，仅放行 Model Gateway + MCP Gateway</td><td>否</td></tr>
+</table>
+</div></details>
+<h3>三层沙箱（缺一不可）</h3>
+<table>
+<tr><th>层</th><th>技术</th><th>防什么</th><th>对应 Codex crate</th></tr>
+<tr><td>① 容器/微虚拟机</td><td>K8s Pod + Seccomp/AppArmor；高敏 Kata/Firecracker</td><td>租户间横向逃逸</td><td>无（Nexus 自建）</td></tr>
+<tr><td>② 命令级 OS 沙箱</td><td>Seatbelt / Landlock+seccomp+bwrap / Windows token</td><td>Agent 乱跑命令</td><td><span class="crate-tag">sandboxing</span> <span class="crate-tag">linux-sandbox</span> <span class="crate-tag">bwrap</span> <span class="crate-tag">windows-sandbox-rs</span></td></tr>
+<tr><td>③ 网络层</td><td>NetworkPolicy 默认拒绝全部出站</td><td>数据外泄、C2 回连</td><td>无（K8s NetworkPolicy）</td></tr>
+</table>
+</section>
+
+<section id="sec6">
+<h2>6. L5 Harness — Codex Crate 映射（重点）</h2>
+<blockquote><p>L5 是唯一复用 Codex 的层，106 个 Rust crate 按功能域映射为 8 个模块组。<strong>黑盒不改</strong>，仅薄适配层桥接。</p></blockquote>
+<img src="harness-crate-topology.svg" alt="L5 Harness 内部 crate 依赖拓扑">
+<div class="img-caption">图 2 · L5 Harness 内部 106 crate 依赖拓扑 — 按功能域分组，箭头表示关键编译期依赖路径</div>
+
+<section id="sec6-1">
+<h3>6.1 核心引擎模块组</h3>
+<details><summary>12 个 crate</summary>
+<div class="details-body">
+<table>
+<tr><th>Codex crate</th><th>职责</th><th>Nexus 中的角色</th><th>关键接口</th></tr>
+<tr><td><span class="crate-tag">core</span></td><td>Agent 主循环 <code>run_turn</code> 七阶段</td><td><strong>执行内核</strong>，黑盒调用</td><td><code>run_turn()</code> / <code>run_auto_compact()</code></td></tr>
+<tr><td><span class="crate-tag">core-api</span></td><td>门面 API</td><td>适配层调用入口</td><td><code>CoreAPI</code> trait</td></tr>
+<tr><td><span class="crate-tag">core-plugins</span></td><td>插件系统</td><td>企业 Skill 扩展基础</td><td><code>Plugin</code> trait</td></tr>
+<tr><td><span class="crate-tag">protocol</span></td><td>协议层（Turn/Item/Event 类型）</td><td>事件类型映射来源</td><td><code>Turn</code> / <code>Item</code> / <code>Event</code></td></tr>
+<tr><td><span class="crate-tag">context-fragments</span></td><td>上下文碎片管理</td><td>上下文工程基础</td><td><code>ContextFragment</code></td></tr>
+<tr><td><span class="crate-tag">prompts</span></td><td>提示词管理</td><td>系统提示注入点</td><td><code>SystemPrompt</code></td></tr>
+<tr><td><span class="crate-tag">app-server</span></td><td><strong>主集成面</strong>，JSON-RPC 2.0</td><td>Nexus 唯一 Harness 集成入口</td><td><code>thread/start</code> / <code>turn/*</code> / <code>thread/resume</code> / <code>fork</code> / <code>rollback</code></td></tr>
+<tr><td><span class="crate-tag">app-server-protocol</span></td><td>协议定义（v1/v2）</td><td>类型生成来源</td><td><code>generate-json-schema</code> / <code>generate-ts</code></td></tr>
+<tr><td><span class="crate-tag">app-server-client</span></td><td>客户端库</td><td>适配层连接管理</td><td><code>AppServerClient</code></td></tr>
+<tr><td><span class="crate-tag">app-server-transport</span></td><td>传输层（stdio/unix socket/WS）</td><td>Pod 内通信</td><td><code>Transport</code> trait</td></tr>
+<tr><td><span class="crate-tag">app-server-daemon</span></td><td>守护进程模式</td><td>Pod 内 app-server 守护</td><td><code>Daemon</code></td></tr>
+<tr><td><span class="crate-tag">codex-api</span></td><td>实验性 API</td><td>内部工具使用</td><td><code>experimental_api.rs</code></td></tr>
+</table>
+</div></details>
+</section>
+
+<section id="sec6-2">
+<h3>6.2 持久化与沙箱模块组</h3>
+<details><summary>9 个 crate</summary>
+<div class="details-body">
+<table>
+<tr><th>Codex crate</th><th>职责</th><th>Nexus 中的角色</th></tr>
+<tr><td><span class="crate-tag">state</span></td><td>本地 SQLite 状态管理</td><td><strong>可丢弃缓存</strong>（云端 Postgres 为真相）</td></tr>
+<tr><td><span class="crate-tag">thread-store</span></td><td>Thread 跨进程重启恢复</td><td>会话持久化桥接基础</td></tr>
+<tr><td><span class="crate-tag">rollout</span></td><td>事件回放文件</td><td><strong>改造点</strong>：事件外送到云端 + 对象存储</td></tr>
+<tr><td><span class="crate-tag">history</span></td><td>历史记录</td><td>会话历史查询</td></tr>
+<tr><td><span class="crate-tag">sandboxing</span></td><td>沙箱总控</td><td><strong>直接用</strong>，不重写</td></tr>
+<tr><td><span class="crate-tag">linux-sandbox</span></td><td>Linux Landlock + seccomp</td><td>容器内需自检</td></tr>
+<tr><td><span class="crate-tag">bwrap</span></td><td>Bubblewrap 沙箱</td><td>Linux 容器层补充</td></tr>
+<tr><td><span class="crate-tag">windows-sandbox-rs</span></td><td>Windows restricted token</td><td>Windows 部署</td></tr>
+<tr><td><span class="crate-tag">execpolicy</span></td><td>Starlark 规则引擎</td><td><strong>按租户下发规则集</strong></td></tr>
+</table>
+</div></details>
+</section>
+
+<section id="sec6-3">
+<h3>6.3 工具/技能/模型模块组</h3>
+<details><summary>12 个 crate</summary>
+<div class="details-body">
+<table>
+<tr><th>Codex crate</th><th>职责</th><th>Nexus 中的角色</th></tr>
+<tr><td><span class="crate-tag">codex-mcp</span></td><td>MCP 客户端</td><td>经 MCP Gateway 代理</td></tr>
+<tr><td><span class="crate-tag">rmcp-client</span></td><td>Rust MCP 客户端（新版）</td><td>MCP 协议实现</td></tr>
+<tr><td><span class="crate-tag">skills</span></td><td>可复用 Markdown 程序化技能</td><td>企业 Skill 市场基础</td></tr>
+<tr><td><span class="crate-tag">hooks</span></td><td>生命周期钩子</td><td>企业生命周期扩展</td></tr>
+<tr><td><span class="crate-tag">tools</span></td><td>工具路由（ToolRouter）</td><td>统一工具定义 + 动态工具解析</td></tr>
+<tr><td><span class="crate-tag">model-provider</span></td><td>模型 provider 抽象</td><td>接自有 Model Gateway</td></tr>
+<tr><td><span class="crate-tag">model-provider-info</span></td><td>Provider 信息管理</td><td>模型配置</td></tr>
+<tr><td><span class="crate-tag">responses-api-proxy</span></td><td>Responses API 代理</td><td><strong>复用</strong>：指向自有 Model Gateway</td></tr>
+<tr><td><span class="crate-tag">ollama</span></td><td>Ollama 本地模型 provider</td><td>私有化部署</td></tr>
+<tr><td><span class="crate-tag">lmstudio</span></td><td>LM Studio 本地模型 provider</td><td>私有化部署</td></tr>
+<tr><td><span class="crate-tag">models-manager</span></td><td>模型管理</td><td>模型配置中心</td></tr>
+<tr><td><span class="crate-tag">connectors</span></td><td>连接器</td><td>外部系统对接</td></tr>
+</table>
+</div></details>
+</section>
+
+<section id="sec6-4">
+<h3>6.4 多 Agent 协作模块组</h3>
+<table>
+<tr><th>Codex crate</th><th>职责</th><th>Nexus 中的角色</th></tr>
+<tr><td><span class="crate-tag">collaboration-mode-templates</span></td><td>协作模板（编排者-工作者/对等/批评对抗）</td><td>团队 Agent 编排参考</td></tr>
+<tr><td><span class="crate-tag">agent-roles</span></td><td>Agent 角色定义</td><td>多角色协作</td></tr>
+<tr><td><span class="crate-tag">agent-identity</span></td><td>Agent 身份管理</td><td>多租户 Agent 身份映射</td></tr>
+<tr><td><span class="crate-tag">agent-graph-store</span></td><td>Agent 关系图存储</td><td>协作拓扑持久化</td></tr>
+</table>
+</section>
+
+<section id="sec6-5">
+<h3>6.5 执行与 CLI 模块组</h3>
+<table>
+<tr><th>Codex crate</th><th>职责</th><th>Nexus 中的角色</th></tr>
+<tr><td><span class="crate-tag">cli</span></td><td>CLI 入口</td><td>开发者体验（自定义登录）</td></tr>
+<tr><td><span class="crate-tag">tui</span></td><td>TUI 交互界面</td><td>内部调试用</td></tr>
+<tr><td><span class="crate-tag">codex-client</span></td><td>Codex 客户端库</td><td>适配层客户端</td></tr>
+<tr><td><span class="crate-tag">exec</span></td><td>一次性执行模式</td><td>CI 场景用</td></tr>
+<tr><td><span class="crate-tag">exec-server</span></td><td>执行服务器</td><td>远程执行支持</td></tr>
+<tr><td><span class="crate-tag">exec-server-protocol</span></td><td>执行服务器协议</td><td>协议定义</td></tr>
+</table>
+</section>
+
+<section id="sec6-6">
+<h3>6.6 可观测模块组</h3>
+<table>
+<tr><th>Codex crate</th><th>职责</th><th>Nexus 中的角色</th></tr>
+<tr><td><span class="crate-tag">otel</span></td><td>OpenTelemetry 集成</td><td>trace 串联（用户→任务→工具→模型）</td></tr>
+<tr><td><span class="crate-tag">analytics</span></td><td>分析数据收集</td><td>使用分析</td></tr>
+<tr><td><span class="crate-tag">diagnostics</span></td><td>诊断工具</td><td>故障定位</td></tr>
+<tr><td><span class="crate-tag">rollout-trace</span></td><td>Rollout 追踪</td><td>会话回放与审计</td></tr>
+</table>
+</section>
+
+<section id="sec6-7">
+<h3>6.7 适配层（唯一贴着 Codex 写的代码）</h3>
+<table>
+<tr><th>#</th><th>职责</th><th>做什么</th><th>不做什么</th></tr>
+<tr><td>1</td><td>协议桥接</td><td>app-server JSON-RPC → 内部事件总线；<code>generate-json-schema</code>/<code>generate-ts</code> 纳入 CI</td><td>不改协议本身</td></tr>
+<tr><td>2</td><td>配置生成</td><td>按 <code>tenant+role+workspace+risk_level</code> 生成 <code>config.toml</code>、<code>execpolicy.rules</code>、MCP 声明、Skills 清单</td><td>不改配置格式</td></tr>
+<tr><td>3</td><td>命令包装</td><td>暴露 <code>start</code>/<code>resume</code>/<code>interrupt</code>/<code>approve</code>/<code>fork</code>/<code>archive</code> 六动作</td><td>不改 <code>run_turn</code></td></tr>
+<tr><td>4</td><td>健康检查与回收</td><td>探测 app-server 存活、处理僵尸进程、Pod 退出前上传 rollout</td><td>不改工具路由/压缩算法/execpolicy 求值器</td></tr>
+</table>
+</section>
+</section>
+
+<section id="sec7">
+<h2>7. L6 模型层</h2>
+<details><summary>6 个模块</summary>
+<div class="details-body">
+<table>
+<tr><th>模块</th><th>职责</th><th>复用 Codex</th></tr>
+<tr><td>Model Gateway</td><td>统一入口（LiteLLM/自建）</td><td>部分（<code>responses-api-proxy</code>）</td></tr>
+<tr><td>多模型路由</td><td>按任务复杂度分档路由</td><td>否</td></tr>
+<tr><td>Responses 代理</td><td>Codex Responses API 代理</td><td>是（<code>responses-api-proxy</code>）</td></tr>
+<tr><td>Token 计量</td><td>四维计量（prompt/cached/reasoning/output）</td><td>否</td></tr>
+<tr><td>故障转移</td><td>主→备→重试</td><td>否</td></tr>
+<tr><td>Prompt Caching</td><td>版本化前缀缓存</td><td>否</td></tr>
+</table>
+</div></details>
+<p><strong>路由策略</strong>：分类/抽取走经济模型，规划/复杂工具编排走强模型，长任务中段用中档。必须在自有评测集上校准。</p>
+<p><strong>私有化</strong>：数据不出域租户指向自建 vLLM/Ollama（Codex 内置 <code>ollama</code>/<code>lmstudio</code> provider）。</p>
+</section>
+
+<section id="sec8">
+<h2>8. L7 存储与治理</h2>
+<table>
+<tr><th>模块</th><th>存储选型</th><th>关键设计</th></tr>
+<tr><td>Postgres</td><td>PostgreSQL（RLS + 分区）</td><td>RLS 兜底租户隔离；<code>item</code> 表按 tenant_id+时间分区</td></tr>
+<tr><td>对象存储</td><td>S3/MinIO（按租户前缀 + CMK）</td><td>大对象外置；禁用租户 CMK → 数据不可解密</td></tr>
+<tr><td>向量库</td><td>pgvector / Milvus</td><td>chunk 携带 tenant_id + acl_tags + permission_version</td></tr>
+<tr><td>审计日志</td><td>WORM 追加写 + SIEM</td><td>应用层无 DELETE/UPDATE 权限</td></tr>
+<tr><td>OTel 追踪</td><td>ClickHouse + Grafana</td><td>trace 串"用户→任务→工具→模型"</td></tr>
+<tr><td>评测中心</td><td>自建 + LLM-as-judge</td><td>CI 门禁：任一变更必须跑回归</td></tr>
+</table>
+</section>
+
+<section id="sec9">
+<h2>9. 安全与合规（贯穿层）</h2>
+<details><summary>四重隔离取证 + 零密钥 + 自检</summary>
+<div class="details-body">
+<h4>四重取证（缺一不可）</h4>
+<table>
+<tr><th>域</th><th>技术</th><th>贯穿层</th></tr>
+<tr><td>逻辑隔离</td><td>Postgres RLS 兜底，强制带 <code>tenant_id</code></td><td>L3+L7</td></tr>
+<tr><td>运行时隔离</td><td>namespace + 节点亲和性 + NetworkPolicy</td><td>L4</td></tr>
+<tr><td>密钥隔离</td><td>按租户 CMK，禁用后不可解密</td><td>L7 对象存储</td></tr>
+<tr><td>存储隔离</td><td>对象存储按租户前缀 + 独立桶策略</td><td>L7</td></tr>
+</table>
+<h4>沙箱内零长期密钥</h4>
+<table>
+<tr><th>密钥类型</th><th>处理</th></tr>
+<tr><td>模型 API Key</td><td>绝不进沙箱，只到 Model Gateway，任务令牌换调用</td></tr>
+<tr><td>MCP/企业 API 凭据</td><td>MCP Gateway 侧车持有，短期委托令牌向控制面换</td></tr>
+<tr><td>Git 凭据</td><td>凭据代理 + 只读/限定分支，禁推保护分支</td></tr>
+<tr><td>云厂商 AK/SK</td><td>IRSA/Workload Identity 换短期角色凭证，不落盘</td></tr>
+<tr><td>用户 OAuth 令牌</td><td>加密存控制面密钥库，按需换短期 access token，结束吊销</td></tr>
+</table>
+<h4>沙箱启动自检清单</h4>
+<ul>
+<li>Landlock/seccomp/Seatbelt 可用性验证通过</li>
+<li>出站网络仅能到达两个白名单地址</li>
+<li>镜像内无长期密钥文件（镜像扫描）</li>
+<li>只读根文件系统 + 非 root 用户</li>
+<li>资源限额（CPU/内存/磁盘/PID）已生效</li>
+</ul>
+</div></details>
+</section>
+
+<section id="sec10">
+<h2>10. 模块间依赖关系总结</h2>
+<pre><code>L1 接入层 ──→ L2 网关层 ──→ L3 控制平面 ──→ L4 执行平面 ──→ L5 Harness
+                    │              │              │              │
+                    │              │              │              ├──→ L6 模型层
+                    │              │              │              │
+                    │              │              ↓              ↓
+                    └──────────────┴──────────→ L7 存储与治理 ←──┘
+                                              │
+                                    安全合规贯穿（全层）</code></pre>
+<h3>依赖方向约束</h3>
+<table>
+<tr><th>依赖方向</th><th>允许</th><th>禁止</th></tr>
+<tr><td>上 → 下</td><td>经接口（协议/事件/API）</td><td>直接引用下层 crate/模块</td></tr>
+<tr><td>L5 → L6（模型调用）</td><td>经 Model Gateway 出站</td><td>L5 直连外部模型 API</td></tr>
+<tr><td>L5 → L7（rollout 上传）</td><td>经对象存储 SDK</td><td>L5 直连 Postgres</td></tr>
+<tr><td>L3 → L5（任务控制）</td><td>经 app-server JSON-RPC</td><td>L3 直接调用 L5 crate</td></tr>
+<tr><td>L5 → L3（反向）</td><td><strong>禁止</strong></td><td>L5 不感知控制面存在</td></tr>
+<tr><td>L6 → L3（反向）</td><td><strong>禁止</strong></td><td>L6 不感知控制面存在</td></tr>
+</table>
+<h3>L5 内部 crate 依赖关键路径</h3>
+<pre><code>core (run_turn)
+  ├──→ app-server-protocol (协议类型)
+  ├──→ state / thread-store / rollout (持久化)
+  ├──→ sandboxing → linux-sandbox / bwrap / windows-sandbox-rs
+  ├──→ execpolicy (命令策略求值)
+  ├──→ codex-mcp / rmcp-client (MCP 工具)
+  ├──→ tools (ToolRouter)
+  ├──→ model-provider → responses-api-proxy / ollama / lmstudio
+  ├──→ collaboration-mode-templates → agent-roles → agent-identity → agent-graph-store
+  └──→ otel / analytics / diagnostics / rollout-trace (可观测)</code></pre>
+</section>
+
+<section id="sec11">
+<h2>11. 配套产物索引</h2>
+<table>
+<tr><th>产物</th><th>文件</th></tr>
+<tr><td>详细方案（Markdown）</td><td><code>module-layering.md</code></td></tr>
+<tr><td>分层依赖图（SVG 源）</td><td><code>module-layering.svg</code></td></tr>
+<tr><td>分层依赖图（PNG 位图）</td><td><code>module-layering.png</code></td></tr>
+<tr><td>Harness crate 拓扑图</td><td><code>harness-crate-topology.svg</code></td></tr>
+<tr><td>控制面子系统设计图</td><td><code>control-plane-subsystems.svg</code></td></tr>
+<tr><td>交互报告（HTML）</td><td><code>module-layering-report.html</code></td></tr>
+<tr><td>生成脚本</td><td><code>_gen_svg.py</code></td></tr>
+</table>
+<p>本方案与 <code>../Nexus 基于CodexHarness的企业级Agent平台_系统设计与实施路线图.md</code> §2.2 八层架构、§3 分层详细设计对齐，为其工程化落地版的模块级展开。</p>
+</section>
+
+  </main>
+</div>
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const cur = html.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  document.querySelector('.theme-toggle').textContent = next === 'dark' ? '浅色' : '深色';
+  localStorage.setItem('nexus-theme', next);
+}
+(function() {
+  const saved = localStorage.getItem('nexus-theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+    document.querySelector('.theme-toggle').textContent = saved === 'dark' ? '浅色' : '深色';
+  }
+  const progress = document.getElementById('progress');
+  const toc = document.getElementById('toc');
+  const links = toc.querySelectorAll('a');
+  const sections = [];
+  links.forEach(a => {
+    const id = a.getAttribute('href').slice(1);
+    const el = document.getElementById(id);
+    if (el) sections.push({el, link: a});
+  });
+  function update() {
+    const sc = window.scrollY;
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.width = (sc / max * 100) + '%';
+    let active = sections[0];
+    for (const s of sections) {
+      if (s.el.offsetTop <= sc + 80) active = s;
+    }
+    links.forEach(a => a.classList.remove('active'));
+    if (active) active.link.classList.add('active');
+  }
+  window.addEventListener('scroll', update, {passive: true});
+  update();
+})();
+</script>
+</body>
+</html>

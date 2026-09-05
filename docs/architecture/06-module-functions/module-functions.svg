@@ -1,0 +1,291 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2800 964">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+<linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7f1d1d"/><stop offset="1" stop-color="#ef4444"/></linearGradient>
+</defs>
+<rect width="2800" height="964" fill="#0b141a"/>
+<text x="40" y="40" fill="#35c2b0" font-size="22" font-weight="700">Nexus 企业级 AI Agent 平台 · 系统模块功能矩阵</text>
+<text x="40" y="64" fill="#9db8b4" font-size="13">八层架构 × 46 模块 · 复用 Codex(青) / 自建(金) / 部分复用(蓝) · 优先级与阶段标注</text>
+<rect x="40" y="76" width="16" height="16" rx="3" fill="#173341" stroke="#35c2b0" stroke-width="1.5"/>
+<text x="62" y="88" fill="#9db8b4" font-size="11.5">复用 Codex（黑盒）</text>
+<rect x="240" y="76" width="16" height="16" rx="3" fill="#173341" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="262" y="88" fill="#9db8b4" font-size="11.5">自建</text>
+<rect x="440" y="76" width="16" height="16" rx="3" fill="#173341" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="462" y="88" fill="#9db8b4" font-size="11.5">部分复用</text>
+<rect x="660" y="76" width="16" height="16" rx="3" fill="#ef4444" opacity="0.7"/>
+<text x="682" y="88" fill="#9db8b4" font-size="11.5">P0 MVP必须</text>
+<rect x="820" y="76" width="16" height="16" rx="3" fill="#e8b64c" opacity="0.7"/>
+<text x="842" y="88" fill="#9db8b4" font-size="11.5">P1 治理必须</text>
+<rect x="980" y="76" width="16" height="16" rx="3" fill="#028090" opacity="0.7"/>
+<text x="1002" y="88" fill="#9db8b4" font-size="11.5">P2 规模化</text>
+<rect x="30" y="100" width="2740" height="84" rx="10" fill="#13242e" stroke="#2e5a68" stroke-width="1.0" opacity="0.6"/>
+<rect x="30" y="100" width="250" height="84" rx="10" fill="url(#gb)" opacity="0.85"/>
+<rect x="245" y="100" width="20" height="84" fill="url(#gb)" opacity="0.85"/>
+<text x="42" y="122" fill="#e8f2f0" font-size="13" font-weight="700">L1 接入层</text>
+<text x="42" y="138" fill="#e8f2f0" font-size="11" font-weight="400">Access</text>
+<rect x="280" y="110" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="396.0" y="130" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">Web 门户</text>
+<rect x="460" y="114" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="482" y="125" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="288" y="125" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="520" y="110" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="636.0" y="130" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">IM Bot</text>
+<rect x="700" y="114" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="722" y="125" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="528" y="125" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="760" y="110" width="232" height="56" rx="6" fill="#0d1a2a" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="876.0" y="130" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">IDE 插件</text>
+<rect x="940" y="114" width="44" height="16" rx="4" fill="#3b82f6" opacity="0.25"/>
+<text x="962" y="125" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">部分</text>
+<text x="768" y="125" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1000" y="110" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="1116.0" y="130" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">OpenAPI+Webhook</text>
+<rect x="1180" y="114" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="1202" y="125" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="1008" y="125" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1240" y="110" width="232" height="56" rx="6" fill="#0d1a2a" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="1356.0" y="130" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">CLI</text>
+<rect x="1420" y="114" width="44" height="16" rx="4" fill="#3b82f6" opacity="0.25"/>
+<text x="1442" y="125" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">部分</text>
+<text x="1248" y="125" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="30" y="196" width="2740" height="84" rx="10" fill="#13242e" stroke="#2e5a68" stroke-width="1.0" opacity="0.6"/>
+<rect x="30" y="196" width="250" height="84" rx="10" fill="url(#gb)" opacity="0.85"/>
+<rect x="245" y="196" width="20" height="84" fill="url(#gb)" opacity="0.85"/>
+<text x="42" y="218" fill="#e8f2f0" font-size="13" font-weight="700">L2 网关层</text>
+<text x="42" y="234" fill="#e8f2f0" font-size="11" font-weight="400">Gateway</text>
+<rect x="280" y="206" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="396.0" y="226" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">API Gateway</text>
+<rect x="460" y="210" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="482" y="221" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="288" y="221" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="520" y="206" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="636.0" y="226" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">WS 网关</text>
+<rect x="700" y="210" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="722" y="221" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="528" y="221" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="760" y="206" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="876.0" y="226" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">认证中间件</text>
+<rect x="940" y="210" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="962" y="221" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="768" y="221" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1000" y="206" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="1116.0" y="226" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">配额预扣</text>
+<rect x="1180" y="210" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="1202" y="221" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="1008" y="221" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="30" y="292" width="2740" height="84" rx="10" fill="#13242e" stroke="#2e5a68" stroke-width="1.0" opacity="0.6"/>
+<rect x="30" y="292" width="250" height="84" rx="10" fill="url(#gt)" opacity="0.85"/>
+<rect x="245" y="292" width="20" height="84" fill="url(#gt)" opacity="0.85"/>
+<text x="42" y="314" fill="#e8f2f0" font-size="13" font-weight="700">L3 控制平面</text>
+<text x="42" y="330" fill="#e8f2f0" font-size="11" font-weight="400">Control Plane</text>
+<rect x="280" y="302" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="396.0" y="322" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">身份租户</text>
+<rect x="460" y="306" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="482" y="317" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="288" y="317" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="520" y="302" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="636.0" y="322" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">任务编排</text>
+<rect x="700" y="306" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="722" y="317" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="528" y="317" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="760" y="302" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="876.0" y="322" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">审批中心</text>
+<rect x="940" y="306" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="962" y="317" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="768" y="317" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1000" y="302" width="232" height="56" rx="6" fill="#0d1a2a" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="1116.0" y="322" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">策略中心</text>
+<rect x="1180" y="306" width="44" height="16" rx="4" fill="#3b82f6" opacity="0.25"/>
+<text x="1202" y="317" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">部分</text>
+<text x="1008" y="317" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1240" y="302" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="1356.0" y="322" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">配额计费</text>
+<rect x="1420" y="306" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="1442" y="317" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="1248" y="317" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1480" y="302" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="1596.0" y="322" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">连接器治理</text>
+<rect x="1660" y="306" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="1682" y="317" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="1488" y="317" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1720" y="302" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="1836.0" y="322" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">知识库/RAG</text>
+<rect x="1900" y="306" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="1922" y="317" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="1728" y="317" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="30" y="388" width="2740" height="84" rx="10" fill="#13242e" stroke="#2e5a68" stroke-width="1.0" opacity="0.6"/>
+<rect x="30" y="388" width="250" height="84" rx="10" fill="url(#gg)" opacity="0.85"/>
+<rect x="245" y="388" width="20" height="84" fill="url(#gg)" opacity="0.85"/>
+<text x="42" y="410" fill="#e8f2f0" font-size="13" font-weight="700">L4 执行平面</text>
+<text x="42" y="426" fill="#e8f2f0" font-size="11" font-weight="400">Execution</text>
+<rect x="280" y="398" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="396.0" y="418" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">Runtime 池调度</text>
+<rect x="460" y="402" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="482" y="413" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="288" y="413" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="520" y="398" width="232" height="56" rx="6" fill="#0d1a2a" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="636.0" y="418" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">三层沙箱</text>
+<rect x="700" y="402" width="44" height="16" rx="4" fill="#3b82f6" opacity="0.25"/>
+<text x="722" y="413" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">部分</text>
+<text x="528" y="413" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="760" y="398" width="232" height="56" rx="6" fill="#0d1a2a" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="876.0" y="418" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">Workspace 供给</text>
+<rect x="940" y="402" width="44" height="16" rx="4" fill="#3b82f6" opacity="0.25"/>
+<text x="962" y="413" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">部分</text>
+<text x="768" y="413" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1000" y="398" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="1116.0" y="418" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">MCP Gateway</text>
+<rect x="1180" y="402" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="1202" y="413" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="1008" y="413" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1240" y="398" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="1356.0" y="418" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">凭据代理</text>
+<rect x="1420" y="402" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="1442" y="413" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="1248" y="413" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="30" y="484" width="2740" height="84" rx="10" fill="#13242e" stroke="#2e5a68" stroke-width="1.0" opacity="0.6"/>
+<rect x="30" y="484" width="250" height="84" rx="10" fill="url(#gp)" opacity="0.85"/>
+<rect x="245" y="484" width="20" height="84" fill="url(#gp)" opacity="0.85"/>
+<text x="42" y="506" fill="#e8f2f0" font-size="13" font-weight="700">L5 Harness</text>
+<text x="42" y="522" fill="#e8f2f0" font-size="11" font-weight="400">Agent 内核</text>
+<rect x="280" y="494" width="232" height="56" rx="6" fill="#0d2a26" stroke="#35c2b0" stroke-width="1.5"/>
+<text x="396.0" y="514" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">Agent Loop</text>
+<rect x="460" y="498" width="44" height="16" rx="4" fill="#35c2b0" opacity="0.25"/>
+<text x="482" y="509" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">Codex</text>
+<text x="288" y="509" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="520" y="494" width="232" height="56" rx="6" fill="#0d2a26" stroke="#35c2b0" stroke-width="1.5"/>
+<text x="636.0" y="514" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">工具路由</text>
+<rect x="700" y="498" width="44" height="16" rx="4" fill="#35c2b0" opacity="0.25"/>
+<text x="722" y="509" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">Codex</text>
+<text x="528" y="509" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="760" y="494" width="232" height="56" rx="6" fill="#0d2a26" stroke="#35c2b0" stroke-width="1.5"/>
+<text x="876.0" y="514" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">ExecPolicy</text>
+<rect x="940" y="498" width="44" height="16" rx="4" fill="#35c2b0" opacity="0.25"/>
+<text x="962" y="509" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">Codex</text>
+<text x="768" y="509" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1000" y="494" width="232" height="56" rx="6" fill="#0d2a26" stroke="#35c2b0" stroke-width="1.5"/>
+<text x="1116.0" y="514" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">OS 沙箱</text>
+<rect x="1180" y="498" width="44" height="16" rx="4" fill="#35c2b0" opacity="0.25"/>
+<text x="1202" y="509" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">Codex</text>
+<text x="1008" y="509" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1240" y="494" width="232" height="56" rx="6" fill="#0d2a26" stroke="#35c2b0" stroke-width="1.5"/>
+<text x="1356.0" y="514" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">上下文压缩</text>
+<rect x="1420" y="498" width="44" height="16" rx="4" fill="#35c2b0" opacity="0.25"/>
+<text x="1442" y="509" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">Codex</text>
+<text x="1248" y="509" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1480" y="494" width="232" height="56" rx="6" fill="#0d2a26" stroke="#35c2b0" stroke-width="1.5"/>
+<text x="1596.0" y="514" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">Skills/Hooks</text>
+<rect x="1660" y="498" width="44" height="16" rx="4" fill="#35c2b0" opacity="0.25"/>
+<text x="1682" y="509" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">Codex</text>
+<text x="1488" y="509" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1720" y="494" width="232" height="56" rx="6" fill="#0d2a26" stroke="#35c2b0" stroke-width="1.5"/>
+<text x="1836.0" y="514" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">MCP 客户端</text>
+<rect x="1900" y="498" width="44" height="16" rx="4" fill="#35c2b0" opacity="0.25"/>
+<text x="1922" y="509" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">Codex</text>
+<text x="1728" y="509" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1960" y="494" width="232" height="56" rx="6" fill="#0d2a26" stroke="#35c2b0" stroke-width="1.5"/>
+<text x="2076.0" y="514" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">协议集成面</text>
+<rect x="2140" y="498" width="44" height="16" rx="4" fill="#35c2b0" opacity="0.25"/>
+<text x="2162" y="509" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">Codex</text>
+<text x="1968" y="509" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="2200" y="494" width="232" height="56" rx="6" fill="#0d2a26" stroke="#35c2b0" stroke-width="1.5"/>
+<text x="2316.0" y="514" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">持久化</text>
+<rect x="2380" y="498" width="44" height="16" rx="4" fill="#35c2b0" opacity="0.25"/>
+<text x="2402" y="509" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">Codex</text>
+<text x="2208" y="509" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="2440" y="494" width="232" height="56" rx="6" fill="#0d2a26" stroke="#35c2b0" stroke-width="1.5"/>
+<text x="2556.0" y="514" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">协作编排</text>
+<rect x="2620" y="498" width="44" height="16" rx="4" fill="#35c2b0" opacity="0.25"/>
+<text x="2642" y="509" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">Codex</text>
+<text x="2448" y="509" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="30" y="580" width="2740" height="84" rx="10" fill="#13242e" stroke="#2e5a68" stroke-width="1.0" opacity="0.6"/>
+<rect x="30" y="580" width="250" height="84" rx="10" fill="url(#gt)" opacity="0.85"/>
+<rect x="245" y="580" width="20" height="84" fill="url(#gt)" opacity="0.85"/>
+<text x="42" y="602" fill="#e8f2f0" font-size="13" font-weight="700">L6 模型层</text>
+<text x="42" y="618" fill="#e8f2f0" font-size="11" font-weight="400">Model</text>
+<rect x="280" y="590" width="232" height="56" rx="6" fill="#0d1a2a" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="396.0" y="610" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">Model Gateway</text>
+<rect x="460" y="594" width="44" height="16" rx="4" fill="#3b82f6" opacity="0.25"/>
+<text x="482" y="605" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">部分</text>
+<text x="288" y="605" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="520" y="590" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="636.0" y="610" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">多模型路由</text>
+<rect x="700" y="594" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="722" y="605" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="528" y="605" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="760" y="590" width="232" height="56" rx="6" fill="#0d2a26" stroke="#35c2b0" stroke-width="1.5"/>
+<text x="876.0" y="610" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">Responses 代理</text>
+<rect x="940" y="594" width="44" height="16" rx="4" fill="#35c2b0" opacity="0.25"/>
+<text x="962" y="605" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">Codex</text>
+<text x="768" y="605" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1000" y="590" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="1116.0" y="610" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">Prompt Caching</text>
+<rect x="1180" y="594" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="1202" y="605" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="1008" y="605" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1240" y="590" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="1356.0" y="610" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">故障转移</text>
+<rect x="1420" y="594" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="1442" y="605" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="1248" y="605" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1480" y="590" width="232" height="56" rx="6" fill="#0d2a26" stroke="#35c2b0" stroke-width="1.5"/>
+<text x="1596.0" y="610" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">私有化部署</text>
+<rect x="1660" y="594" width="44" height="16" rx="4" fill="#35c2b0" opacity="0.25"/>
+<text x="1682" y="605" text-anchor="middle" fill="#35c2b0" font-size="9.5" font-weight="700">Codex</text>
+<text x="1488" y="605" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="30" y="676" width="2740" height="84" rx="10" fill="#13242e" stroke="#2e5a68" stroke-width="1.0" opacity="0.6"/>
+<rect x="30" y="676" width="250" height="84" rx="10" fill="url(#gb)" opacity="0.85"/>
+<rect x="245" y="676" width="20" height="84" fill="url(#gb)" opacity="0.85"/>
+<text x="42" y="698" fill="#e8f2f0" font-size="13" font-weight="700">L7 存储治理</text>
+<text x="42" y="714" fill="#e8f2f0" font-size="11" font-weight="400">Storage</text>
+<rect x="280" y="686" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="396.0" y="706" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">Postgres</text>
+<rect x="460" y="690" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="482" y="701" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="288" y="701" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="520" y="686" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="636.0" y="706" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">对象存储</text>
+<rect x="700" y="690" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="722" y="701" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="528" y="701" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="760" y="686" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="876.0" y="706" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">向量库</text>
+<rect x="940" y="690" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="962" y="701" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="768" y="701" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1000" y="686" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="1116.0" y="706" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">审计日志</text>
+<rect x="1180" y="690" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="1202" y="701" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="1008" y="701" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1240" y="686" width="232" height="56" rx="6" fill="#0d1a2a" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="1356.0" y="706" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">OTel 可观测</text>
+<rect x="1420" y="690" width="44" height="16" rx="4" fill="#3b82f6" opacity="0.25"/>
+<text x="1442" y="701" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">部分</text>
+<text x="1248" y="701" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="1480" y="686" width="232" height="56" rx="6" fill="#2a1f0a" stroke="#e8b64c" stroke-width="1.5"/>
+<text x="1596.0" y="706" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="700">评测中心</text>
+<rect x="1660" y="690" width="44" height="16" rx="4" fill="#e8b64c" opacity="0.25"/>
+<text x="1682" y="701" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">自建</text>
+<text x="1488" y="701" fill="#9db8b4" font-size="9" font-weight="700">P0</text>
+<rect x="30" y="776" width="2740" height="44" rx="8" fill="#173341" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="6,4"/>
+<text x="42" y="804" fill="#fecaca" font-size="13" font-weight="700">安全合规</text>
+<rect x="280" y="786" width="180" height="24" rx="4" fill="#1a1205" stroke="#ef4444" stroke-width="1.0"/>
+<text x="370" y="802" text-anchor="middle" fill="#fecaca" font-size="11" font-weight="700">四重隔离取证</text>
+<rect x="480" y="786" width="180" height="24" rx="4" fill="#1a1205" stroke="#ef4444" stroke-width="1.0"/>
+<text x="570" y="802" text-anchor="middle" fill="#fecaca" font-size="11" font-weight="700">KMS 按租户CMK</text>
+<rect x="680" y="786" width="180" height="24" rx="4" fill="#1a1205" stroke="#ef4444" stroke-width="1.0"/>
+<text x="770" y="802" text-anchor="middle" fill="#fecaca" font-size="11" font-weight="700">网络策略</text>
+<rect x="880" y="786" width="180" height="24" rx="4" fill="#1a1205" stroke="#ef4444" stroke-width="1.0"/>
+<text x="970" y="802" text-anchor="middle" fill="#fecaca" font-size="11" font-weight="700">内容安全</text>
+<rect x="1080" y="786" width="180" height="24" rx="4" fill="#1a1205" stroke="#ef4444" stroke-width="1.0"/>
+<text x="1170" y="802" text-anchor="middle" fill="#fecaca" font-size="11" font-weight="700">红队演练</text>
+<text x="40" y="834" fill="#9db8b4" font-size="11.5">图 1 · 八层模块功能矩阵（共 46 模块：复用 Codex 10 · 自建 26 · 部分复用 10）· 颜色编码：青=复用 金=自建 蓝=部分</text>
+</svg>

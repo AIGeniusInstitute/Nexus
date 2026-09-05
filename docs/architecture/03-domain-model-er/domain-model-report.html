@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus 领域模型 ER 设计方案 · 交互报告</title>
+<style>
+:root{--bg:#0b141a;--panel:#13242e;--panel2:#173341;--text:#e8f2f0;--muted:#9db8b4;--line:#24414e;--accent:#35c2b0;--gold:#e8b64c;--blue:#3b82f6;--red:#ef4444;--purple:#a855f7;--orange:#f97316;--code-bg:#0d1b20}
+[data-theme="light"]{--bg:#f6f8f9;--panel:#fff;--panel2:#eef2f4;--text:#16202a;--muted:#5a6b72;--line:#d4dde0;--accent:#028090;--gold:#b07d1a;--blue:#2563eb;--red:#dc2626;--purple:#7c3aed;--orange:#ea580c;--code-bg:#f1f3f4}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px}
+.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--gold));z-index:1000;width:0}
+header{padding:32px 40px 16px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
+header h1{color:var(--accent);font-size:24px;margin-bottom:4px}
+header .sub{color:var(--muted);font-size:13px}
+.theme-btn{position:absolute;right:40px;top:30px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px}
+.theme-btn:hover{border-color:var(--accent)}
+.layout{display:flex;max-width:1700px;margin:0 auto}
+nav.toc{width:260px;position:sticky;top:120px;height:calc(100vh-140px);overflow-y:auto;padding:24px 12px;flex-shrink:0}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;font-size:13px;padding:5px 12px;border-radius:6px;border-left:2px solid transparent}
+nav.toc a:hover,nav.toc a.active{color:var(--accent);background:var(--panel);border-left-color:var(--accent)}
+nav.toc a.sub{font-size:12px;padding-left:28px}
+main{flex:1;padding:24px 40px;min-width:0}
+section{margin-bottom:48px;padding-bottom:16px;border-bottom:1px dashed var(--line)}
+section:last-child{border-bottom:none}
+h2{color:var(--accent);font-size:20px;margin-bottom:14px;padding-bottom:6px;border-bottom:2px solid var(--accent)}
+h3{color:var(--gold);font-size:16px;margin:18px 0 10px}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px;background:var(--panel)}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+th{background:var(--panel2);color:var(--accent);font-weight:600}
+img.diagram{width:100%;border:1px solid var(--line);border-radius:10px;margin:14px 0;background:var(--panel)}
+.cap{color:var(--muted);font-size:12px;text-align:center;margin-top:-6px;margin-bottom:14px}
+code{background:var(--code-bg);padding:2px 6px;border-radius:4px;font-family:Consolas,monospace;font-size:12px;color:var(--gold)}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;margin:12px 0}
+pre code{background:none;padding:0;color:var(--text);font-size:12px}
+details{border:1px solid var(--line);border-radius:8px;margin:10px 0;background:var(--panel)}
+summary{cursor:pointer;padding:10px 14px;font-weight:600;color:var(--accent);user-select:none}
+summary:hover{background:var(--panel2);border-radius:8px}
+details[open] summary{border-bottom:1px solid var(--line)}
+.detail-body{padding:12px 14px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.b-tenant{background:rgba(59,130,246,.18);color:var(--blue)}
+.b-workspace{background:rgba(2,128,144,.18);color:var(--accent)}
+.b-session{background:rgba(53,194,176,.18);color:var(--accent)}
+.b-approval{background:rgba(232,182,76,.18);color:var(--gold)}
+.b-billing{background:rgba(239,68,68,.18);color:var(--red)}
+.b-sandbox{background:rgba(249,115,22,.18);color:var(--orange)}
+.b-audit{background:rgba(168,85,247,.18);color:var(--purple)}
+.b-model{background:rgba(59,130,246,.18);color:var(--blue)}
+.b-mcp{background:rgba(2,128,144,.18);color:var(--accent)}
+.b-skill{background:rgba(232,182,76,.18);color:var(--gold)}
+.callout{border-left:4px solid var(--accent);background:var(--panel);padding:12px 16px;margin:14px 0;border-radius:0 8px 8px 0}
+.callout.gold{border-color:var(--gold)}
+.callout.red{border-color:var(--red)}
+.callout.blue{border-color:var(--blue)}
+.callout.purple{border-color:var(--purple)}
+ul,ol{margin:8px 0 8px 22px}
+li{margin:4px 0}
+.domain-tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600;margin-right:4px}
+@media(max-width:980px){.layout{flex-direction:column}nav.toc{position:static;width:auto;height:auto}}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<header>
+  <h1>Nexus 领域模型 ER 设计方案</h1>
+  <div class="sub">基于 Codex Harness 原语 · 控制平面 Postgres（RLS + 分区 + WORM）· 任务二-3</div>
+  <button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+</header>
+<div class="layout">
+<nav class="toc" id="toc"></nav>
+<main>
+
+<section id="s0">
+<h2>0. 领域模型设计原则</h2>
+<div class="callout gold"><strong>一句话</strong>：Nexus 控制平面的数据模型不是 Codex 本地 SQLite 的翻版，而是以「事件即真相」为核心、以 Postgres RLS 为兜底的云端领域模型。会话真相在云端 DB，Harness 只持有可重建的执行态。</div>
+<table>
+<tr><th>#</th><th>原则</th><th>说明</th></tr>
+<tr><td>1</td><td><strong>事件即真相</strong></td><td>所有对用户可见状态来自 app-server 事件流；控制面消费事件写 Postgres，Pod 死不丢会话。<code>items</code> 表是事件流持久化形态</td></tr>
+<tr><td>2</td><td><strong>幂等键 thread_id + turn_id + item_seq</strong></td><td><code>UNIQUE(thread_id, turn_id, seq)</code>——同一 Turn 内同序号事件只写一次，支持 at-least-once 投递语义下精确去重</td></tr>
+<tr><td>3</td><td><strong>RLS 租户隔离</strong></td><td>所有业务表强制 Row-Level Security <code>tenant_id = current_setting('app.tenant_id')</code>；ORM 漏加 WHERE 也能兜底拒绝跨租户访问</td></tr>
+<tr><td>4</td><td><strong>WORM 审计</strong></td><td><code>audit_logs</code> 与 <code>usage_records</code> 只追加；应用账号无 UPDATE/DELETE 权限；按月分区 + 投递 SIEM</td></tr>
+<tr><td>5</td><td><strong>大字段外置</strong></td><td>content_ref / params_ref / diff_preview_ref / before_ref / after_ref 均指向对象存储，主表只存摘要与 digest</td></tr>
+<tr><td>6</td><td><strong>权限快照防漂移</strong></td><td><code>threads.permission_snapshot_hash</code> 记录创建时权限边界哈希；事后可证明运行时权限</td></tr>
+<tr><td>7</td><td><strong>配置即政策</strong></td><td>租户差异不下沉数据模型，而是下发的 <code>config.toml</code> + <code>execpolicy</code> 规则集</td></tr>
+</table>
+</section>
+
+<section id="s1">
+<h2>1. 核心域 ER 总图</h2>
+<img class="diagram" src="domain-model-core.svg" alt="核心域 ER 总图">
+<div class="cap">图 1 · 核心域 ER 总图（tenants→users→workspaces→threads→turns→items + approval_tickets + usage_records/quotas/budgets）</div>
+<div class="callout blue">域着色：<span class="badge b-tenant">租户域</span> <span class="badge b-workspace">工作区域</span> <span class="badge b-session">会话域</span> <span class="badge b-approval">审批域</span> <span class="badge b-billing">计费配额域</span> · PK=主键(金色) · ★=幂等键 · 线条标注 1:N / M:N</div>
+</section>
+
+<section id="s2">
+<h2>2. 治理与周边域 ER 图</h2>
+<img class="diagram" src="domain-model-governance.svg" alt="治理域 ER 图">
+<div class="cap">图 2 · 治理与周边域 ER（audit_logs WORM · sandbox_pods/workspace_snapshots · model_routes/credentials · mcp_servers/credentials · skills/skill_versions · tool_call_logs）</div>
+<div class="callout purple">域着色：<span class="badge b-audit">审计域(WORM)</span> <span class="badge b-sandbox">沙箱域</span> <span class="badge b-model">模型域</span> <span class="badge b-mcp">MCP/连接器域</span> <span class="badge b-skill">Skills 域</span></div>
+</section>
+
+<section id="s3">
+<h2>3. 核心实体清单</h2>
+<details open><summary>点击展开/折叠实体清单（26 张表）</summary><div class="detail-body">
+<table>
+<tr><th>实体</th><th>所属域</th><th>主键</th><th>关键字段</th><th>说明</th></tr>
+<tr><td><code>tenants</code></td><td><span class="badge b-tenant">租户域</span></td><td>id</td><td>name, plan, isolation_tier, cmk_id, quota_profile</td><td>多租户根节点；isolation_tier 决定隔离级别</td></tr>
+<tr><td><code>users</code></td><td><span class="badge b-tenant">租户域</span></td><td>id</td><td>tenant_id, idp_subject, email</td><td>平台用户；idp_subject 对接 IdP</td></tr>
+<tr><td><code>roles</code></td><td><span class="badge b-tenant">租户域</span></td><td>id</td><td>tenant_id, name, permissions_json</td><td>角色定义；权限矩阵</td></tr>
+<tr><td><code>tenant_memberships</code></td><td><span class="badge b-tenant">租户域</span></td><td>id</td><td>tenant_id, user_id, role_id, scope_json</td><td>用户↔角色 M:N 关联表</td></tr>
+<tr><td><code>workspaces</code></td><td><span class="badge b-workspace">工作区域</span></td><td>id</td><td>tenant_id, repos_json, sandbox_mode, approval_policy</td><td>绑定仓库/连接器/知识库范围</td></tr>
+<tr><td><code>environments</code></td><td><span class="badge b-workspace">工作区域</span></td><td>id</td><td>workspace_id, config_json</td><td>环境配置(dev/staging/prod)</td></tr>
+<tr><td><code>knowledge_bases</code></td><td><span class="badge b-workspace">工作区域</span></td><td>id</td><td>workspace_id, embedding_model, acl_json</td><td>RAG 知识库</td></tr>
+<tr><td><code>threads</code></td><td><span class="badge b-session">会话域</span></td><td>id</td><td>tenant_id, codex_thread_id, rollout_object_key, permission_snapshot_hash</td><td>★对应 Codex Thread（云端化）</td></tr>
+<tr><td><code>turns</code></td><td><span class="badge b-session">会话域</span></td><td>id</td><td>thread_id, seq, status, model, cost_micros</td><td>★对应 Codex Turn</td></tr>
+<tr><td><code>items</code></td><td><span class="badge b-session">会话域</span></td><td>id</td><td>thread_id, turn_id, seq, kind, content_ref</td><td>★最大最热表；UNIQUE(thread_id,turn_id,seq) 幂等键</td></tr>
+<tr><td><code>steps</code></td><td><span class="badge b-session">会话域</span></td><td>id</td><td>turn_id, seq, sample_status, tool_calls_json</td><td>★对应 Codex Step</td></tr>
+<tr><td><code>approval_tickets</code></td><td><span class="badge b-approval">审批域</span></td><td>id</td><td>thread_id, turn_id, tool_name, risk_level, status, decided_by</td><td>HITL 审批一等公民</td></tr>
+<tr><td><code>usage_records</code></td><td><span class="badge b-billing">计费域</span></td><td>id</td><td>tenant_id, metric, quantity, unit_cost_micros</td><td>计量流水；只追加</td></tr>
+<tr><td><code>quotas</code></td><td><span class="badge b-billing">计费域</span></td><td>id</td><td>tenant_id, scope, metric, limit_value, period</td><td>配额限值</td></tr>
+<tr><td><code>budgets</code></td><td><span class="badge b-billing">计费域</span></td><td>id</td><td>tenant_id, amount_micros, alert_threshold, hard_limit</td><td>预算控制</td></tr>
+<tr><td><code>sandbox_pods</code></td><td><span class="badge b-sandbox">沙箱域</span></td><td>id</td><td>tenant_id, thread_id, pod_name, status, cpu_milli</td><td>执行面 Pod 生命周期</td></tr>
+<tr><td><code>workspace_snapshots</code></td><td><span class="badge b-sandbox">沙箱域</span></td><td>id</td><td>workspace_id, rollout_version, object_key</td><td>★对应 Codex Rollout 归档</td></tr>
+<tr><td><code>audit_logs</code></td><td><span class="badge b-audit">审计域</span></td><td>id</td><td>tenant_id, actor, action, before_ref, after_ref, trace_id</td><td>WORM 只追加；按月分区</td></tr>
+<tr><td><code>model_routes</code></td><td><span class="badge b-model">模型域</span></td><td>id</td><td>tenant_id, model_id, provider, fallback_model_id</td><td>多模型路由；支持降级</td></tr>
+<tr><td><code>model_credentials</code></td><td><span class="badge b-model">模型域</span></td><td>id</td><td>tenant_id, provider, cred_ref, api_key_enc</td><td>模型密钥管理</td></tr>
+<tr><td><code>mcp_servers</code></td><td><span class="badge b-mcp">MCP域</span></td><td>id</td><td>tenant_id, transport, command, tool_whitelist</td><td>MCP 服务器注册</td></tr>
+<tr><td><code>mcp_credentials</code></td><td><span class="badge b-mcp">MCP域</span></td><td>id</td><td>mcp_server_id, cred_type, cred_ref, expires_at</td><td>MCP 凭据注入</td></tr>
+<tr><td><code>skills</code></td><td><span class="badge b-skill">Skills域</span></td><td>id</td><td>tenant_id, name, scope, latest_version_id</td><td>企业技能市场</td></tr>
+<tr><td><code>skill_versions</code></td><td><span class="badge b-skill">Skills域</span></td><td>id</td><td>skill_id, version, content_ref, checksum</td><td>技能版本快照</td></tr>
+<tr><td><code>connectors</code></td><td><span class="badge b-mcp">MCP域</span></td><td>id</td><td>tenant_id, type, endpoint, cred_ref, enabled_tools</td><td>连接器注册表</td></tr>
+<tr><td><code>tool_call_logs</code></td><td><span class="badge b-mcp">MCP域</span></td><td>id</td><td>thread_id, turn_id, connector_id, tool_name, cost_micros</td><td>工具调用审计</td></tr>
+</table>
+</div></details>
+</section>
+
+<section id="s4">
+<h2>4. 关系矩阵</h2>
+<details><summary>点击展开关系矩阵（30 条关系）</summary><div class="detail-body">
+<table>
+<tr><th>从</th><th>到</th><th>基数</th><th>外键</th><th>说明</th></tr>
+<tr><td>tenants</td><td>users</td><td>1:N</td><td>users.tenant_id</td><td>租户下多用户</td></tr>
+<tr><td>tenants</td><td>roles</td><td>1:N</td><td>roles.tenant_id</td><td>租户自定义角色</td></tr>
+<tr><td>users</td><td>tenant_memberships</td><td>M:N</td><td>memberships.user_id</td><td>经关联表关联角色</td></tr>
+<tr><td>roles</td><td>tenant_memberships</td><td>1:N</td><td>memberships.role_id</td><td>一个角色多成员</td></tr>
+<tr><td>tenants</td><td>workspaces</td><td>1:N</td><td>workspaces.tenant_id</td><td>租户下多工作区</td></tr>
+<tr><td>workspaces</td><td>environments</td><td>1:N</td><td>environments.workspace_id</td><td>工作区多环境</td></tr>
+<tr><td>workspaces</td><td>knowledge_bases</td><td>1:N</td><td>knowledge_bases.workspace_id</td><td>工作区多知识库</td></tr>
+<tr><td>tenants</td><td>connectors</td><td>1:N</td><td>connectors.tenant_id</td><td>租户级连接器</td></tr>
+<tr><td>workspaces</td><td>threads</td><td>1:N</td><td>threads.workspace_id</td><td>工作区下多会话</td></tr>
+<tr><td>threads</td><td>turns</td><td>1:N</td><td>turns.thread_id</td><td>会话内多轮次</td></tr>
+<tr><td>turns</td><td>items</td><td>1:N</td><td>items.turn_id</td><td>轮次内多条事件</td></tr>
+<tr><td>turns</td><td>steps</td><td>1:N</td><td>steps.turn_id</td><td>轮次内多采样步骤</td></tr>
+<tr><td>threads</td><td>approval_tickets</td><td>1:N</td><td>approval_tickets.thread_id</td><td>会话级审批</td></tr>
+<tr><td>turns</td><td>approval_tickets</td><td>1:N</td><td>approval_tickets.turn_id</td><td>轮次级审批</td></tr>
+<tr><td>threads</td><td>usage_records</td><td>1:N</td><td>usage_records.thread_id</td><td>会话级用量</td></tr>
+<tr><td>tenants</td><td>quotas</td><td>1:N</td><td>quotas.tenant_id</td><td>租户配额</td></tr>
+<tr><td>tenants</td><td>budgets</td><td>1:N</td><td>budgets.tenant_id</td><td>租户预算</td></tr>
+<tr><td>threads</td><td>sandbox_pods</td><td>1:N</td><td>sandbox_pods.thread_id</td><td>会话级 Pod</td></tr>
+<tr><td>threads</td><td>workspace_snapshots</td><td>1:N</td><td>workspace_snapshots.thread_id</td><td>会话级快照</td></tr>
+<tr><td>tenants</td><td>model_routes</td><td>1:N</td><td>model_routes.tenant_id</td><td>租户级模型路由</td></tr>
+<tr><td>mcp_servers</td><td>mcp_credentials</td><td>1:N</td><td>mcp_credentials.mcp_server_id</td><td>MCP 凭据</td></tr>
+<tr><td>skills</td><td>skill_versions</td><td>1:N</td><td>skill_versions.skill_id</td><td>技能版本链</td></tr>
+<tr><td>turns</td><td>tool_call_logs</td><td>1:N</td><td>tool_call_logs.turn_id</td><td>轮次级工具调用</td></tr>
+</table>
+</div></details>
+</section>
+
+<section id="s5">
+<h2>5. 分域 DDL</h2>
+<details><summary>5.1 租户域 DDL</summary><div class="detail-body">
+<pre><code>-- 租户
+CREATE TABLE tenants (
+    id              BIGSERIAL PRIMARY KEY,
+    name            TEXT NOT NULL,
+    plan            TEXT NOT NULL DEFAULT 'team',
+    isolation_tier  TEXT NOT NULL DEFAULT 'shared',
+    cmk_id          TEXT,
+    quota_profile   JSONB NOT NULL DEFAULT '{}',
+    status          TEXT NOT NULL DEFAULT 'active',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 用户
+CREATE TABLE users (
+    id            BIGSERIAL PRIMARY KEY,
+    tenant_id     BIGINT NOT NULL REFERENCES tenants(id),
+    idp_subject   TEXT,
+    email         CITEXT UNIQUE,
+    display_name  TEXT,
+    status        TEXT NOT NULL DEFAULT 'active',
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 角色
+CREATE TABLE roles (
+    id               BIGSERIAL PRIMARY KEY,
+    tenant_id        BIGINT NOT NULL REFERENCES tenants(id),
+    name             TEXT NOT NULL,
+    permissions_json JSONB NOT NULL DEFAULT '{}',
+    UNIQUE(tenant_id, name)
+);
+
+-- 租户成员（用户↔角色 M:N）
+CREATE TABLE tenant_memberships (
+    id            BIGSERIAL PRIMARY KEY,
+    tenant_id     BIGINT NOT NULL REFERENCES tenants(id),
+    user_id       BIGINT NOT NULL REFERENCES users(id),
+    org_unit_id   BIGINT,
+    role_id       BIGINT NOT NULL REFERENCES roles(id),
+    scope_json    JSONB DEFAULT '{}',
+    UNIQUE(tenant_id, user_id, role_id)
+);
+
+-- RLS 策略
+ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users    ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON tenants USING (id = current_setting('app.tenant_id')::BIGINT);
+CREATE POLICY tenant_isolation ON users USING (tenant_id = current_setting('app.tenant_id')::BIGINT);</code></pre>
+</div></details>
+
+<details><summary>5.2 工作区域 DDL</summary><div class="detail-body">
+<pre><code>CREATE TABLE workspaces (
+    id                  BIGSERIAL PRIMARY KEY,
+    tenant_id           BIGINT NOT NULL REFERENCES tenants(id),
+    name                TEXT NOT NULL,
+    env_tag             TEXT DEFAULT 'dev',
+    repos_json          JSONB DEFAULT '[]',
+    connectors_json     JSONB DEFAULT '[]',
+    knowledge_scope_json JSONB DEFAULT '{}',
+    sandbox_mode        TEXT DEFAULT 'read-only',
+    approval_policy     TEXT DEFAULT 'on-request',
+    max_risk_level      TEXT DEFAULT 'medium',
+    UNIQUE(tenant_id, name)
+);
+
+CREATE TABLE environments (
+    id            BIGSERIAL PRIMARY KEY,
+    workspace_id  BIGINT NOT NULL REFERENCES workspaces(id),
+    name          TEXT NOT NULL,
+    config_json   JSONB DEFAULT '{}'
+);
+
+CREATE TABLE knowledge_bases (
+    id              BIGSERIAL PRIMARY KEY,
+    workspace_id    BIGINT NOT NULL REFERENCES workspaces(id),
+    name            TEXT NOT NULL,
+    embedding_model TEXT DEFAULT 'text-embedding-3-large',
+    acl_json        JSONB DEFAULT '{}'
+);</code></pre>
+</div></details>
+
+<details><summary>5.3 会话域 DDL（核心）</summary><div class="detail-body">
+<pre><code>-- ★ 会话（对应 Codex Thread）
+CREATE TABLE threads (
+    id                       BIGSERIAL PRIMARY KEY,
+    tenant_id                BIGINT NOT NULL REFERENCES tenants(id),
+    workspace_id             BIGINT NOT NULL REFERENCES workspaces(id),
+    owner_user_id            BIGINT REFERENCES users(id),
+    codex_thread_id          TEXT,
+    title                    TEXT,
+    status                   TEXT NOT NULL DEFAULT 'active',
+    rollout_object_key       TEXT,
+    rollout_version          INT DEFAULT 0,
+    permission_snapshot_hash TEXT,   -- ★ 权限快照
+    total_tokens             BIGINT DEFAULT 0,
+    total_cost_micros        BIGINT DEFAULT 0,
+    created_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_active_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ★ 轮次（对应 Codex Turn）
+CREATE TABLE turns (
+    id               BIGSERIAL PRIMARY KEY,
+    thread_id        BIGINT NOT NULL REFERENCES threads(id),
+    seq              INT NOT NULL,
+    status           TEXT NOT NULL DEFAULT 'pending',
+    trigger          TEXT DEFAULT 'user',
+    model            TEXT,
+    sandbox_mode     TEXT,
+    approval_policy  TEXT,
+    input_tokens     INT DEFAULT 0,
+    output_tokens    INT DEFAULT 0,
+    cost_micros      BIGINT DEFAULT 0,
+    started_at       TIMESTAMPTZ,
+    ended_at         TIMESTAMPTZ,
+    UNIQUE(thread_id, seq)
+);
+
+-- ★★ 事件项（对应 Codex Item）最大最热的表
+CREATE TABLE items (
+    id             BIGSERIAL PRIMARY KEY,
+    thread_id      BIGINT NOT NULL REFERENCES threads(id),
+    turn_id        BIGINT NOT NULL REFERENCES turns(id),
+    seq            INT NOT NULL,
+    kind           TEXT NOT NULL,
+    actor          TEXT NOT NULL,
+    content_ref    TEXT,        -- ★ 大字段指向对象存储
+    content_digest  TEXT,
+    summary        TEXT,
+    visibility     TEXT DEFAULT 'user_visible',
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(thread_id, turn_id, seq)  -- ★★★ 幂等键
+);
+
+-- 采样步骤（对应 Codex Step）
+CREATE TABLE steps (
+    id                BIGSERIAL PRIMARY KEY,
+    turn_id           BIGINT NOT NULL REFERENCES turns(id),
+    seq               INT NOT NULL,
+    sample_status     TEXT,
+    model_output_ref  TEXT,
+    tool_calls_json   JSONB,
+    UNIQUE(turn_id, seq)
+);</code></pre>
+</div></details>
+
+<details><summary>5.4 审批域 DDL</summary><div class="detail-body">
+<pre><code>CREATE TABLE approval_tickets (
+    id                     BIGSERIAL PRIMARY KEY,
+    thread_id              BIGINT NOT NULL REFERENCES threads(id),
+    turn_id                BIGINT NOT NULL REFERENCES turns(id),
+    item_seq               INT NOT NULL,
+    tool_name              TEXT NOT NULL,
+    params_ref             TEXT,           -- 原始参数(对象存储)
+    params_redacted        JSONB,          -- 脱敏后参数
+    diff_preview_ref       TEXT,
+    risk_level             TEXT DEFAULT 'medium',
+    required_approver_role TEXT,
+    require_dual           BOOLEAN DEFAULT FALSE,
+    status                 TEXT NOT NULL DEFAULT 'pending',
+    decided_by             BIGINT REFERENCES users(id),
+    decided_at             TIMESTAMPTZ,
+    context_snapshot_ref   TEXT,
+    expires_at             TIMESTAMPTZ,
+    default_action         TEXT DEFAULT 'deny'
+);
+
+CREATE INDEX idx_approval_status ON approval_tickets(status) WHERE status = 'pending';</code></pre>
+</div></details>
+
+<details><summary>5.5 计费配额域 DDL</summary><div class="detail-body">
+<pre><code>-- ★ 只追加，无 UPDATE/DELETE 权限
+CREATE TABLE usage_records (
+    id               BIGSERIAL PRIMARY KEY,
+    tenant_id        BIGINT NOT NULL REFERENCES tenants(id),
+    user_id          BIGINT REFERENCES users(id),
+    thread_id        BIGINT REFERENCES threads(id),
+    turn_id          BIGINT REFERENCES turns(id),
+    metric           TEXT NOT NULL,  -- token_in/out/cached, tool_call, sandbox_second, storage_byte
+    quantity         NUMERIC(20,4) NOT NULL,
+    model            TEXT,
+    unit_cost_micros BIGINT,
+    occurred_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE quotas (
+    id          BIGSERIAL PRIMARY KEY,
+    tenant_id   BIGINT NOT NULL REFERENCES tenants(id),
+    scope       TEXT NOT NULL,     -- tenant/org_unit/user/workspace
+    metric      TEXT NOT NULL,
+    limit_value NUMERIC(20,4) NOT NULL,
+    period      TEXT NOT NULL,
+    used_value  NUMERIC(20,4) DEFAULT 0,
+    reset_at    TIMESTAMPTZ
+);
+
+CREATE TABLE budgets (
+    id              BIGSERIAL PRIMARY KEY,
+    tenant_id       BIGINT NOT NULL REFERENCES tenants(id),
+    amount_micros   BIGINT NOT NULL,
+    spent_micros    BIGINT DEFAULT 0,
+    period          TEXT NOT NULL,
+    alert_threshold NUMERIC(5,2) DEFAULT 0.8,
+    hard_limit      BOOLEAN DEFAULT TRUE
+);</code></pre>
+</div></details>
+
+<details><summary>5.6 沙箱域 + 审计域(WORM) DDL</summary><div class="detail-body">
+<pre><code>CREATE TABLE sandbox_pods (
+    id            BIGSERIAL PRIMARY KEY,
+    tenant_id     BIGINT NOT NULL REFERENCES tenants(id),
+    thread_id     BIGINT NOT NULL REFERENCES threads(id),
+    turn_id       BIGINT REFERENCES turns(id),
+    pod_name      TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'pending',
+    node          TEXT,
+    cpu_milli     INT,
+    memory_mb     INT,
+    started_at    TIMESTAMPTZ,
+    terminated_at TIMESTAMPTZ
+);
+
+CREATE TABLE workspace_snapshots (
+    id              BIGSERIAL PRIMARY KEY,
+    workspace_id    BIGINT NOT NULL REFERENCES workspaces(id),
+    thread_id       BIGINT REFERENCES threads(id),
+    rollout_version INT NOT NULL,
+    object_key      TEXT NOT NULL,  -- ★ 对象存储(按租户前缀+CMK)
+    content_digest  TEXT NOT NULL,
+    size_bytes      BIGINT
+);
+
+-- ★★★ WORM 审计日志：只追加，按月分区
+CREATE TABLE audit_logs (
+    id            BIGSERIAL,
+    tenant_id     BIGINT NOT NULL REFERENCES tenants(id),
+    actor_type    TEXT NOT NULL,
+    actor_id      TEXT,
+    action        TEXT NOT NULL,
+    resource_type TEXT,
+    resource_id   TEXT,
+    before_ref    TEXT,
+    after_ref     TEXT,
+    ip            INET,
+    trace_id      TEXT,
+    occurred_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+) PARTITION BY RANGE (occurred_at);
+
+CREATE TABLE audit_logs_2026_09 PARTITION OF audit_logs
+    FOR VALUES FROM ('2026-09-01') TO ('2026-10-01');
+
+-- ★ 应用账号 GRANT INSERT ONLY（不授予 UPDATE/DELETE）</code></pre>
+</div></details>
+
+<details><summary>5.7 模型域 + MCP/连接器域 + Skills 域 DDL</summary><div class="detail-body">
+<pre><code>-- 模型路由
+CREATE TABLE model_routes (
+    id                 BIGSERIAL PRIMARY KEY,
+    tenant_id          BIGINT NOT NULL REFERENCES tenants(id),
+    route_name         TEXT NOT NULL,
+    model_id           TEXT NOT NULL,
+    provider           TEXT NOT NULL,
+    priority           INT DEFAULT 0,
+    fallback_model_id  TEXT,
+    max_tokens         INT,
+    rate_limit_rpm     INT,
+    enabled            BOOLEAN DEFAULT TRUE,
+    UNIQUE(tenant_id, route_name)
+);
+
+-- MCP 服务器
+CREATE TABLE mcp_servers (
+    id             BIGSERIAL PRIMARY KEY,
+    tenant_id      BIGINT NOT NULL REFERENCES tenants(id),
+    workspace_id   BIGINT REFERENCES workspaces(id),
+    name           TEXT NOT NULL,
+    transport      TEXT NOT NULL,
+    endpoint       TEXT,
+    command        TEXT,
+    tool_whitelist JSONB DEFAULT '[]',
+    enabled        BOOLEAN DEFAULT TRUE,
+    UNIQUE(tenant_id, name)
+);
+
+-- Skills
+CREATE TABLE skills (
+    id                  BIGSERIAL PRIMARY KEY,
+    tenant_id           BIGINT NOT NULL REFERENCES tenants(id),
+    name                TEXT NOT NULL,
+    scope               TEXT NOT NULL DEFAULT 'tenant',
+    status              TEXT NOT NULL DEFAULT 'active',
+    latest_version_id   BIGINT,
+    UNIQUE(tenant_id, name)
+);
+
+CREATE TABLE skill_versions (
+    id            BIGSERIAL PRIMARY KEY,
+    skill_id      BIGINT NOT NULL REFERENCES skills(id),
+    version       TEXT NOT NULL,
+    content_ref   TEXT NOT NULL,
+    checksum      TEXT NOT NULL,
+    published_by  BIGINT REFERENCES users(id),
+    UNIQUE(skill_id, version)
+);</code></pre>
+</div></details>
+</section>
+
+<section id="s6">
+<h2>6. 与 Codex 原语映射</h2>
+<div class="callout gold"><strong>核心映射</strong>：Codex 的 Thread→Turn→Item→Step 原语在 Nexus 云端对应同名表（threads/turns/items/steps）；Approval（TUI 弹窗）桥接为云端一等公民 approval_tickets；Rollout（本地文件）归档为 workspace_snapshots + 对象存储。</div>
+<table>
+<tr><th>Codex 原语</th><th>Nexus 表</th><th>映射关系</th><th>说明</th></tr>
+<tr><td><strong>Thread</strong></td><td><code>threads</code></td><td>1:1 映射</td><td>app-server Thread → 云端一行；codex_thread_id 存 app-server ID；rollout_object_key 指向对象存储</td></tr>
+<tr><td><strong>Turn</strong></td><td><code>turns</code></td><td>1:1 映射</td><td>每个 Turn 对应一行；status 状态机更丰富（加 waiting_approval）</td></tr>
+<tr><td><strong>Item</strong></td><td><code>items</code></td><td>1:1 映射</td><td>★事件流持久化形态；UNIQUE(thread_id,turn_id,seq) 幂等键</td></tr>
+<tr><td><strong>Step</strong></td><td><code>steps</code></td><td>1:1 映射</td><td>Turn 内单次采样快照</td></tr>
+<tr><td><strong>Approval</strong></td><td><code>approval_tickets</code></td><td>桥接映射</td><td>TUI 弹窗→云端一等公民；Pod 死后从 DB 重建审批态</td></tr>
+<tr><td><strong>Rollout</strong></td><td><code>workspace_snapshots</code></td><td>归档映射</td><td>本地 rollout → 对象存储 + 快照行；Pod 死后可恢复</td></tr>
+<tr><td><strong>Session</strong></td><td>（不映射）</td><td>内部运行态</td><td>不对外暴露；Pod 死后从 Thread+Turn+Item+Rollout 重建</td></tr>
+</table>
+<pre><code>Codex 本地                          Nexus 云端 Postgres
+──────────                          ──────────────────
+Thread (app-server)    ──────────→  threads
+  └ Turn                ──────────→    └ turns
+      └ Step             ──────────→        └ steps
+      └ Item             ──────────→        └ items ★幂等键
+  └ Approval (TUI)      ── bridge ─→    └ approval_tickets
+Rollout (本地文件)       ── sync ──→  workspace_snapshots + 对象存储
+Session (内部运行态)     ── (不映射) ──  从 threads+turns+items+rollout 重建</code></pre>
+</section>
+
+<section id="s7">
+<h2>7. 索引与分区策略</h2>
+<table>
+<tr><th>表</th><th>策略</th><th>说明</th></tr>
+<tr><td><code>items</code></td><td>按 tenant_id + 月范围分区</td><td>★最大最热表；按 tenant_id 聚簇 + 按月分区；大字段外置</td></tr>
+<tr><td><code>audit_logs</code></td><td>按月分区 (PARTITION BY RANGE)</td><td>WORM 只追加；冷分区归档对象存储；合规保留 1-7 年</td></tr>
+<tr><td><code>usage_records</code></td><td>按 tenant_id + 月分区</td><td>计量流水高频写；便于聚合与归档</td></tr>
+<tr><td><code>turns</code></td><td>索引 (thread_id, seq) UNIQUE</td><td>会话内顺序访问</td></tr>
+<tr><td><code>threads</code></td><td>索引 (tenant_id, status, last_active_at DESC)</td><td>列表页"我的活跃会话"</td></tr>
+<tr><td><code>approval_tickets</code></td><td>部分索引 WHERE status='pending'</td><td>审批中心只查 pending；极小极快</td></tr>
+<tr><td><code>sandbox_pods</code></td><td>索引 (tenant_id, status)</td><td>调度器查可用 Pod</td></tr>
+</table>
+<div class="callout blue"><strong>分区管理</strong>：pg_partman / pg_cron 定期创建未来分区、归档旧分区；冷分区（>3 月）DETACH 后导出到对象存储。分区表主键必须包含分区键。</div>
+</section>
+
+<section id="s8">
+<h2>8. 数据生命周期</h2>
+<table>
+<tr><th>层级</th><th>数据</th><th>存储</th><th>保留期</th><th>说明</th></tr>
+<tr><td><span class="badge b-billing">热</span></td><td>items(近3月) · turns · threads(active) · approval(pending)</td><td>PG 主库</td><td>0-3 月</td><td>高频读写；大字段外置</td></tr>
+<tr><td><span class="badge b-billing">热</span></td><td>usage_records(当月) · sandbox_pods(active)</td><td>PG 主库</td><td>当月</td><td>计量实时聚合</td></tr>
+<tr><td><span class="badge b-audit">温</span></td><td>items(3-12月) · threads(archived) · audit_logs(当年)</td><td>PG 分区</td><td>3-12 月</td><td>低频查询</td></tr>
+<tr><td><span class="badge b-audit">冷</span></td><td>audit_logs(>1年) · usage_records(>1年)</td><td>对象存储 + SIEM</td><td>1-7 年</td><td>合规留存</td></tr>
+<tr><td><span class="badge b-sandbox">冷</span></td><td>workspace_snapshots (rollout 归档)</td><td>对象存储(按租户+CMK)</td><td>按租户策略</td><td>Pod 死后重建用</td></tr>
+</table>
+<div class="callout red"><strong>加密粉碎</strong>：禁用租户 CMK → 对象存储数据不可解密。归档流程：items 冷分区 DETACH → Parquet → S3 → audit_logs 投递 SIEM。</div>
+</section>
+
+<section id="s9">
+<h2>9. 配套产物索引</h2>
+<table>
+<tr><th>产物</th><th>文件</th></tr>
+<tr><td>详细方案</td><td><code>domain-model.md</code></td></tr>
+<tr><td>核心域 ER 图</td><td><code>domain-model-core.svg</code> / <code>.png</code></td></tr>
+<tr><td>治理域 ER 图</td><td><code>domain-model-governance.svg</code> / <code>.png</code></td></tr>
+<tr><td>合并 ER 图</td><td><code>domain-model.svg</code> / <code>.png</code></td></tr>
+<tr><td>SVG 生成脚本</td><td><code>_gen_svg.py</code></td></tr>
+</table>
+<div class="callout blue">本方案与 <code>../Nexus 基于CodexHarness的企业级Agent平台_系统设计与实施路线图.md</code> §5「核心数据模型」对齐，为其工程化落地版。</div>
+</section>
+
+</main>
+</div>
+<script>
+function toggleTheme(){const h=document.documentElement;h.dataset.theme=h.dataset.theme==='dark'?'light':'dark';localStorage.setItem('theme',h.dataset.theme)}
+(function(){const t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t})();
+const sections=[...document.querySelectorAll('main section')];
+const toc=document.getElementById('toc');
+sections.forEach(s=>{const h=s.querySelector('h2');if(!h)return;const a=document.createElement('a');a.href='#'+s.id;a.textContent=h.textContent.replace(/^\d+\.\s*/,'');toc.appendChild(a);s.querySelectorAll('h3').forEach(h3=>{h3.id='h-'+Math.random().toString(36).slice(2,7);const sa=document.createElement('a');sa.className='sub';sa.href='#'+h3.id;sa.textContent='↳ '+h3.textContent;toc.appendChild(sa)})});
+const prog=document.getElementById('progress');
+window.addEventListener('scroll',()=>{const st=window.scrollY;const dh=document.documentElement.scrollHeight-window.innerHeight;prog.style.width=(st/dh*100)+'%';let cur=sections[0];sections.forEach(s=>{if(s.offsetTop<=st+120)cur=s});toc.querySelectorAll('a').forEach(a=>a.classList.remove('active'));const a=toc.querySelector('a[href="#'+cur.id+'"]');if(a)a.classList.add('active')});
+</script>
+</body>
+</html>

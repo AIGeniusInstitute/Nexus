@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 1500">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#a855f7"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f97316"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+</defs>
+<rect width="2000" height="1500" fill="#0b141a"/>
+<text x="40" y="32" fill="#35c2b0" font-size="22" font-weight="700">Nexus 多 Agent 协作流程</text>
+<text x="40" y="56" fill="#9db8b4" font-size="13">主Agent > ThreadManager.spawn_subagent > fork_thread > 子Agent > agent-graph-store父子拓扑 > guardian审查</text>
+<rect x="60" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#a855f7" stroke-width="1.4"/>
+<text x="200.0" y="100" text-anchor="middle" fill="#a855f7" font-size="12.5" font-weight="700">Main Agent</text>
+<text x="200.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">主Thread(orchestrator)</text>
+<line x1="200.0" y1="126" x2="200.0" y2="1440" stroke="#a855f7" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="420" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#35c2b0" stroke-width="1.4"/>
+<text x="560.0" y="100" text-anchor="middle" fill="#35c2b0" font-size="12.5" font-weight="700">ThreadManager</text>
+<text x="560.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L5 协作管理器</text>
+<line x1="560.0" y1="126" x2="560.0" y2="1440" stroke="#35c2b0" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="780" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="920.0" y="100" text-anchor="middle" fill="#3b82f6" font-size="12.5" font-weight="700">Sub Agent</text>
+<text x="920.0" y="116" text-anchor="middle" fill="#3b82f6" font-size="12.5" font-weight="700">Thread</text>
+<text x="920.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">forked子Thread</text>
+<line x1="920.0" y1="126" x2="920.0" y2="1440" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1140" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#e8b64c" stroke-width="1.4"/>
+<text x="1280.0" y="100" text-anchor="middle" fill="#e8b64c" font-size="12.5" font-weight="700">agent-graph</text>
+<text x="1280.0" y="116" text-anchor="middle" fill="#e8b64c" font-size="12.5" font-weight="700">store</text>
+<text x="1280.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">父子拓扑存储</text>
+<line x1="1280.0" y1="126" x2="1280.0" y2="1440" stroke="#e8b64c" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1500" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#ef4444" stroke-width="1.4"/>
+<text x="1640.0" y="100" text-anchor="middle" fill="#ef4444" font-size="12.5" font-weight="700">Guardian</text>
+<text x="1640.0" y="116" text-anchor="middle" fill="#ef4444" font-size="12.5" font-weight="700">Reviewer</text>
+<text x="1640.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">自动审查子Agent</text>
+<line x1="1640.0" y1="126" x2="1640.0" y2="1440" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1860" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#35c2b0" stroke-width="1.4"/>
+<text x="2000.0" y="100" text-anchor="middle" fill="#35c2b0" font-size="12.5" font-weight="700">Event Consumer</text>
+<text x="2000.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L3事件消费</text>
+<line x1="2000.0" y1="126" x2="2000.0" y2="1440" stroke="#35c2b0" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="195.0" y="146" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="555.0" y="146" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M200.0 160 L560.0 160" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<text x="380.0" y="154" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">spawn_subagent(goal, context, tools)</text>
+<path d="M560.0 228 L590.0 228 L590.0 248 L560.0 248" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="598.0" y="234" fill="#e8f2f0" font-size="9.5">决策: fork_thread vs new_thread</text>
+<rect x="555.0" y="282" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="915.0" y="282" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<path d="M560.0 296 L920.0 296" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<text x="740.0" y="290" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">thread/fork(sourceThreadId)</text>
+<text x="740.0" y="303" text-anchor="middle" fill="#9db8b4" font-size="9">复制item元数据, 新thread_id</text>
+<rect x="555.0" y="350" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="1275.0" y="350" width="10" height="28" rx="2" fill="#e8b64c" opacity="0.65" stroke="#e8b64c" stroke-width="0.8"/>
+<path d="M560.0 364 L1280.0 364" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="920.0" y="358" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">★ 写spawn-edge: parent>child拓扑</text>
+<path d="M920.0 432 L950.0 432 L950.0 452 L920.0 452" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<text x="958.0" y="438" fill="#e8f2f0" font-size="9.5">子Agent启动run_turn
+继承父workspace/权限快照</text>
+<rect x="915.0" y="486" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<rect x="195.0" y="486" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<path d="M920.0 500 L200.0 500" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<text x="560.0" y="494" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">collabToolCall: send_input/resume_agent</text>
+<path d="M200.0 568 L230.0 568 L230.0 588 L200.0 588" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<text x="238.0" y="574" fill="#e8f2f0" font-size="9.5">父Agent继续(并行/等待)</text>
+<rect x="915.0" y="622" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<rect x="1635.0" y="622" width="10" height="28" rx="2" fill="#ef4444" opacity="0.65" stroke="#ef4444" stroke-width="0.8"/>
+<path d="M920.0 636 L1640.0 636" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="1280.0" y="630" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">Guardian审查子Agent输出</text>
+<text x="1280.0" y="643" text-anchor="middle" fill="#9db8b4" font-size="9">数据外传/凭据探测/破坏性动作</text>
+<rect x="1635.0" y="690" width="10" height="28" rx="2" fill="#ef4444" opacity="0.65" stroke="#ef4444" stroke-width="0.8"/>
+<rect x="915.0" y="690" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<path d="M1640.0 704 L920.0 704" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="1280.0" y="698" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">审查通过>继续 / 审查拒绝>中止</text>
+<rect x="1635.0" y="758" width="10" height="28" rx="2" fill="#ef4444" opacity="0.65" stroke="#ef4444" stroke-width="0.8"/>
+<rect x="555.0" y="758" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M1640.0 772 L560.0 772" fill="none" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="1100.0" y="766" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">审查结果通知(item/autoApprovalReview/*)</text>
+<rect x="915.0" y="826" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<rect x="1995.0" y="826" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M920.0 840 L2000.0 840" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1460.0" y="834" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">子Agent事件流(item/started/completed)</text>
+<rect x="1995.0" y="894" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="1275.0" y="894" width="10" height="28" rx="2" fill="#e8b64c" opacity="0.65" stroke="#e8b64c" stroke-width="0.8"/>
+<path d="M2000.0 908 L1280.0 908" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="1640.0" y="902" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">★ 幂等写入子thread items</text>
+<rect x="915.0" y="962" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<rect x="195.0" y="962" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<path d="M920.0 976 L200.0 976" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<text x="560.0" y="970" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">subAgentActivity: completed</text>
+<text x="560.0" y="983" text-anchor="middle" fill="#9db8b4" font-size="9">结果回灌父Agent turn</text>
+<path d="M200.0 1044 L230.0 1044 L230.0 1064 L200.0 1064" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<text x="238.0" y="1050" fill="#e8f2f0" font-size="9.5">父Agent收到子结果 > 继续turn</text>
+<rect x="195.0" y="1098" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="1995.0" y="1098" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M200.0 1112 L2000.0 1112" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1100.0" y="1106" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">父Agent事件流 > 幂等消费</text>
+<rect x="1995.0" y="1166" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="1275.0" y="1166" width="10" height="28" rx="2" fill="#e8b64c" opacity="0.65" stroke="#e8b64c" stroke-width="0.8"/>
+<path d="M2000.0 1180 L1280.0 1180" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="1640.0" y="1174" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">★ 幂等写入父thread items</text>
+<rect x="60" y="1278" width="1880" height="100" rx="6" fill="none" stroke="#a855f7" stroke-width="1" stroke-dasharray="5,3"/>
+<rect x="68" y="1270" width="75" height="16" rx="3" fill="#0b141a" stroke="#a855f7" stroke-width="0.8"/>
+<text x="74" y="1282" fill="#a855f7" font-size="10" font-weight="600">父子拓扑与权限继承</text>
+<rect x="80" y="1298" width="1840" height="30" rx="4" fill="#13242e" stroke="#a855f7" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="88" y="1314" fill="#a855f7" font-size="10" font-weight="600">权限继承: 子Agent可用权限 = 父Agent权限 ∩ 子Agent角色上限 ∩ 策略中心允许</text>
+<rect x="80" y="1333" width="1840" height="30" rx="4" fill="#13242e" stroke="#a855f7" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="88" y="1349" fill="#a855f7" font-size="10" font-weight="600">thread/list(parentThreadId/ancestorThreadId)可遍历子Agent; Review/Guardian线程不参与spawn-edge生命周期</text>
+<text x="40" y="1398" fill="#9db8b4" font-size="11.5">图 5 - 多Agent协作流程 (fork语义 + 父子拓扑 + Guardian审查 + 事件幂等消费)</text>
+</svg>

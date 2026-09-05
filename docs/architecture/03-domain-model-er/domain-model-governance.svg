@@ -1,0 +1,413 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 1100">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#a855f7"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f97316"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+<linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7f1d1d"/><stop offset="1" stop-color="#ef4444"/></linearGradient>
+<linearGradient id="go" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9a3412"/><stop offset="1" stop-color="#f97316"/></linearGradient>
+</defs>
+<rect width="2400" height="1100" fill="#0b141a"/>
+<text x="40" y="40" fill="#35c2b0" font-size="22" font-weight="700">Nexus 领域模型 ER · 治理与周边域</text>
+<text x="40" y="64" fill="#9db8b4" font-size="13">审计域(紫·WORM) · 沙箱域(橙) · 模型域(蓝) · MCP/连接器域(青) · Skills域(金) · 关联核心域</text>
+<rect x="60" y="100" width="360" height="258" rx="6" fill="#1a0a2a" stroke="#a855f7" stroke-width="1.4"/>
+<rect x="60" y="100" width="360" height="28" rx="6" fill="url(#gp)"/>
+<rect x="60" y="118" width="360" height="10" fill="url(#gp)"/>
+<text x="240.0" y="119" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">audit_logs</text>
+<text x="414" y="113" text-anchor="end" fill="#e9d5ff" font-size="9" opacity="0.7">审计域</text>
+<text x="70" y="136" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="98" y="136" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="412" y="136" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="70" y="152" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="152" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="412" y="152" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="70" y="168" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="168" fill="#e8f2f0" font-size="10.5">actor_type</text>
+<text x="412" y="168" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="70" y="184" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="184" fill="#e8f2f0" font-size="10.5">actor_id</text>
+<text x="412" y="184" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="200" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="200" fill="#e8f2f0" font-size="10.5">action</text>
+<text x="412" y="200" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="216" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="216" fill="#e8f2f0" font-size="10.5">resource_type</text>
+<text x="412" y="216" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="232" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="232" fill="#e8f2f0" font-size="10.5">resource_id</text>
+<text x="412" y="232" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="248" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="248" fill="#e8f2f0" font-size="10.5">before_ref</text>
+<text x="412" y="248" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="264" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="264" fill="#e8f2f0" font-size="10.5">after_ref</text>
+<text x="412" y="264" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="280" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="280" fill="#e8f2f0" font-size="10.5">ip</text>
+<text x="412" y="280" text-anchor="end" fill="#9db8b4" font-size="9">INET</text>
+<text x="70" y="296" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="296" fill="#e8f2f0" font-size="10.5">user_agent</text>
+<text x="412" y="296" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="312" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="312" fill="#e8f2f0" font-size="10.5">trace_id</text>
+<text x="412" y="312" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="328" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="328" fill="#e8f2f0" font-size="10.5">occurred_at</text>
+<text x="412" y="328" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<text x="70" y="344" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="344" fill="#e8f2f0" font-size="10.5">★ WORM 禁UPDATE/DELETE</text>
+<text x="412" y="344" text-anchor="end" fill="#9db8b4" font-size="9">只追加</text>
+<rect x="520" y="100" width="340" height="226" rx="6" fill="#2a1a0a" stroke="#f97316" stroke-width="1.4"/>
+<rect x="520" y="100" width="340" height="28" rx="6" fill="url(#go)"/>
+<rect x="520" y="118" width="340" height="10" fill="url(#go)"/>
+<text x="690.0" y="119" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">sandbox_pods</text>
+<text x="854" y="113" text-anchor="end" fill="#fed7aa" font-size="9" opacity="0.7">沙箱域</text>
+<text x="530" y="136" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="558" y="136" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="852" y="136" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="530" y="152" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="152" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="852" y="152" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="530" y="168" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="168" fill="#e8f2f0" font-size="10.5">thread_id</text>
+<text x="852" y="168" text-anchor="end" fill="#9db8b4" font-size="9">FK→threads</text>
+<text x="530" y="184" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="184" fill="#e8f2f0" font-size="10.5">turn_id</text>
+<text x="852" y="184" text-anchor="end" fill="#9db8b4" font-size="9">FK→turns</text>
+<text x="530" y="200" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="200" fill="#e8f2f0" font-size="10.5">pod_name</text>
+<text x="852" y="200" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="530" y="216" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="216" fill="#e8f2f0" font-size="10.5">status</text>
+<text x="852" y="216" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="530" y="232" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="232" fill="#e8f2f0" font-size="10.5">node</text>
+<text x="852" y="232" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="530" y="248" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="248" fill="#e8f2f0" font-size="10.5">cpu_milli</text>
+<text x="852" y="248" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="530" y="264" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="264" fill="#e8f2f0" font-size="10.5">memory_mb</text>
+<text x="852" y="264" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="530" y="280" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="280" fill="#e8f2f0" font-size="10.5">started_at</text>
+<text x="852" y="280" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<text x="530" y="296" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="296" fill="#e8f2f0" font-size="10.5">terminated_at</text>
+<text x="852" y="296" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<text x="530" y="312" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="312" fill="#e8f2f0" font-size="10.5">exit_reason</text>
+<text x="852" y="312" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<rect x="940" y="100" width="340" height="178" rx="6" fill="#2a1a0a" stroke="#f97316" stroke-width="1.4"/>
+<rect x="940" y="100" width="340" height="28" rx="6" fill="url(#go)"/>
+<rect x="940" y="118" width="340" height="10" fill="url(#go)"/>
+<text x="1110.0" y="119" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">workspace_snapshots</text>
+<text x="1274" y="113" text-anchor="end" fill="#fed7aa" font-size="9" opacity="0.7">沙箱域</text>
+<text x="950" y="136" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="978" y="136" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="1272" y="136" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="950" y="152" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="152" fill="#e8f2f0" font-size="10.5">workspace_id</text>
+<text x="1272" y="152" text-anchor="end" fill="#9db8b4" font-size="9">FK→workspaces</text>
+<text x="950" y="168" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="168" fill="#e8f2f0" font-size="10.5">thread_id</text>
+<text x="1272" y="168" text-anchor="end" fill="#9db8b4" font-size="9">FK→threads</text>
+<text x="950" y="184" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="184" fill="#e8f2f0" font-size="10.5">rollout_version</text>
+<text x="1272" y="184" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="950" y="200" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="200" fill="#e8f2f0" font-size="10.5">object_key</text>
+<text x="1272" y="200" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="950" y="216" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="216" fill="#e8f2f0" font-size="10.5">content_digest</text>
+<text x="1272" y="216" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="950" y="232" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="232" fill="#e8f2f0" font-size="10.5">size_bytes</text>
+<text x="1272" y="232" text-anchor="end" fill="#9db8b4" font-size="9">BIGINT</text>
+<text x="950" y="248" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="248" fill="#e8f2f0" font-size="10.5">created_at</text>
+<text x="1272" y="248" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<text x="950" y="264" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="264" fill="#e8f2f0" font-size="10.5">★ 对应Codex Rollout</text>
+<text x="1272" y="264" text-anchor="end" fill="#9db8b4" font-size="9">归档对象存储</text>
+<rect x="60" y="460" width="360" height="194" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.4"/>
+<rect x="60" y="460" width="360" height="28" rx="6" fill="url(#gb)"/>
+<rect x="60" y="478" width="360" height="10" fill="url(#gb)"/>
+<text x="240.0" y="479" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">model_routes</text>
+<text x="414" y="473" text-anchor="end" fill="#bfdbfe" font-size="9" opacity="0.7">模型域</text>
+<text x="70" y="496" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="98" y="496" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="412" y="496" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="70" y="512" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="512" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="412" y="512" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="70" y="528" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="528" fill="#e8f2f0" font-size="10.5">route_name</text>
+<text x="412" y="528" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="544" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="544" fill="#e8f2f0" font-size="10.5">model_id</text>
+<text x="412" y="544" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="560" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="560" fill="#e8f2f0" font-size="10.5">provider</text>
+<text x="412" y="560" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="70" y="576" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="576" fill="#e8f2f0" font-size="10.5">priority</text>
+<text x="412" y="576" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="70" y="592" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="592" fill="#e8f2f0" font-size="10.5">fallback_model_id</text>
+<text x="412" y="592" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="608" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="608" fill="#e8f2f0" font-size="10.5">max_tokens</text>
+<text x="412" y="608" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="70" y="624" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="624" fill="#e8f2f0" font-size="10.5">rate_limit_rpm</text>
+<text x="412" y="624" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="70" y="640" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="640" fill="#e8f2f0" font-size="10.5">enabled</text>
+<text x="412" y="640" text-anchor="end" fill="#9db8b4" font-size="9">BOOL</text>
+<rect x="520" y="460" width="340" height="162" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.4"/>
+<rect x="520" y="460" width="340" height="28" rx="6" fill="url(#gb)"/>
+<rect x="520" y="478" width="340" height="10" fill="url(#gb)"/>
+<text x="690.0" y="479" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">model_credentials</text>
+<text x="854" y="473" text-anchor="end" fill="#bfdbfe" font-size="9" opacity="0.7">模型域</text>
+<text x="530" y="496" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="558" y="496" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="852" y="496" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="530" y="512" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="512" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="852" y="512" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="530" y="528" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="528" fill="#e8f2f0" font-size="10.5">provider</text>
+<text x="852" y="528" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="530" y="544" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="544" fill="#e8f2f0" font-size="10.5">cred_ref</text>
+<text x="852" y="544" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="530" y="560" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="560" fill="#e8f2f0" font-size="10.5">api_key_enc</text>
+<text x="852" y="560" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="530" y="576" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="576" fill="#e8f2f0" font-size="10.5">org_id</text>
+<text x="852" y="576" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="530" y="592" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="592" fill="#e8f2f0" font-size="10.5">enabled</text>
+<text x="852" y="592" text-anchor="end" fill="#9db8b4" font-size="9">BOOL</text>
+<text x="530" y="608" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="558" y="608" fill="#e8f2f0" font-size="10.5">last_rotated_at</text>
+<text x="852" y="608" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<rect x="940" y="460" width="340" height="210" rx="6" fill="#0a2620" stroke="#028090" stroke-width="1.4"/>
+<rect x="940" y="460" width="340" height="28" rx="6" fill="url(#gt)"/>
+<rect x="940" y="478" width="340" height="10" fill="url(#gt)"/>
+<text x="1110.0" y="479" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">mcp_servers</text>
+<text x="1274" y="473" text-anchor="end" fill="#a7f3e0" font-size="9" opacity="0.7">MCP/连接器域</text>
+<text x="950" y="496" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="978" y="496" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="1272" y="496" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="950" y="512" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="512" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="1272" y="512" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="950" y="528" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="528" fill="#e8f2f0" font-size="10.5">workspace_id</text>
+<text x="1272" y="528" text-anchor="end" fill="#9db8b4" font-size="9">FK→workspaces</text>
+<text x="950" y="544" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="544" fill="#e8f2f0" font-size="10.5">name</text>
+<text x="1272" y="544" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="950" y="560" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="560" fill="#e8f2f0" font-size="10.5">transport</text>
+<text x="1272" y="560" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="950" y="576" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="576" fill="#e8f2f0" font-size="10.5">endpoint</text>
+<text x="1272" y="576" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="950" y="592" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="592" fill="#e8f2f0" font-size="10.5">command</text>
+<text x="1272" y="592" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="950" y="608" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="608" fill="#e8f2f0" font-size="10.5">args_json</text>
+<text x="1272" y="608" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<text x="950" y="624" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="624" fill="#e8f2f0" font-size="10.5">env_redacted</text>
+<text x="1272" y="624" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<text x="950" y="640" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="640" fill="#e8f2f0" font-size="10.5">tool_whitelist</text>
+<text x="1272" y="640" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<text x="950" y="656" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="656" fill="#e8f2f0" font-size="10.5">enabled</text>
+<text x="1272" y="656" text-anchor="end" fill="#9db8b4" font-size="9">BOOL</text>
+<rect x="1360" y="460" width="340" height="146" rx="6" fill="#0a2620" stroke="#028090" stroke-width="1.4"/>
+<rect x="1360" y="460" width="340" height="28" rx="6" fill="url(#gt)"/>
+<rect x="1360" y="478" width="340" height="10" fill="url(#gt)"/>
+<text x="1530.0" y="479" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">mcp_credentials</text>
+<text x="1694" y="473" text-anchor="end" fill="#a7f3e0" font-size="9" opacity="0.7">MCP/连接器域</text>
+<text x="1370" y="496" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="1398" y="496" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="1692" y="496" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="1370" y="512" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1398" y="512" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="1692" y="512" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="1370" y="528" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1398" y="528" fill="#e8f2f0" font-size="10.5">mcp_server_id</text>
+<text x="1692" y="528" text-anchor="end" fill="#9db8b4" font-size="9">FK→mcp_servers</text>
+<text x="1370" y="544" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1398" y="544" fill="#e8f2f0" font-size="10.5">cred_type</text>
+<text x="1692" y="544" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="1370" y="560" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1398" y="560" fill="#e8f2f0" font-size="10.5">cred_ref</text>
+<text x="1692" y="560" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="1370" y="576" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1398" y="576" fill="#e8f2f0" font-size="10.5">scope_json</text>
+<text x="1692" y="576" text-anchor="end" fill="#9db8b4" font-size="9">JSONB</text>
+<text x="1370" y="592" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="1398" y="592" fill="#e8f2f0" font-size="10.5">expires_at</text>
+<text x="1692" y="592" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<rect x="60" y="820" width="340" height="162" rx="6" fill="#2a2110" stroke="#e8b64c" stroke-width="1.4"/>
+<rect x="60" y="820" width="340" height="28" rx="6" fill="url(#gg)"/>
+<rect x="60" y="838" width="340" height="10" fill="url(#gg)"/>
+<text x="230.0" y="839" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">skills</text>
+<text x="394" y="833" text-anchor="end" fill="#fde9b8" font-size="9" opacity="0.7">Skills 域</text>
+<text x="70" y="856" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="98" y="856" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="392" y="856" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="70" y="872" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="872" fill="#e8f2f0" font-size="10.5">tenant_id</text>
+<text x="392" y="872" text-anchor="end" fill="#9db8b4" font-size="9">FK→tenants</text>
+<text x="70" y="888" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="888" fill="#e8f2f0" font-size="10.5">name</text>
+<text x="392" y="888" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="904" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="904" fill="#e8f2f0" font-size="10.5">description</text>
+<text x="392" y="904" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="70" y="920" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="920" fill="#e8f2f0" font-size="10.5">scope</text>
+<text x="392" y="920" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="70" y="936" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="936" fill="#e8f2f0" font-size="10.5">status</text>
+<text x="392" y="936" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="70" y="952" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="952" fill="#e8f2f0" font-size="10.5">latest_version_id</text>
+<text x="392" y="952" text-anchor="end" fill="#9db8b4" font-size="9">FK→skill_versions</text>
+<text x="70" y="968" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="98" y="968" fill="#e8f2f0" font-size="10.5">created_at</text>
+<text x="392" y="968" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<rect x="480" y="820" width="360" height="162" rx="6" fill="#2a2110" stroke="#e8b64c" stroke-width="1.4"/>
+<rect x="480" y="820" width="360" height="28" rx="6" fill="url(#gg)"/>
+<rect x="480" y="838" width="360" height="10" fill="url(#gg)"/>
+<text x="660.0" y="839" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">skill_versions</text>
+<text x="834" y="833" text-anchor="end" fill="#fde9b8" font-size="9" opacity="0.7">Skills 域</text>
+<text x="490" y="856" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="518" y="856" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="832" y="856" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="490" y="872" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="518" y="872" fill="#e8f2f0" font-size="10.5">skill_id</text>
+<text x="832" y="872" text-anchor="end" fill="#9db8b4" font-size="9">FK→skills</text>
+<text x="490" y="888" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="518" y="888" fill="#e8f2f0" font-size="10.5">version</text>
+<text x="832" y="888" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="490" y="904" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="518" y="904" fill="#e8f2f0" font-size="10.5">content_ref</text>
+<text x="832" y="904" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="490" y="920" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="518" y="920" fill="#e8f2f0" font-size="10.5">checksum</text>
+<text x="832" y="920" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="490" y="936" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="518" y="936" fill="#e8f2f0" font-size="10.5">changelog</text>
+<text x="832" y="936" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="490" y="952" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="518" y="952" fill="#e8f2f0" font-size="10.5">published_by</text>
+<text x="832" y="952" text-anchor="end" fill="#9db8b4" font-size="9">FK→users</text>
+<text x="490" y="968" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="518" y="968" fill="#e8f2f0" font-size="10.5">published_at</text>
+<text x="832" y="968" text-anchor="end" fill="#9db8b4" font-size="9">TIMESTAMPTZ</text>
+<rect x="940" y="820" width="340" height="194" rx="6" fill="#0a2620" stroke="#028090" stroke-width="1.4"/>
+<rect x="940" y="820" width="340" height="28" rx="6" fill="url(#gt)"/>
+<rect x="940" y="838" width="340" height="10" fill="url(#gt)"/>
+<text x="1110.0" y="839" text-anchor="middle" fill="#e8f2f0" font-size="13" font-weight="700">tool_call_logs</text>
+<text x="1274" y="833" text-anchor="end" fill="#a7f3e0" font-size="9" opacity="0.7">MCP/连接器域</text>
+<text x="950" y="856" fill="#e8b64c" font-size="10.5" font-weight="700">PK </text>
+<text x="978" y="856" fill="#e8f2f0" font-size="10.5">id</text>
+<text x="1272" y="856" text-anchor="end" fill="#9db8b4" font-size="9">BIGSERIAL</text>
+<text x="950" y="872" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="872" fill="#e8f2f0" font-size="10.5">thread_id</text>
+<text x="1272" y="872" text-anchor="end" fill="#9db8b4" font-size="9">FK→threads</text>
+<text x="950" y="888" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="888" fill="#e8f2f0" font-size="10.5">turn_id</text>
+<text x="1272" y="888" text-anchor="end" fill="#9db8b4" font-size="9">FK→turns</text>
+<text x="950" y="904" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="904" fill="#e8f2f0" font-size="10.5">item_seq</text>
+<text x="1272" y="904" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="950" y="920" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="920" fill="#e8f2f0" font-size="10.5">connector_id</text>
+<text x="1272" y="920" text-anchor="end" fill="#9db8b4" font-size="9">FK→connectors</text>
+<text x="950" y="936" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="936" fill="#e8f2f0" font-size="10.5">tool_name</text>
+<text x="1272" y="936" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="950" y="952" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="952" fill="#e8f2f0" font-size="10.5">duration_ms</text>
+<text x="1272" y="952" text-anchor="end" fill="#9db8b4" font-size="9">INT</text>
+<text x="950" y="968" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="968" fill="#e8f2f0" font-size="10.5">status</text>
+<text x="1272" y="968" text-anchor="end" fill="#9db8b4" font-size="9">ENUM</text>
+<text x="950" y="984" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="984" fill="#e8f2f0" font-size="10.5">error_type</text>
+<text x="1272" y="984" text-anchor="end" fill="#9db8b4" font-size="9">TEXT</text>
+<text x="950" y="1000" fill="#9db8b4" font-size="10.5" font-weight="700">   </text>
+<text x="978" y="1000" fill="#e8f2f0" font-size="10.5">cost_micros</text>
+<text x="1272" y="1000" text-anchor="end" fill="#9db8b4" font-size="9">BIGINT</text>
+<path d="M220 100 C 230.0 100, 230.0 100, 240.0 100" fill="none" stroke="#a855f7" stroke-width="1.6" marker-end="url(#ap)"/>
+<rect x="204.0" y="90.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#a855f7" stroke-width="0.6"/>
+<text x="230.0" y="102.0" text-anchor="middle" fill="#a855f7" font-size="9.5" font-weight="700">1:N</text>
+<path d="M220 620 C 455.0 620, 455.0 100, 690.0 100" fill="none" stroke="#f97316" stroke-width="1.6" marker-end="url(#ao)"/>
+<rect x="429.0" y="350.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#f97316" stroke-width="0.6"/>
+<text x="455.0" y="362.0" text-anchor="middle" fill="#f97316" font-size="9.5" font-weight="700">1:N</text>
+<path d="M220 640 C 665.0 640, 665.0 100, 1110.0 100" fill="none" stroke="#f97316" stroke-width="1.6" marker-end="url(#ao)"/>
+<rect x="639.0" y="360.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#f97316" stroke-width="0.6"/>
+<text x="665.0" y="372.0" text-anchor="middle" fill="#f97316" font-size="9.5" font-weight="700">1:N</text>
+<path d="M460 440 C 825.0 440, 825.0 100, 1190.0 100" fill="none" stroke="#f97316" stroke-width="1.6" marker-end="url(#ao)"/>
+<rect x="799.0" y="260.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#f97316" stroke-width="0.6"/>
+<text x="825.0" y="272.0" text-anchor="middle" fill="#f97316" font-size="9.5" font-weight="700">1:N</text>
+<path d="M220 420 C 230.0 420, 230.0 460, 240.0 460" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<rect x="204.0" y="430.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#3b82f6" stroke-width="0.6"/>
+<text x="230.0" y="442.0" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">1:N</text>
+<path d="M220 440 C 455.0 440, 455.0 460, 690.0 460" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<rect x="429.0" y="440.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#3b82f6" stroke-width="0.6"/>
+<text x="455.0" y="452.0" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">1:N</text>
+<path d="M420 557.0 L520 541.0" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<rect x="444.0" y="539.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#3b82f6" stroke-width="0.6"/>
+<text x="470.0" y="551.0" text-anchor="middle" fill="#3b82f6" font-size="9.5" font-weight="700">N:1</text>
+<path d="M220 480 C 665.0 480, 665.0 460, 1110.0 460" fill="none" stroke="#028090" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="639.0" y="460.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#028090" stroke-width="0.6"/>
+<text x="665.0" y="472.0" text-anchor="middle" fill="#028090" font-size="9.5" font-weight="700">1:N</text>
+<path d="M1280 565.0 L1360 533.0" fill="none" stroke="#028090" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="1294.0" y="539.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#028090" stroke-width="0.6"/>
+<text x="1320.0" y="551.0" text-anchor="middle" fill="#028090" font-size="9.5" font-weight="700">1:N</text>
+<path d="M460 460 C 815.0 460, 815.0 460, 1170.0 460" fill="none" stroke="#028090" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="789.0" y="450.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#028090" stroke-width="0.6"/>
+<text x="815.0" y="462.0" text-anchor="middle" fill="#028090" font-size="9.5" font-weight="700">1:N</text>
+<path d="M220 800 C 225.0 800, 225.0 820, 230.0 820" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<rect x="199.0" y="800.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#e8b64c" stroke-width="0.6"/>
+<text x="225.0" y="812.0" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">1:N</text>
+<path d="M400 901.0 L480 901.0" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<rect x="414.0" y="891.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#e8b64c" stroke-width="0.6"/>
+<text x="440.0" y="903.0" text-anchor="middle" fill="#e8b64c" font-size="9.5" font-weight="700">1:N</text>
+<path d="M620 640 C 865.0 640, 865.0 820, 1110.0 820" fill="none" stroke="#028090" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="839.0" y="720.0" width="52" height="16" rx="3" fill="#0b141a" stroke="#028090" stroke-width="0.6"/>
+<text x="865.0" y="732.0" text-anchor="middle" fill="#028090" font-size="9.5" font-weight="700">1:N</text>
+<rect x="60" y="1000" width="2280" height="56" rx="8" fill="#13242e" stroke="#2e5a68"/>
+<rect x="80" y="1016" width="16" height="16" rx="3" fill="#1a0a2a" stroke="#a855f7" stroke-width="1.4"/>
+<text x="102" y="1028" fill="#e8f2f0" font-size="11">审计域</text>
+<rect x="240" y="1016" width="16" height="16" rx="3" fill="#2a1a0a" stroke="#f97316" stroke-width="1.4"/>
+<text x="262" y="1028" fill="#e8f2f0" font-size="11">沙箱域</text>
+<rect x="400" y="1016" width="16" height="16" rx="3" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="422" y="1028" fill="#e8f2f0" font-size="11">模型域</text>
+<rect x="560" y="1016" width="16" height="16" rx="3" fill="#0a2620" stroke="#028090" stroke-width="1.4"/>
+<text x="582" y="1028" fill="#e8f2f0" font-size="11">MCP/连接器域</text>
+<rect x="720" y="1016" width="16" height="16" rx="3" fill="#2a2110" stroke="#e8b64c" stroke-width="1.4"/>
+<text x="742" y="1028" fill="#e8f2f0" font-size="11">Skills 域</text>
+<text x="880" y="1028" fill="#9db8b4" font-size="11">audit_logs 只追加(WORM) · workspace_snapshots 对应 Codex Rollout 归档对象存储 · 所有表 RLS 按 tenant_id 隔离</text>
+<text x="40" y="1074" fill="#9db8b4" font-size="12">图 2 · 治理与周边域 ER（audit_logs WORM · sandbox_pods/workspace_snapshots · model_routes/credentials · mcp_servers/credentials · skills/skill_versions · tool_call_logs）</text>
+</svg>

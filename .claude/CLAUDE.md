@@ -24,7 +24,7 @@ Nexus 项目基本信息：
 
 ### Issue 修复任务工作流程
 
-针对 bug 修复 / 线上事故 / CI 故障等 issue 处理（**不**走 PRD → tech_solution → test_report 那条线，因为不是新需求开发）：
+针对 bug 修复 / 线上事故 / CI 故障等 issue 处理流程:
 
 0.针对该任务创建工作分支树 worktree
 1.定位根因：必须有证据（日志、API 输出、测试结果），禁止主观判断下结论

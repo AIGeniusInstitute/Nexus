@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3200 560">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#a855f7"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+<linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7f1d1d"/><stop offset="1" stop-color="#ef4444"/></linearGradient>
+</defs>
+<rect width="3200" height="560" fill="#0b141a"/>
+<text x="40" y="40" fill="#35c2b0" font-size="22" font-weight="700">L3 控制平面 · 七大自建子系统详细设计</text>
+<text x="40" y="64" fill="#9db8b4" font-size="13">身份租户 / 任务编排 / 审批中心 / 策略中心 / 配额计费 / 连接器治理 / 知识库 RAG</text>
+<rect x="80" y="100" width="440" height="220" rx="10" fill="#13242e" stroke="#35c2b0" stroke-width="1.6"/>
+<rect x="80" y="100" width="440" height="28" rx="10" fill="#35c2b0" opacity="0.25"/>
+<text x="300.0" y="120" text-anchor="middle" fill="#e8f2f0" font-size="12.5" font-weight="700">身份与租户</text>
+<rect x="100" y="140" width="200" height="60" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="200.0" y="168.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">Tenant 模型</text>
+<text x="200.0" y="181.0" text-anchor="middle" fill="#9db8b4" font-size="8">租户/OrgUnit/Role | RBAC+ABAC</text>
+<rect x="310" y="140" width="200" height="60" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="410.0" y="168.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">Agent 身份</text>
+<text x="410.0" y="181.0" text-anchor="middle" fill="#9db8b4" font-size="8">服务账号不等于用户 | 权限子集</text>
+<rect x="100" y="210" width="200" height="60" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="200.0" y="238.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">连接器身份</text>
+<text x="200.0" y="251.0" text-anchor="middle" fill="#9db8b4" font-size="8">MCP/OAuth 委托 | 按租户隔离</text>
+<rect x="310" y="210" width="200" height="60" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="410.0" y="238.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">权限交集</text>
+<text x="410.0" y="251.0" text-anchor="middle" fill="#9db8b4" font-size="8">四取交集 | 任一空即拒</text>
+<rect x="550" y="100" width="440" height="220" rx="10" fill="#13242e" stroke="#35c2b0" stroke-width="1.6"/>
+<rect x="550" y="100" width="440" height="28" rx="10" fill="#35c2b0" opacity="0.25"/>
+<text x="770.0" y="120" text-anchor="middle" fill="#e8f2f0" font-size="12.5" font-weight="700">任务编排 (Temporal)</text>
+<rect x="570" y="140" width="200" height="60" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="670.0" y="168.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">Workflow 引擎</text>
+<text x="670.0" y="181.0" text-anchor="middle" fill="#9db8b4" font-size="8">可恢复编排 | 跨小时审批</text>
+<rect x="780" y="140" width="200" height="60" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="880.0" y="168.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">外层循环</text>
+<text x="880.0" y="181.0" text-anchor="middle" fill="#9db8b4" font-size="8">平台资源+账本 | 长周期</text>
+<rect x="570" y="210" width="200" height="60" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="670.0" y="238.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">内层循环</text>
+<text x="670.0" y="251.0" text-anchor="middle" fill="#9db8b4" font-size="8">Harness run_turn | 短周期</text>
+<rect x="780" y="210" width="200" height="60" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="880.0" y="238.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">调度策略</text>
+<text x="880.0" y="251.0" text-anchor="middle" fill="#9db8b4" font-size="8">权重+优先级 | 并发上限</text>
+<rect x="1020" y="100" width="440" height="220" rx="10" fill="#13242e" stroke="#e8b64c" stroke-width="1.6"/>
+<rect x="1020" y="100" width="440" height="28" rx="10" fill="#e8b64c" opacity="0.25"/>
+<text x="1240.0" y="120" text-anchor="middle" fill="#e8f2f0" font-size="12.5" font-weight="700">审批中心 (HITL)</text>
+<rect x="1040" y="140" width="200" height="60" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="1140.0" y="168.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">ApprovalTicket</text>
+<text x="1140.0" y="181.0" text-anchor="middle" fill="#9db8b4" font-size="8">先落库后回写 | 跨小时</text>
+<rect x="1250" y="140" width="200" height="60" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="1350.0" y="168.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">多渠道推送</text>
+<text x="1350.0" y="181.0" text-anchor="middle" fill="#9db8b4" font-size="8">Web+IM+邮件 | 按风险选</text>
+<rect x="1040" y="210" width="200" height="60" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="1140.0" y="238.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">边界处理</text>
+<text x="1140.0" y="251.0" text-anchor="middle" fill="#9db8b4" font-size="8">Pod 崩/超时/权限 | 去重重放</text>
+<rect x="1250" y="210" width="200" height="60" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="1350.0" y="238.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">批量审批</text>
+<text x="1350.0" y="251.0" text-anchor="middle" fill="#9db8b4" font-size="8">作用域限定 | 小于等于1h</text>
+<rect x="1490" y="100" width="440" height="220" rx="10" fill="#13242e" stroke="#ef4444" stroke-width="1.6"/>
+<rect x="1490" y="100" width="440" height="28" rx="10" fill="#ef4444" opacity="0.25"/>
+<text x="1710.0" y="120" text-anchor="middle" fill="#e8f2f0" font-size="12.5" font-weight="700">策略中心</text>
+<rect x="1510" y="140" width="200" height="60" rx="5" fill="#173341" stroke="#ef4444" stroke-width="1"/>
+<text x="1610.0" y="168.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">策略对象</text>
+<text x="1610.0" y="181.0" text-anchor="middle" fill="#9db8b4" font-size="8">tenant/role/tool | risk_level</text>
+<rect x="1720" y="140" width="200" height="60" rx="5" fill="#173341" stroke="#ef4444" stroke-width="1"/>
+<text x="1820.0" y="168.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">决策结果</text>
+<text x="1820.0" y="181.0" text-anchor="middle" fill="#9db8b4" font-size="8">allow/deny/approval | dual_approval</text>
+<rect x="1510" y="210" width="200" height="60" rx="5" fill="#173341" stroke="#ef4444" stroke-width="1"/>
+<text x="1610.0" y="238.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">求值时机</text>
+<text x="1610.0" y="251.0" text-anchor="middle" fill="#9db8b4" font-size="8">准入+高危前 | 不永久通行</text>
+<rect x="1720" y="210" width="200" height="60" rx="5" fill="#173341" stroke="#ef4444" stroke-width="1"/>
+<text x="1820.0" y="238.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">漂移防护</text>
+<text x="1820.0" y="251.0" text-anchor="middle" fill="#9db8b4" font-size="8">快照入上下文 | 新动作新策略</text>
+<rect x="80" y="360" width="440" height="220" rx="10" fill="#13242e" stroke="#35c2b0" stroke-width="1.6"/>
+<rect x="80" y="360" width="440" height="28" rx="10" fill="#35c2b0" opacity="0.25"/>
+<text x="300.0" y="380" text-anchor="middle" fill="#e8f2f0" font-size="12.5" font-weight="700">配额与计费</text>
+<rect x="100" y="400" width="200" height="60" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="200.0" y="428.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">四维计量</text>
+<text x="200.0" y="441.0" text-anchor="middle" fill="#9db8b4" font-size="8">token/工具/时长/存储 | 归因到部门</text>
+<rect x="310" y="400" width="200" height="60" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="410.0" y="428.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">预算控制</text>
+<text x="410.0" y="441.0" text-anchor="middle" fill="#9db8b4" font-size="8">软告警降档熔断 | 不直接杀</text>
+<rect x="100" y="470" width="200" height="60" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="200.0" y="498.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">优雅暂停</text>
+<text x="200.0" y="511.0" text-anchor="middle" fill="#9db8b4" font-size="8">保存 rollout | 预算恢复 resume</text>
+<rect x="310" y="470" width="200" height="60" rx="5" fill="#173341" stroke="#35c2b0" stroke-width="1"/>
+<text x="410.0" y="498.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">成本归因</text>
+<text x="410.0" y="511.0" text-anchor="middle" fill="#9db8b4" font-size="8">tenant->model | 实时看板</text>
+<rect x="550" y="360" width="440" height="220" rx="10" fill="#13242e" stroke="#e8b64c" stroke-width="1.6"/>
+<rect x="550" y="360" width="440" height="28" rx="10" fill="#e8b64c" opacity="0.25"/>
+<text x="770.0" y="380" text-anchor="middle" fill="#e8f2f0" font-size="12.5" font-weight="700">连接器治理</text>
+<rect x="570" y="400" width="200" height="60" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="670.0" y="428.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">分级管理</text>
+<text x="670.0" y="441.0" text-anchor="middle" fill="#9db8b4" font-size="8">官方/私有/社区 | 默认禁用</text>
+<rect x="780" y="400" width="200" height="60" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="880.0" y="428.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">MCP Gateway</text>
+<text x="880.0" y="441.0" text-anchor="middle" fill="#9db8b4" font-size="8">凭据注入+白名单 | 出站审计</text>
+<rect x="570" y="470" width="200" height="60" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="670.0" y="498.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">质量分</text>
+<text x="670.0" y="511.0" text-anchor="middle" fill="#9db8b4" font-size="8">可用性/P95/错误率 | 低于阈值下线</text>
+<rect x="780" y="470" width="200" height="60" rx="5" fill="#173341" stroke="#e8b64c" stroke-width="1"/>
+<text x="880.0" y="498.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">凭据代理</text>
+<text x="880.0" y="511.0" text-anchor="middle" fill="#9db8b4" font-size="8">短期 JWT | 绑定 tenant+turn</text>
+<rect x="1020" y="360" width="440" height="220" rx="10" fill="#13242e" stroke="#a855f7" stroke-width="1.6"/>
+<rect x="1020" y="360" width="440" height="28" rx="10" fill="#a855f7" opacity="0.25"/>
+<text x="1240.0" y="380" text-anchor="middle" fill="#e8f2f0" font-size="12.5" font-weight="700">知识库 / RAG</text>
+<rect x="1040" y="400" width="200" height="60" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="1140.0" y="428.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">ACL 随索引</text>
+<text x="1140.0" y="441.0" text-anchor="middle" fill="#9db8b4" font-size="8">chunk 携带 tenant+acl | 先过滤后召回</text>
+<rect x="1250" y="400" width="200" height="60" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="1350.0" y="428.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">混合召回</text>
+<text x="1350.0" y="441.0" text-anchor="middle" fill="#9db8b4" font-size="8">稠密+稀疏+rerank | 附 chunk_id</text>
+<rect x="1040" y="470" width="200" height="60" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="1140.0" y="498.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">权限强制</text>
+<text x="1140.0" y="511.0" text-anchor="middle" fill="#9db8b4" font-size="8">Gateway 侧校验 | 不依赖模型</text>
+<rect x="1250" y="470" width="200" height="60" rx="5" fill="#173341" stroke="#a855f7" stroke-width="1"/>
+<text x="1350.0" y="498.0" text-anchor="middle" fill="#e8f2f0" font-size="10" font-weight="700">知识注入</text>
+<text x="1350.0" y="511.0" text-anchor="middle" fill="#9db8b4" font-size="8">MCP 工具/自定义 Tool | 权限在 Gateway</text>
+<path d="M520 210 L550 210" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<path d="M1460 210 L1490 210" fill="none" stroke="#e8b64c" stroke-width="1.5" marker-end="url(#ag)"/>
+<path d="M770 320 C 1005.0 320, 1005.0 470, 1240 470" fill="none" stroke="#e8b64c" stroke-width="1.5" marker-end="url(#ag)"/>
+<path d="M1020 320 C 660.0 320, 660.0 360, 300 360" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<path d="M990 470 L1020 470" fill="none" stroke="#a855f7" stroke-width="1.5" marker-end="url(#ap)"/>
+<text x="40" y="620" fill="#9db8b4" font-size="11.5">图 3 · L3 控制平面七大自建子系统 — 箭头表示跨子系统依赖（身份->策略->审批、编排->审批->计费、连接器->知识库）</text>
+</svg>

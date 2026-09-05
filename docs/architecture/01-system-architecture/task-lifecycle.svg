@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 520">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+</defs>
+<rect width="1600" height="520" fill="#0b141a"/>
+<text x="40" y="40" fill="#35c2b0" font-size="22" font-weight="700">Nexus 一次任务的完整生命周期（13 步）</text>
+<text x="40" y="64" fill="#9db8b4" font-size="13">★ 为云端落库点；事件即真相，先落库后推送可回放</text>
+<rect x="80" y="110" width="200" height="72" rx="8" fill="#173341" stroke="#028090" stroke-width="1.2"/>
+<text x="180.0" y="150.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="180" y="136" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">① 客户端提交</text>
+<text x="180" y="153" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">幂等键</text>
+<path d="M280 146 L295 146" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="295" y="110" width="200" height="72" rx="8" fill="#173341" stroke="#028090" stroke-width="1.2"/>
+<text x="395.0" y="150.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="395" y="136" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">② 鉴权+策略</text>
+<text x="395" y="153" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">求值+预扣</text>
+<path d="M495 146 L510 146" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="510" y="110" width="200" height="72" rx="8" fill="#173341" stroke="#028090" stroke-width="1.2"/>
+<text x="610.0" y="150.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="610" y="136" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">③ 调度沙箱Pod</text>
+<text x="610" y="153" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">注入配置令牌</text>
+<path d="M710 146 L725 146" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="725" y="110" width="200" height="72" rx="8" fill="#173341" stroke="#028090" stroke-width="1.2"/>
+<text x="825.0" y="150.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="825" y="136" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">④ 启动app-server</text>
+<text x="825" y="153" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">下发rollout恢复</text>
+<path d="M925 146 L940 146" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="940" y="110" width="200" height="72" rx="8" fill="#173341" stroke="#028090" stroke-width="1.2"/>
+<text x="1040.0" y="150.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="1040" y="136" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">⑤ 模型采样</text>
+<text x="1040" y="153" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">出站只到Gateway</text>
+<path d="M1140 146 L1155 146" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="1155" y="110" width="200" height="72" rx="8" fill="#173341" stroke="#028090" stroke-width="1.2"/>
+<text x="1255.0" y="150.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="1255" y="136" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">⑥ 事件流回吐</text>
+<text x="1255" y="153" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">turn/item/delta</text>
+<path d="M1355 146 L1370 146" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="1370" y="110" width="200" height="72" rx="8" fill="#173341" stroke="#e8b64c" stroke-width="1.2"/>
+<text x="1470.0" y="150.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="1470" y="136" text-anchor="middle" fill="#e8b64c" font-size="11" font-weight="700">⑦ 控制面消费</text>
+<text x="1470" y="153" text-anchor="middle" fill="#e8b64c" font-size="11" font-weight="700">★写Postgres+推WS</text>
+<rect x="80" y="290" width="200" height="72" rx="8" fill="#173341" stroke="#e8b64c" stroke-width="1.2"/>
+<text x="180.0" y="330.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="180" y="316" text-anchor="middle" fill="#e8b64c" font-size="11" font-weight="700">⑧ 审批请求★</text>
+<text x="180" y="333" text-anchor="middle" fill="#e8b64c" font-size="11" font-weight="700">落ApprovalTicket</text>
+<path d="M280 326 L295 326" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="295" y="290" width="200" height="72" rx="8" fill="#173341" stroke="#028090" stroke-width="1.2"/>
+<text x="395.0" y="330.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="395" y="316" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">⑨ 用户决策</text>
+<text x="395" y="333" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">先落库再回写</text>
+<path d="M495 326 L510 326" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="510" y="290" width="200" height="72" rx="8" fill="#173341" stroke="#028090" stroke-width="1.2"/>
+<text x="610.0" y="330.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="610" y="316" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">⑩ 工具执行</text>
+<text x="610" y="333" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">execpolicy+沙箱</text>
+<path d="M710 326 L725 326" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="725" y="290" width="200" height="72" rx="8" fill="#173341" stroke="#028090" stroke-width="1.2"/>
+<text x="825.0" y="330.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="825" y="316" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">⑪ 上下文将满</text>
+<text x="825" y="333" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">auto compact</text>
+<path d="M925 326 L940 326" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="940" y="290" width="200" height="72" rx="8" fill="#173341" stroke="#e8b64c" stroke-width="1.2"/>
+<text x="1040.0" y="330.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="1040" y="316" text-anchor="middle" fill="#e8b64c" font-size="11" font-weight="700">⑫ turn完成★</text>
+<text x="1040" y="333" text-anchor="middle" fill="#e8b64c" font-size="11" font-weight="700">产物+rollout上传</text>
+<path d="M1140 326 L1155 326" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="1155" y="290" width="200" height="72" rx="8" fill="#173341" stroke="#028090" stroke-width="1.2"/>
+<text x="1255.0" y="330.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="1255" y="316" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">⑬ 用量结算</text>
+<text x="1255" y="333" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">+审计→Pod销毁</text>
+<path d="M1355 326 L1370 326" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<path d="M1570 146 L1585 146" fill="none" stroke="#35c2b0" stroke-width="1.5" marker-end="url(#a)"/>
+<text x="1330" y="140" fill="#e8b64c" font-size="11" font-weight="700">换行→</text>
+<rect x="80" y="310" width="20" height="14" fill="#173341" stroke="#e8b64c"/>
+<text x="110" y="322" fill="#9db8b4" font-size="11">★ 云端落库点（会话真相写入点）</text>
+<rect x="350" y="310" width="20" height="14" fill="#173341" stroke="#028090"/>
+<text x="380" y="322" fill="#9db8b4" font-size="11">执行/控制面动作</text>
+<text x="40" y="350" fill="#9db8b4" font-size="11.5">图 3 · 13 步任务生命周期（Pod 随时可死，云端状态可重建 resume）</text>
+</svg>

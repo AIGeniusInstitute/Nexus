@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 1600">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ef4444"/></marker>
+<marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#a855f7"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f97316"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+</defs>
+<rect width="2000" height="1600" fill="#0b141a"/>
+<text x="40" y="32" fill="#35c2b0" font-size="22" font-weight="700">Nexus 会话事件流持久化流程</text>
+<text x="40" y="56" fill="#9db8b4" font-size="13">app-server事件 > 控制面消费者at-least-once > 幂等写入Postgres+对象存储rollout > WS推前端 (含seq缺口补齐/fork/resume语义)</text>
+<rect x="60" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#a855f7" stroke-width="1.4"/>
+<text x="200.0" y="100" text-anchor="middle" fill="#a855f7" font-size="12.5" font-weight="700">app-server</text>
+<text x="200.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L5 Harness</text>
+<line x1="200.0" y1="126" x2="200.0" y2="1540" stroke="#a855f7" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="400" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#35c2b0" stroke-width="1.4"/>
+<text x="540.0" y="100" text-anchor="middle" fill="#35c2b0" font-size="12.5" font-weight="700">Event Consumer</text>
+<text x="540.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L3 消费者(at-least-once)</text>
+<line x1="540.0" y1="126" x2="540.0" y2="1540" stroke="#35c2b0" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="740" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="880.0" y="100" text-anchor="middle" fill="#3b82f6" font-size="12.5" font-weight="700">Postgres</text>
+<text x="880.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L7 thread/turn/item分区表</text>
+<line x1="880.0" y1="126" x2="880.0" y2="1540" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1080" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#e8b64c" stroke-width="1.4"/>
+<text x="1220.0" y="100" text-anchor="middle" fill="#e8b64c" font-size="12.5" font-weight="700">Object Store</text>
+<text x="1220.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">L7 rollout/snapshot</text>
+<line x1="1220.0" y1="126" x2="1220.0" y2="1540" stroke="#e8b64c" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1420" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="1560.0" y="100" text-anchor="middle" fill="#3b82f6" font-size="12.5" font-weight="700">WS Gateway</text>
+<text x="1560.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">> 前端(仅展示)</text>
+<line x1="1560.0" y1="126" x2="1560.0" y2="1540" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="1760" y="80" width="280" height="46" rx="6" fill="#173341" stroke="#22c55e" stroke-width="1.4"/>
+<text x="1900.0" y="100" text-anchor="middle" fill="#22c55e" font-size="12.5" font-weight="700">Frontend</text>
+<text x="1900.0" y="120" text-anchor="middle" fill="#9db8b4" font-size="9.5">Web/IM/IDE</text>
+<line x1="1900.0" y1="126" x2="1900.0" y2="1540" stroke="#22c55e" stroke-width="1.2" stroke-dasharray="4,4"/>
+<rect x="195.0" y="146" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="535.0" y="146" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M200.0 160 L540.0 160" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="370.0" y="154" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">item/started {threadId,turnId,item}</text>
+<rect x="195.0" y="216" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="535.0" y="216" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M200.0 230 L540.0 230" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="370.0" y="224" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">item/agentMessage/delta {delta}</text>
+<rect x="195.0" y="286" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="535.0" y="286" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M200.0 300 L540.0 300" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="370.0" y="294" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">item/completed {item(完整)}</text>
+<rect x="195.0" y="356" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="535.0" y="356" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M200.0 370 L540.0 370" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="370.0" y="364" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">turn/started {turn}</text>
+<rect x="195.0" y="426" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="535.0" y="426" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M200.0 440 L540.0 440" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="370.0" y="434" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">turn/completed {turn,tokenUsage}</text>
+<rect x="195.0" y="496" width="10" height="28" rx="2" fill="#a855f7" opacity="0.65" stroke="#a855f7" stroke-width="0.8"/>
+<rect x="535.0" y="496" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<path d="M200.0 510 L540.0 510" fill="none" stroke="#35c2b0" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="370.0" y="504" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">thread/started {thread}</text>
+<path d="M540.0 580 L570.0 580 L570.0 600 L540.0 600" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="578.0" y="586" fill="#e8f2f0" font-size="9.5">幂等去重: thread_id+turn_id+item_seq 唯一键</text>
+<rect x="535.0" y="636" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="875.0" y="636" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<path d="M540.0 650 L880.0 650" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="710.0" y="644" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">★ INSERT item (ON CONFLICT DO NOTHING)</text>
+<rect x="535.0" y="706" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="875.0" y="706" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<path d="M540.0 720 L880.0 720" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="710.0" y="714" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">★ UPSERT thread/turn 状态</text>
+<rect x="535.0" y="776" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="1215.0" y="776" width="10" height="28" rx="2" fill="#e8b64c" opacity="0.65" stroke="#e8b64c" stroke-width="0.8"/>
+<path d="M540.0 790 L1220.0 790" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="880.0" y="784" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">rollout上传 (每N item或每T秒)</text>
+<rect x="535.0" y="846" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="1215.0" y="846" width="10" height="28" rx="2" fill="#e8b64c" opacity="0.65" stroke="#e8b64c" stroke-width="0.8"/>
+<path d="M540.0 860 L1220.0 860" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="880.0" y="854" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">turn结束 > 必传完整rollout</text>
+<rect x="535.0" y="916" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="1555.0" y="916" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<path d="M540.0 930 L1560.0 930" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<text x="1050.0" y="924" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">WS推送 (先落库后推送,可回放)</text>
+<rect x="1555.0" y="986" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<rect x="1895.0" y="986" width="10" height="28" rx="2" fill="#22c55e" opacity="0.65" stroke="#22c55e" stroke-width="0.8"/>
+<path d="M1560.0 1000 L1900.0 1000" fill="none" stroke="#22c55e" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="1730.0" y="994" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">实时渲染事件时间线</text>
+<path d="M540.0 1070 L570.0 1070 L570.0 1090 L540.0 1090" fill="none" stroke="#f97316" stroke-width="1.6" marker-end="url(#ao)"/>
+<text x="578.0" y="1076" fill="#e8f2f0" font-size="9.5">seq缺口检测: expected_seq vs received</text>
+<rect x="535.0" y="1126" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="1215.0" y="1126" width="10" height="28" rx="2" fill="#e8b64c" opacity="0.65" stroke="#e8b64c" stroke-width="0.8"/>
+<path d="M540.0 1140 L1220.0 1140" fill="none" stroke="#f97316" stroke-width="1.6" marker-end="url(#ao)"/>
+<text x="880.0" y="1134" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">拉取rollout补齐缺口(顺序恢复)</text>
+<rect x="535.0" y="1196" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="875.0" y="1196" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<path d="M540.0 1210 L880.0 1210" fill="none" stroke="#e8b64c" stroke-width="1.6" marker-end="url(#ag)"/>
+<text x="710.0" y="1204" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">补齐缺失item (幂等写入)</text>
+<rect x="535.0" y="1266" width="10" height="28" rx="2" fill="#35c2b0" opacity="0.65" stroke="#35c2b0" stroke-width="0.8"/>
+<rect x="1555.0" y="1266" width="10" height="28" rx="2" fill="#3b82f6" opacity="0.65" stroke="#3b82f6" stroke-width="0.8"/>
+<path d="M540.0 1280 L1560.0 1280" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ab)"/>
+<text x="1050.0" y="1274" text-anchor="middle" fill="#e8f2f0" font-size="10.5" font-weight="400">补齐后推送前端(seq连续)</text>
+<rect x="60" y="1380" width="900" height="120" rx="6" fill="none" stroke="#a855f7" stroke-width="1" stroke-dasharray="5,3"/>
+<rect x="68" y="1372" width="110" height="16" rx="3" fill="#0b141a" stroke="#a855f7" stroke-width="0.8"/>
+<text x="74" y="1384" fill="#a855f7" font-size="10" font-weight="600">fork/resume 语义</text>
+<rect x="80" y="1400" width="860" height="40" rx="4" fill="#13242e" stroke="#a855f7" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="88" y="1416" fill="#a855f7" font-size="10" font-weight="600">fork: thread/fork > 新thread_id, 复制item元数据(不复制大字段实体), 用于分叉探索</text>
+<rect x="80" y="1445" width="860" height="40" rx="4" fill="#13242e" stroke="#a855f7" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="88" y="1461" fill="#a855f7" font-size="10" font-weight="600">resume: 新Pod > 下载rollout > thread/resume > 新事件seq从云端最大值继续</text>
+<rect x="1000" y="1380" width="940" height="120" rx="6" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="5,3"/>
+<rect x="1008" y="1372" width="54" height="16" rx="3" fill="#0b141a" stroke="#ef4444" stroke-width="0.8"/>
+<text x="1014" y="1384" fill="#ef4444" font-size="10" font-weight="600">关键设计约束</text>
+<rect x="1020" y="1400" width="900" height="40" rx="4" fill="#13242e" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="1028" y="1416" fill="#ef4444" font-size="10" font-weight="600">不阻塞Harness: 写库失败不能反压app-server, 降级到本地队列+告警</text>
+<rect x="1020" y="1445" width="900" height="40" rx="4" fill="#13242e" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="1028" y="1461" fill="#ef4444" font-size="10" font-weight="600">大字段外置: shell输出/diff >64KB 只存对象存储引用+摘要</text>
+<text x="40" y="1520" fill="#9db8b4" font-size="11.5">图 2 - 会话事件流持久化流程 (at-least-once + 幂等键 + seq补齐 + fork/resume)</text>
+</svg>

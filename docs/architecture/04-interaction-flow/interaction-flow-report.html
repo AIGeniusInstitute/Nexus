@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus 系统模块组件交互流程报告</title>
+<style>
+:root[data-theme="dark"] {
+  --bg:#0b141a; --panel:#13242e; --panel2:#173341; --text:#e8f2f0; --muted:#9db8b4;
+  --line:#24414e; --line2:#2e5a68; --accent:#35c2b0; --gold:#e8b64c;
+  --blue:#3b82f6; --red:#ef4444; --purple:#a855f7; --green:#22c55e; --orange:#f97316;
+  --border:#24414e; --shadow:rgba(0,0,0,0.4);
+}
+:root[data-theme="light"] {
+  --bg:#f8fafb; --panel:#e8eef0; --panel2:#d8e2e6; --text:#1a2a30; --muted:#5a7078;
+  --line:#b0c4c8; --line2:#8aa4a8; --accent:#0d9488; --gold:#b8821a;
+  --blue:#2563eb; --red:#dc2626; --purple:#9333ca; --green:#16a34a; --orange:#ea580c;
+  --border:#b0c4c8; --shadow:rgba(0,0,0,0.1);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:var(--bg); color:var(--text); font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif;
+  line-height:1.6; transition:background 0.3s,color 0.3s;
+}
+#progress { position:fixed; top:0; left:0; height:3px; background:var(--accent); width:0; z-index:9999; transition:width 0.1s; }
+#theme-btn {
+  position:fixed; top:12px; right:16px; z-index:1000;
+  background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:6px;
+  padding:6px 14px; cursor:pointer; font-size:13px; transition:all 0.3s;
+}
+#theme-btn:hover { background:var(--accent); color:var(--bg); }
+.layout { display:flex; max-width:2400px; margin:0 auto; }
+#toc {
+  position:sticky; top:20px; width:240px; height:calc(100vh - 40px); overflow-y:auto;
+  padding:16px; flex-shrink:0; border-right:1px solid var(--border);
+  background:var(--bg);
+}
+#toc h3 { color:var(--accent); font-size:12px; margin-bottom:8px; text-transform:uppercase; letter-spacing:1px; }
+#toc ul { list-style:none; }
+#toc li { margin:4px 0; }
+#toc a {
+  color:var(--muted); text-decoration:none; font-size:12px; display:block; padding:3px 8px;
+  border-radius:4px; border-left:2px solid transparent; transition:all 0.2s;
+}
+#toc a:hover, #toc a.active { color:var(--accent); border-left-color:var(--accent); background:var(--panel); }
+.content { flex:1; padding:40px; min-width:0; }
+h1 { color:var(--accent); font-size:28px; margin-bottom:8px; }
+h1 + p { color:var(--muted); font-size:14px; margin-bottom:24px; }
+h2 {
+  color:var(--accent); font-size:22px; margin:40px 0 16px; padding-bottom:8px;
+  border-bottom:1px solid var(--border); scroll-margin-top:20px;
+}
+h3 { color:var(--gold); font-size:16px; margin:24px 0 12px; }
+.img-wrap {
+  margin:16px 0 24px; border:1px solid var(--border); border-radius:8px; overflow:hidden;
+  background:var(--panel); box-shadow:0 4px 20px var(--shadow);
+}
+.img-wrap img { width:100%; display:block; }
+.img-wrap .cap { padding:8px 16px; font-size:12px; color:var(--muted); border-top:1px solid var(--border); }
+table { width:100%; border-collapse:collapse; margin:12px 0 24px; font-size:13px; }
+th { background:var(--panel2); color:var(--accent); padding:10px 12px; text-align:left; font-weight:700; border:1px solid var(--border); }
+td { padding:8px 12px; border:1px solid var(--border); color:var(--text); }
+tr:nth-child(even) { background:var(--panel); }
+tr:hover { background:var(--panel2); }
+.star { color:var(--gold); font-weight:700; }
+.code {
+  background:var(--panel); border:1px solid var(--border); border-radius:6px;
+  padding:12px 16px; margin:12px 0; font-family:'Courier New',monospace; font-size:12px;
+  color:var(--green); overflow-x:auto; white-space:pre;
+}
+details {
+  margin:12px 0; border:1px solid var(--border); border-radius:8px; overflow:hidden;
+}
+summary {
+  padding:12px 16px; cursor:pointer; font-weight:700; color:var(--accent);
+  background:var(--panel); user-select:none; border-bottom:1px solid transparent;
+}
+summary:hover { background:var(--panel2); }
+details[open] summary { border-bottom-color:var(--border); }
+details .body { padding:16px; }
+.pill { display:inline-block; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:700; }
+.pill-gold { background:rgba(232,182,76,0.2); color:var(--gold); }
+.pill-green { background:rgba(34,197,94,0.2); color:var(--green); }
+.pill-red { background:rgba(239,68,68,0.2); color:var(--red); }
+.pill-purple { background:rgba(168,85,247,0.2); color:var(--purple); }
+.pill-blue { background:rgba(59,130,246,0.2); color:var(--blue); }
+.pill-accent { background:rgba(53,194,176,0.2); color:var(--accent); }
+.pill-orange { background:rgba(249,115,22,0.2); color:var(--orange); }
+.info-box {
+  border-left:4px solid var(--accent); background:var(--panel); padding:12px 16px;
+  margin:12px 0; border-radius:0 8px 8px 0; font-size:13px;
+}
+.info-box.warn { border-left-color:var(--red); }
+.info-box.note { border-left-color:var(--gold); }
+@media (max-width:900px) { #toc { display:none; } .content { padding:20px; } }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<button id="theme-btn" onclick="toggleTheme()">🌙 Dark</button>
+<div class="layout">
+<nav id="toc">
+<h3>目录</h3>
+<ul>
+<li><a href="#sec-1">① 任务全生命周期</a></li>
+<li><a href="#sec-2">② 事件流持久化</a></li>
+<li><a href="#sec-3">③ 审批 HITL 桥接</a></li>
+<li><a href="#sec-4">④ resume 恢复</a></li>
+<li><a href="#sec-5">⑤ 多 Agent 协作</a></li>
+<li><a href="#sec-6">⑥ 工具调用</a></li>
+<li><a href="#sec-7">⑦ 流程总览</a></li>
+</ul>
+</nav>
+<div class="content">
+
+<h1>Nexus 系统模块组件交互流程报告</h1>
+<p>维度 04 · 6 大流程时序图 + 逐步说明 · 基座 Codex Harness app-server JSON-RPC · 八层架构对齐</p>
+
+<div class="info-box">
+<strong>图注色板：</strong>
+<span class="pill pill-gold">★ 云端落库</span>
+<span class="pill pill-green">一致性保证</span>
+<span class="pill pill-red">安全/销毁</span>
+<span class="pill pill-purple">Harness</span>
+<span class="pill pill-blue">网络/存储</span>
+<span class="pill pill-accent">控制面</span>
+<span class="pill pill-orange">审批/策略</span>
+</div>
+
+<!-- ====== Section 1 ====== -->
+<h2 id="sec-1">① 任务全生命周期 13 步时序图</h2>
+<div class="img-wrap">
+<img src="flow-01-lifecycle.svg" alt="任务全生命周期13步时序图">
+<div class="cap">图 1 · 8 个参与方泳道：Client → Gateway → Control Plane → Scheduler → app-server → Model Gateway → Event Consumer → Postgres+Object Store。★ 为云端落库点。</div>
+</div>
+
+<details open><summary>逐步说明（13 步）</summary>
+<div class="body">
+<table>
+<tr><th>步</th><th>动作</th><th>参与方</th><th>关键设计点</th></tr>
+<tr><td>①</td><td>客户端提交任务</td><td>Client → Gateway</td><td>幂等键 <code>Idempotency-Key</code>，避免重复提交产生双份计费</td></tr>
+<tr><td>②</td><td>鉴权 + 策略求值 + 配额预扣</td><td>Gateway → Control Plane</td><td>先扣后跑，防超卖；策略求值结果快照进任务上下文</td></tr>
+<tr><td>③</td><td>调度沙箱 Pod</td><td>Control Plane → Scheduler</td><td>注入 config.toml、execpolicy 规则集、短期令牌</td></tr>
+<tr><td>④</td><td>启动 app-server，下发 rollout</td><td>Scheduler → app-server</td><td>首次用 <code>thread/start</code>；恢复先下载 rollout 再 <code>thread/resume</code></td></tr>
+<tr><td>⑤</td><td>模型采样</td><td>app-server → Model Gateway</td><td>沙箱出站只到 Model Gateway，令牌 TTL ≤ 任务超时</td></tr>
+<tr><td>⑥</td><td>事件流回吐</td><td>app-server → Event Consumer</td><td><code>turn/started</code>、<code>item/*</code>、<code>delta</code></td></tr>
+<tr><td class="star">⑦★</td><td>控制面消费 → 写 Postgres + WS 推前端</td><td>Event Consumer → Postgres/Gateway</td><td>先落库后推，可回放；写库与推送解耦</td></tr>
+<tr><td class="star">⑧★</td><td>审批请求 → 落 ApprovalTicket → 推送</td><td>app-server → Control Plane → Web/IM</td><td>最复杂的一处桥接，见 §3</td></tr>
+<tr><td class="star">⑨★</td><td>用户决策回写 → app-server 继续</td><td>User → Control Plane → app-server</td><td>决策先落库再回写，宕机可重放</td></tr>
+<tr><td>⑩</td><td>工具执行</td><td>app-server</td><td>shell 走 execpolicy + OS 沙箱；MCP 走 Gateway</td></tr>
+<tr><td>⑪</td><td>上下文将满 → auto compact</td><td>app-server</td><td>压缩前完整上下文已落云端，可回溯</td></tr>
+<tr><td class="star">⑫★</td><td>turn/completed → 产物+rollout 上传</td><td>app-server → Object Store</td><td>产物扫描后才对用户可见</td></tr>
+<tr><td class="star">⑬★</td><td>用量结算 + 审计 → Pod 销毁</td><td>Scheduler → Control Plane</td><td>归还配额、写 usage、审计留痕；会话保留云端可 resume</td></tr>
+</table>
+</div></details>
+
+<details><summary>★ 云端落库点汇总</summary>
+<div class="body">
+<table>
+<tr><th>落库点</th><th>写入内容</th><th>幂等键</th><th>可回放</th></tr>
+<tr><td>⑦</td><td>thread / turn / item 事件流</td><td><code>thread_id+turn_id+item_seq</code></td><td>是，WS 可回放</td></tr>
+<tr><td>⑧</td><td>approval_ticket (pending)</td><td><code>thread_id+turn_id+item_seq</code></td><td>是，Pod 重建后重放</td></tr>
+<tr><td>⑨</td><td>approval_ticket (decided)</td><td><code>ticket_id</code></td><td>是，决策不可丢失</td></tr>
+<tr><td>⑫</td><td>产物对象 + rollout 完整文件</td><td><code>thread_id+turn_id+content_digest</code></td><td>是，对象存储永久</td></tr>
+<tr><td>⑬</td><td>usage_record + audit_log</td><td><code>event_id</code> (WORM)</td><td>是，审计只追加</td></tr>
+</table>
+</div></details>
+
+<div class="info-box">
+<strong>关键约束：</strong>事件即真相 · 先落库后推送 · Pod 随时可死可重建 · 配置即政策
+</div>
+
+<!-- ====== Section 2 ====== -->
+<h2 id="sec-2">② 会话事件流持久化流程</h2>
+<div class="img-wrap">
+<img src="flow-02-event-persistence.svg" alt="会话事件流持久化流程">
+<div class="cap">图 2 · app-server 事件 → at-least-once 消费 → 幂等写入 Postgres + 对象存储 → WS 推前端（含 seq 补齐、fork/resume 语义）</div>
+</div>
+
+<details open><summary>事件类型映射表</summary>
+<div class="body">
+<table>
+<tr><th>app-server 事件</th><th>控制面动作</th><th>幂等写入目标</th><th>大字段处理</th></tr>
+<tr><td><code>thread/started</code></td><td>UPSERT thread 状态</td><td><code>thread</code> 表</td><td>—</td></tr>
+<tr><td><code>turn/started</code></td><td>UPSERT turn 状态</td><td><code>turn</code> 表</td><td>—</td></tr>
+<tr><td><code>item/started</code></td><td>INSERT item</td><td><code>item</code> 表（分区）</td><td>content_ref 指向对象存储</td></tr>
+<tr><td><code>item/agentMessage/delta</code></td><td>累积 delta</td><td>仅推前端，不逐条落库</td><td>—</td></tr>
+<tr><td><code>item/completed</code></td><td>UPDATE item (final)</td><td><code>item</code> 表</td><td>大字段外置对象存储</td></tr>
+<tr><td><code>turn/completed</code></td><td>UPDATE turn + token usage</td><td><code>turn</code> 表</td><td>—</td></tr>
+<tr><td><code>item/commandExecution/requestApproval</code></td><td>创建 ApprovalTicket</td><td><code>approval_ticket</code> 表</td><td>见 §3</td></tr>
+</table>
+</div></details>
+
+<details><summary>幂等写入机制 + seq 补齐</summary>
+<div class="body">
+<div class="code">唯一键 = (thread_id, turn_id, item_seq)
+INSERT INTO item (...) VALUES (...) ON CONFLICT DO NOTHING</div>
+<ul>
+<li>每个 Item 用 <code>thread_id + turn_id + item_seq</code> 作唯一键，重复事件直接丢弃</li>
+<li>消费者维护期望 seq；出现缺口 → 暂停推送 → 从对象存储拉 rollout 补齐 → 再继续</li>
+<li>事件流是 at-least-once，"恰好一次"靠幂等键实现</li>
+</ul>
+</div></details>
+
+<details><summary>fork/resume 语义</summary>
+<div class="body">
+<table>
+<tr><th>操作</th><th>语义</th><th>数据复制</th></tr>
+<tr><td><code>thread/fork</code></td><td>产生新 thread_id</td><td>复制 item 元数据（不复制大字段实体），用于分叉探索</td></tr>
+<tr><td><code>thread/resume</code></td><td>新 Pod → 下载 rollout → 恢复内存状态</td><td>新事件 seq 从云端最大值继续</td></tr>
+</table>
+</div></details>
+
+<div class="info-box warn">
+<strong>关键约束：</strong>不阻塞 Harness（写库失败降级到本地队列+告警）· 大字段外置（>64KB 只存引用+摘要）· WS 仅展示（落库是唯一 truth source）
+</div>
+
+<!-- ====== Section 3 ====== -->
+<h2 id="sec-3">③ 跨进程审批 HITL 桥接时序</h2>
+<div class="img-wrap">
+<img src="flow-03-approval-hitl.svg" alt="跨进程审批HITL桥接时序">
+<div class="cap">图 3 · 7 个泳道：app-server → Adapter → Approval Center → Postgres → Web/IM → User → Audit。审批是控制面一等资源，先落库后回写。</div>
+</div>
+
+<details open><summary>审批 Ticket 生命周期 + 数据结构</summary>
+<div class="body">
+<div class="code">pending → (用户决策) → decided(approved/rejected) → archived
+                        ↓
+             expired (超时, 默认拒绝)
+             cancelled (权限撤销)</div>
+<table>
+<tr><th>字段</th><th>说明</th></tr>
+<tr><td><code>thread_id / turn_id / item_seq</code></td><td>定位到具体步骤</td></tr>
+<tr><td><code>tool_name / params_ref</code></td><td>工具名 + 参数（脱敏后引用）</td></tr>
+<tr><td><code>diff_preview_ref</code></td><td>diff 预览（对象存储引用）</td></tr>
+<tr><td><code>risk_level</code></td><td>low / medium / high / critical</td></tr>
+<tr><td><code>required_approver_role</code></td><td>谁可以批</td></tr>
+<tr><td><code>require_dual</code></td><td>是否需双人审批（四眼原则）</td></tr>
+<tr><td><code>context_snapshot_ref</code></td><td>审批时上下文快照</td></tr>
+<tr><td><code>expires_at / default_action</code></td><td>超时动作（默认拒绝）</td></tr>
+</table>
+</div></details>
+
+<details open><summary>6 个边界情况处理</summary>
+<div class="body">
+<table>
+<tr><th>#</th><th>情况</th><th>处理</th></tr>
+<tr><td>①</td><td>Pod 在等待审批时崩了</td><td>审批状态在 DB，Pod 重建后 resume；用 <code>item_seq</code> 去重，同一请求只问一次；已决策的直接重放决策</td></tr>
+<tr><td>②</td><td>审批超时</td><td>按策略默认动作（建议默认<strong>拒绝</strong>而非批准）；通知申请人；ticket → expired</td></tr>
+<tr><td>③</td><td>审批期间用户权限被撤销</td><td>决策时重新校验审批人权限，失效则 ticket 作废（cancelled）；通知重新审批</td></tr>
+<tr><td>④</td><td>用户修改参数后批准</td><td>必须重新走策略求值（改参数=新请求）；不能沿用旧审批结果；生成新 ticket</td></tr>
+<tr><td>⑤</td><td>批量相似请求</td><td>提供"同类操作一律批准"作用域；限定：仅该目录、仅限该工具、有效期 ≤ 1h</td></tr>
+<tr><td>⑥</td><td>全量审计</td><td>请求快照/决策人/时间/理由全部 WORM 留存；不可篡改；可导出 SIEM</td></tr>
+</table>
+</div></details>
+
+<!-- ====== Section 4 ====== -->
+<h2 id="sec-4">④ thread/resume 恢复流程</h2>
+<div class="img-wrap">
+<img src="flow-04-resume.svg" alt="thread/resume恢复流程">
+<div class="cap">图 4 · Pod 崩溃 → 新 Pod → 下载 rollout → thread/resume → seq 从云端 max 继续 → 一致性保证</div>
+</div>
+
+<details open><summary>恢复流程 14 步</summary>
+<div class="body">
+<table>
+<tr><th>步</th><th>动作</th><th>关键点</th></tr>
+<tr><td>1</td><td>Pod 崩溃（OOM/调度回收）</td><td>Harness 本地状态丢失，云端真相完好</td></tr>
+<tr><td>2</td><td>Pod 退出信号/心跳超时</td><td>Scheduler 检测失活</td></tr>
+<tr><td>3</td><td>查 Postgres 云端最大 seq</td><td>确定恢复点</td></tr>
+<tr><td>4</td><td>确认 rollout 对象存储 key</td><td>确保 rollout 可用</td></tr>
+<tr><td>5</td><td>调度新 Pod</td><td>注入 config/policy/令牌</td></tr>
+<tr><td>6</td><td>下载 rollout 到 Pod 内</td><td>从对象存储拉取完整事件历史</td></tr>
+<tr><td>7</td><td><code>thread/resume(threadId)</code></td><td>加载 rollout → 重建内存状态</td></tr>
+<tr><td>8</td><td>resume 成功 → 报告 ready</td><td>控制面确认恢复</td></tr>
+<tr><td>9</td><td><code>turn/start</code>（继续未完成 turn）</td><td>或等待用户新输入</td></tr>
+<tr><td>10</td><td>新事件流（seq 从云端 max+1）</td><td>前端无重复无缺失</td></tr>
+<tr><td>11</td><td>幂等消费</td><td>重复事件直接丢弃</td></tr>
+<tr><td>12</td><td>对比云端 vs 新事件 → 无缺口 = 一致</td><td>一致性验证</td></tr>
+</table>
+</div></details>
+
+<details><summary>一致性保证</summary>
+<div class="body">
+<table>
+<tr><th>保证</th><th>机制</th></tr>
+<tr><td>唯一真相源</td><td>云端 Postgres 是唯一 truth source</td></tr>
+<tr><td>本地可丢弃</td><td>Harness 本地 SQLite/rollout 是可丢弃缓存</td></tr>
+<tr><td>seq 连续性</td><td>resume 后新事件 seq = MAX(云端已落库 seq) + 1</td></tr>
+<tr><td>无重复</td><td>幂等键 <code>thread_id + turn_id + item_seq</code></td></tr>
+<tr><td>无缺失</td><td>seq 缺口检测 + rollout 拉取补齐</td></tr>
+</table>
+</div></details>
+
+<div class="info-box note">
+<strong>app-server 协议：</strong>冷 resume 加载配置不持锁，允许无关线程元数据更新并发。仅一个 app-server 进程可持有分页 thread 的写权限（<code>-32600</code> 错误保护）。
+</div>
+
+<!-- ====== Section 5 ====== -->
+<h2 id="sec-5">⑤ 多 Agent 协作流程</h2>
+<div class="img-wrap">
+<img src="flow-05-multi-agent.svg" alt="多Agent协作流程">
+<div class="cap">图 5 · 主 Agent → ThreadManager → fork_thread → 子 Agent → 父子拓扑 → Guardian 审查 → 结果回灌</div>
+</div>
+
+<details open><summary>协作时序 16 步</summary>
+<div class="body">
+<table>
+<tr><th>步</th><th>动作</th><th>关键点</th></tr>
+<tr><td>1</td><td>Main Agent 调用 <code>spawn_subagent</code></td><td>传递 goal/context/tools</td></tr>
+<tr><td>2</td><td>ThreadManager 决策</td><td>fork_thread（继承历史）vs new_thread（全新）</td></tr>
+<tr><td>3</td><td><code>thread/fork(sourceThreadId)</code></td><td>复制 item 元数据，新 thread_id</td></tr>
+<tr><td class="star">4★</td><td>写 spawn-edge 拓扑</td><td>parent → child 关系持久化</td></tr>
+<tr><td>5</td><td>子 Agent 启动 <code>run_turn</code></td><td>继承父 workspace/权限快照</td></tr>
+<tr><td>6</td><td>子 → 父 <code>collabToolCall</code></td><td>send_input / resume_agent</td></tr>
+<tr><td>7</td><td>父 Agent 继续</td><td>可并行/等待</td></tr>
+<tr><td>8</td><td>Guardian 审查子 Agent 输出</td><td>数据外传/凭据探测/破坏性动作</td></tr>
+<tr><td>9</td><td>审查通过 → 继续 / 审查拒绝 → 中止</td><td>Guardian gate</td></tr>
+<tr><td>10</td><td>审查结果通知</td><td><code>item/autoApprovalReview/*</code></td></tr>
+<tr><td class="star">12★</td><td>幂等写入子 thread items</td><td><code>thread_id+turn_id+item_seq</code></td></tr>
+<tr><td>13</td><td><code>subAgentActivity: completed</code></td><td>结果回灌父 Agent turn</td></tr>
+<tr><td class="star">16★</td><td>幂等写入父 thread items</td><td>同样幂等</td></tr>
+</table>
+</div></details>
+
+<details><summary>父子拓扑与权限继承</summary>
+<div class="body">
+<table>
+<tr><th>维度</th><th>规则</th></tr>
+<tr><td>拓扑存储</td><td><code>agent-graph-store</code> 维护 spawn-edge（parent → child）</td></tr>
+<tr><td>权限继承</td><td>子 Agent 可用权限 = 父 Agent 权限 ∩ 子 Agent 角色上限 ∩ 策略中心允许</td></tr>
+<tr><td>遍历</td><td><code>thread/list(parentThreadId/ancestorThreadId)</code> 可遍历子 Agent</td></tr>
+<tr><td>排除</td><td>Review/Guardian 线程不参与 spawn-edge 生命周期</td></tr>
+</table>
+</div></details>
+
+<details><summary>collabToolCall 类型</summary>
+<div class="body">
+<table>
+<tr><th>工具</th><th>说明</th></tr>
+<tr><td><code>spawn_agent</code></td><td>派生子 Agent</td></tr>
+<tr><td><code>send_input</code></td><td>向子 Agent 发送输入</td></tr>
+<tr><td><code>resume_agent</code></td><td>恢复子 Agent</td></tr>
+<tr><td><code>wait</code></td><td>等待子 Agent 完成</td></tr>
+<tr><td><code>close_agent</code></td><td>关闭子 Agent</td></tr>
+</table>
+</div></details>
+
+<!-- ====== Section 6 ====== -->
+<h2 id="sec-6">⑥ 工具调用流程</h2>
+<div class="img-wrap">
+<img src="flow-06-tool-call.svg" alt="工具调用流程">
+<div class="cap">图 6 · 模型采样 → ToolRouter → execpolicy → OS 沙箱/MCP Gateway → 记 Item → 审批（如需）</div>
+</div>
+
+<details open><summary>工具调用 16 步</summary>
+<div class="body">
+<table>
+<tr><th>步</th><th>动作</th><th>关键点</th></tr>
+<tr><td>1</td><td>模型采样</td><td><code>function_call(tool, arguments)</code></td></tr>
+<tr><td>2</td><td>ToolRouter.dispatch</td><td>统一工具路由</td></tr>
+<tr><td>3</td><td>execpolicy 规则求值</td><td>allow / deny / require_approval</td></tr>
+<tr><td>4</td><td>决策返回</td><td>三条路径分支</td></tr>
+<tr><td>5a</td><td>[shell] 命令 → OS 沙箱</td><td>Seatbelt/Landlock+seccomp/bwrap</td></tr>
+<tr><td>5b</td><td>[MCP] 工具调用 → MCP Gateway 侧车</td><td>凭据注入</td></tr>
+<tr><td>5c</td><td>[approval] → 审批中心</td><td>execpolicy=require_approval</td></tr>
+<tr><td>7</td><td>item/started</td><td>记录 commandExecution/mcpToolCall/fileChange</td></tr>
+<tr><td>8</td><td>item/completed</td><td>status=completed/failed/declined</td></tr>
+<tr><td>9</td><td>工具结果回灌模型</td><td>作为 functionCallOutput 回灌</td></tr>
+</table>
+</div></details>
+
+<details><summary>三条路径决策</summary>
+<div class="body">
+<table>
+<tr><th>路径</th><th>execpolicy 决策</th><th>执行方式</th><th>审批</th></tr>
+<tr><td><span class="pill pill-green">shell</span></td><td>allow</td><td>OS 沙箱直接执行</td><td>不需要</td></tr>
+<tr><td><span class="pill pill-blue">MCP</span></td><td>allow</td><td>MCP Gateway 注入凭据 → 白名单 → 企业 API</td><td>不需要</td></tr>
+<tr><td><span class="pill pill-orange">approval</span></td><td>require_approval</td><td>审批中心 → 用户决策 → 执行/中止</td><td>必须</td></tr>
+</table>
+</div></details>
+
+<details><summary>安全约束</summary>
+<div class="body">
+<table>
+<tr><th>约束</th><th>实现</th></tr>
+<tr><td>config.toml 零真实密钥</td><td>只出现指向 Gateway 的本地地址与任务令牌</td></tr>
+<tr><td>MCP 凭据由 Gateway 持有</td><td>短期委托令牌向控制面换取</td></tr>
+<tr><td>破坏性工具恒定需审批</td><td>execpolicy 规则强制</td></tr>
+<tr><td>命令显示用 redacted 值</td><td><code>commandActions</code> 为脱敏展示值</td></tr>
+<tr><td>网络出站仅两个白名单</td><td>Model Gateway + MCP Gateway</td></tr>
+</table>
+</div></details>
+
+<!-- ====== Section 7 ====== -->
+<h2 id="sec-7">⑦ 交互流程总览</h2>
+<div class="img-wrap">
+<img src="interaction-flow-overview.svg" alt="交互流程总览">
+<div class="cap">图 7 · 6 大流程全景总览</div>
+</div>
+
+<details open><summary>6 大流程关系矩阵</summary>
+<div class="body">
+<table>
+<tr><th>流程</th><th>核心参与方</th><th>持久化点</th><th>恢复能力</th><th>审批介入</th></tr>
+<tr><td>① 生命周期</td><td>全部 8 层</td><td>5 个 ★ 点</td><td>Pod 可死可重建</td><td>⑧⑨ 步</td></tr>
+<tr><td>② 事件持久化</td><td>app-server → L3 → L7</td><td>item 幂等写入</td><td>seq 补齐 + fork/resume</td><td>—</td></tr>
+<tr><td>③ 审批 HITL</td><td>app-server → L3 → User</td><td>approval_ticket</td><td>Pod 重建后重放</td><td>全流程核心</td></tr>
+<tr><td>④ resume 恢复</td><td>Scheduler → L3 → L7 → 新Pod</td><td>rollout 下载</td><td>seq 从云端 max 继续</td><td>—</td></tr>
+<tr><td>⑤ 多 Agent</td><td>Main → Sub → graph-store</td><td>spawn-edge + items</td><td>fork 语义</td><td>Guardian gate</td></tr>
+<tr><td>⑥ 工具调用</td><td>Model → ToolRouter → 沙箱/MCP</td><td>item 记录</td><td>—</td><td>require_approval 路径</td></tr>
+</table>
+</div></details>
+
+<details><summary>流程间依赖关系</summary>
+<div class="body">
+<div class="code">①生命周期 ──包含──→ ②事件持久化（⑥⑦步）
+    │                ├──包含──→ ③审批HITL（⑧⑨步）
+    │                └──包含──→ ④resume恢复（④步恢复）
+    │
+    ├──包含──→ ⑥工具调用（⑩步）
+    │                └──触发──→ ③审批HITL（require_approval路径）
+    │
+    └──扩展──→ ⑤多Agent协作（子Agent独立生命周期）
+                     └──包含──→ ②事件持久化（子thread items）</div>
+</div></details>
+
+<details><summary>设计原则贯穿</summary>
+<div class="body">
+<table>
+<tr><th>原则</th><th>体现</th></tr>
+<tr><td>控制面/执行面分离</td><td>所有 ★ 落库点在 L3/L7，执行面不持有真相</td></tr>
+<tr><td>Harness 不持有企业真相</td><td>租户/权限/凭据/计费/审计全在控制面</td></tr>
+<tr><td>事件即真相</td><td>app-server 事件流 → 控制面消费 → 落库 → 推前端</td></tr>
+<tr><td>默认最小权限</td><td>新租户默认只读沙箱 + 全量审批</td></tr>
+<tr><td>可重建优于高可用</td><td>Pod 随时可死，云端状态可重建 resume</td></tr>
+<tr><td>配置即政策</td><td>config.toml + execpolicy + MCP 白名单 + AGENTS.md</td></tr>
+</table>
+</div></details>
+
+<div class="info-box">
+<strong>产物文件清单：</strong>
+<code>interaction-flow.md</code> ·
+<code>interaction-flow-report.html</code> ·
+<code>_gen_svg.py</code> ·
+<code>flow-01-lifecycle.svg/png</code> ·
+<code>flow-02-event-persistence.svg/png</code> ·
+<code>flow-03-approval-hitl.svg/png</code> ·
+<code>flow-04-resume.svg/png</code> ·
+<code>flow-05-multi-agent.svg/png</code> ·
+<code>flow-06-tool-call.svg/png</code> ·
+<code>interaction-flow-overview.svg/png</code>
+</div>
+
+</div>
+</div>
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn = document.getElementById('theme-btn');
+  if (html.dataset.theme === 'dark') {
+    html.dataset.theme = 'light'; btn.textContent = '☀ Light';
+    localStorage.setItem('theme', 'light');
+  } else {
+    html.dataset.theme = 'dark'; btn.textContent = '🌙 Dark';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+// Restore theme
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved) {
+    document.documentElement.dataset.theme = saved;
+    document.getElementById('theme-btn').textContent = saved === 'dark' ? '🌙 Dark' : '☀ Light';
+  }
+})();
+// Scroll progress
+window.addEventListener('scroll', function() {
+  const h = document.documentElement;
+  const p = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  document.getElementById('progress').style.width = p + '%';
+});
+// TOC active highlight
+const sections = document.querySelectorAll('h2[id]');
+const tocLinks = document.querySelectorAll('#toc a');
+window.addEventListener('scroll', function() {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 60) current = s.id;
+  });
+  tocLinks.forEach(l => {
+    l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+  });
+});
+</script>
+</body>
+</html>

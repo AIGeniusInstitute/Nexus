@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus 系统模块功能清单 · 交互报告</title>
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0b141a; --panel: #13242e; --panel2: #173341;
+  --text: #e8f2f0; --muted: #9db8b4; --line: #24414e; --line2: #2e5a68;
+  --accent: #35c2b0; --accent2: #028090; --gold: #e8b64c;
+  --blue: #3b82f6; --red: #ef4444; --purple: #a855f7;
+  --code-bg: #0d1f26; --table-hover: #1a3340;
+  --shadow: rgba(0,0,0,0.3);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --panel: #ffffff; --panel2: #f1f5f9;
+  --text: #1e293b; --muted: #64748b; --line: #e2e8f0; --line2: #cbd5e1;
+  --accent: #0d9488; --accent2: #14b8a6; --gold: #d97706;
+  --blue: #2563eb; --red: #dc2626; --purple: #9333ea;
+  --code-bg: #f1f5f9; --table-hover: #e2e8f0;
+  --shadow: rgba(0,0,0,0.08);
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.7;
+  font-size: 15px; overflow-x: hidden;
+}
+
+/* ===== Scroll Progress ===== */
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0;
+  background: linear-gradient(90deg, var(--accent), var(--gold));
+  z-index: 1000; transition: width 0.15s ease;
+}
+
+/* ===== Header ===== */
+header {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--panel); border-bottom: 1px solid var(--line);
+  padding: 12px 24px; display: flex; align-items: center; gap: 16px;
+  box-shadow: 0 2px 12px var(--shadow);
+}
+header h1 { font-size: 18px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+header .spacer { flex: 1; }
+header button {
+  background: var(--panel2); border: 1px solid var(--line2); color: var(--text);
+  padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  transition: all 0.2s;
+}
+header button:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ===== Layout ===== */
+.main-wrap { display: flex; max-width: 1600px; margin: 0 auto; }
+
+/* ===== TOC ===== */
+#toc {
+  position: sticky; top: 56px; width: 260px; flex-shrink: 0;
+  height: calc(100vh - 56px); overflow-y: auto;
+  padding: 20px 12px; border-right: 1px solid var(--line);
+  background: var(--panel);
+}
+#toc h3 { font-size: 12px; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; padding-left: 8px; }
+#toc ul { list-style: none; }
+#toc li { margin-bottom: 2px; }
+#toc a {
+  display: block; padding: 5px 12px; font-size: 13px; color: var(--muted);
+  text-decoration: none; border-radius: 4px; border-left: 2px solid transparent;
+  transition: all 0.15s;
+}
+#toc a:hover { color: var(--text); background: var(--panel2); }
+#toc a.active { color: var(--accent); border-left-color: var(--accent); background: var(--panel2); font-weight: 600; }
+#toc .toc-sub a { padding-left: 28px; font-size: 12px; }
+
+/* ===== Content ===== */
+#content { flex: 1; padding: 32px 40px; max-width: 1340px; min-width: 0; }
+#content section { margin-bottom: 48px; scroll-margin-top: 64px; }
+#content h2 {
+  font-size: 24px; font-weight: 700; color: var(--accent);
+  margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--line);
+}
+#content h3 { font-size: 18px; font-weight: 600; color: var(--gold); margin: 24px 0 12px; }
+#content p { margin-bottom: 12px; }
+#content ul { margin: 8px 0 16px 24px; }
+#content li { margin-bottom: 4px; }
+#content code {
+  background: var(--code-bg); padding: 2px 6px; border-radius: 3px;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; font-size: 13px;
+  color: var(--accent);
+}
+#content pre {
+  background: var(--code-bg); padding: 16px; border-radius: 8px;
+  border: 1px solid var(--line); overflow-x: auto; margin: 12px 0;
+}
+#content pre code { background: none; padding: 0; color: var(--text); }
+
+/* ===== Stats Cards ===== */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 20px 0; }
+.stat-card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  padding: 16px; text-align: center;
+}
+.stat-card .num { font-size: 28px; font-weight: 700; color: var(--accent); }
+.stat-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.stat-card.gold .num { color: var(--gold); }
+.stat-card.blue .num { color: var(--blue); }
+.stat-card.red .num { color: var(--red); }
+
+/* ===== Filter Bar ===== */
+.filter-bar {
+  display: flex; gap: 12px; flex-wrap: wrap; margin: 20px 0;
+  padding: 12px 16px; background: var(--panel); border-radius: 8px;
+  border: 1px solid var(--line);
+}
+.filter-bar select, .filter-bar input {
+  background: var(--panel2); border: 1px solid var(--line2); color: var(--text);
+  padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer;
+}
+.filter-bar label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.filter-bar input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
+
+/* ===== Tables ===== */
+.table-wrap { overflow-x: auto; margin: 16px 0; border-radius: 8px; border: 1px solid var(--line); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead { background: var(--panel2); position: sticky; top: 56px; }
+th {
+  padding: 10px 12px; text-align: left; font-weight: 600; color: var(--muted);
+  border-bottom: 1px solid var(--line2); white-space: nowrap; cursor: pointer;
+  user-select: none;
+}
+th:hover { color: var(--accent); }
+td { padding: 8px 12px; border-bottom: 1px solid var(--line); color: var(--text); vertical-align: top; }
+tbody tr:hover { background: var(--table-hover); }
+td.mod-codex { color: var(--accent); font-weight: 600; }
+td.mod-self { color: var(--gold); font-weight: 600; }
+td.mod-partial { color: var(--blue); font-weight: 600; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.badge-p0 { background: rgba(239,68,68,0.2); color: #f87171; }
+.badge-p1 { background: rgba(232,182,76,0.2); color: var(--gold); }
+.badge-p2 { background: rgba(53,194,176,0.2); color: var(--accent); }
+.badge-codex { background: rgba(53,194,176,0.15); color: var(--accent); }
+.badge-self { background: rgba(232,182,76,0.15); color: var(--gold); }
+.badge-partial { background: rgba(59,130,246,0.15); color: var(--blue); }
+.hidden { display: none !important; }
+
+/* ===== Details/Collapsible ===== */
+details {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  margin: 12px 0; overflow: hidden;
+}
+summary {
+  padding: 12px 20px; cursor: pointer; font-weight: 600; color: var(--text);
+  background: var(--panel2); user-select: none;
+  display: flex; align-items: center; gap: 8px;
+  list-style: none;
+}
+summary::before { content: '▶'; font-size: 10px; color: var(--muted); transition: transform 0.2s; }
+details[open] summary::before { transform: rotate(90deg); }
+details[open] summary { border-bottom: 1px solid var(--line); }
+.detail-body { padding: 16px 20px; }
+
+/* ===== Embed SVG ===== */
+.embed-svg {
+  width: 100%; border-radius: 8px; border: 1px solid var(--line);
+  margin: 16px 0; background: var(--bg);
+}
+
+/* ===== ASCII Art ===== */
+.ascii-art {
+  background: var(--code-bg); padding: 16px; border-radius: 8px;
+  font-family: monospace; font-size: 12px; line-height: 1.5;
+  overflow-x: auto; white-space: pre; color: var(--text);
+  border: 1px solid var(--line); margin: 12px 0;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  #toc { display: none; }
+  #content { padding: 20px; }
+}
+@media (max-width: 640px) {
+  header h1 { font-size: 14px; }
+  #content { padding: 16px; }
+  table { font-size: 12px; }
+  th, td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+
+<header>
+  <h1>Nexus · 系统模块功能清单</h1>
+  <span class="spacer"></span>
+  <button onclick="toggleTheme()">🌙 / ☀</button>
+</header>
+
+<div class="main-wrap">
+<!-- TOC -->
+<nav id="toc">
+  <h3>目录</h3>
+  <ul>
+    <li><a href="#overview" data-sec="overview">0. 概述</a></li>
+    <li><a href="#stats" data-sec="stats">0.1 统计概览</a></li>
+    <li><a href="#l1" data-sec="l1">1. L1 接入层</a></li>
+    <li class="toc-sub"><a href="#l1-detail" data-sec="l1-detail">1.x 功能详述</a></li>
+    <li><a href="#l2" data-sec="l2">2. L2 网关层</a></li>
+    <li class="toc-sub"><a href="#l2-detail" data-sec="l2-detail">2.x 功能详述</a></li>
+    <li><a href="#l3" data-sec="l3">3. L3 控制平面</a></li>
+    <li class="toc-sub"><a href="#l3-detail" data-sec="l3-detail">3.x 功能详述</a></li>
+    <li><a href="#l4" data-sec="l4">4. L4 执行平面</a></li>
+    <li class="toc-sub"><a href="#l4-detail" data-sec="l4-detail">4.x 功能详述</a></li>
+    <li><a href="#l5" data-sec="l5">5. L5 Harness</a></li>
+    <li class="toc-sub"><a href="#l5-detail" data-sec="l5-detail">5.x 功能详述</a></li>
+    <li><a href="#l6" data-sec="l6">6. L6 模型层</a></li>
+    <li><a href="#l6-detail" data-sec="l6-detail">6.x 功能详述</a></li>
+    <li><a href="#l7" data-sec="l7">7. L7 存储治理</a></li>
+    <li><a href="#l7-detail" data-sec="l7-detail">7.x 功能详述</a></li>
+    <li><a href="#sec" data-sec="sec">8. 安全合规</a></li>
+    <li><a href="#priority" data-sec="priority">9. 优先级与阶段</a></li>
+    <li><a href="#deps" data-sec="deps">10. 依赖关系</a></li>
+    <li><a href="#crates" data-sec="crates">附录 A · Crate 清单</a></li>
+  </ul>
+</nav>
+
+<!-- Content -->
+<main id="content">
+
+<!-- 0. Overview -->
+<section id="overview">
+  <h2>0. 概述</h2>
+  <p>本文档按八层架构逐模块列出功能清单矩阵。每模块含：模块名、所属层、功能描述、输入、输出、依赖模块、复用 Codex（crate 名）、是否自建、优先级（P0/P1/P2）、阶段（M1–M12）。</p>
+  <div class="ascii-art">图例：
+  复用类型：  Codex = 直接复用 Codex crate（黑盒不改）  |  自建 = 全新自研  |  部分 = 部分复用 + 自建外壳
+  优先级：    P0 = MVP 必须  |  P1 = 多租户/治理必须  |  P2 = 规模化/生态
+  阶段：      M0 = PoC  |  M1-M4 = 单租户 MVP  |  M5-M7 = 多租户  |  M8-M10 = 治理  |  M11-M12+ = 规模化</div>
+</section>
+
+<section id="stats">
+  <h2>0.1 统计概览</h2>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="num">46</div><div class="label">总模块数</div></div>
+    <div class="stat-card"><div class="num">10</div><div class="label">复用 Codex</div></div>
+    <div class="stat-card gold"><div class="num">26</div><div class="label">自建模块</div></div>
+    <div class="stat-card blue"><div class="num">10</div><div class="label">部分复用</div></div>
+    <div class="stat-card red"><div class="num">26</div><div class="label">P0 优先级</div></div>
+    <div class="stat-card"><div class="num">14</div><div class="label">P1 优先级</div></div>
+    <div class="stat-card"><div class="num">6</div><div class="label">P2 优先级</div></div>
+    <div class="stat-card"><div class="num">105</div><div class="label">Codex crate</div></div>
+  </div>
+  <!-- Embedded SVG -->
+  <h3>功能矩阵图</h3>
+  <img src="module-functions.svg" alt="八层模块功能矩阵图" class="embed-svg" loading="lazy">
+</section>
+
+<!-- 1. L1 Access Layer -->
+<section id="l1">
+  <h2>1. L1 接入层 · Access Layer</h2>
+  <div class="filter-bar">
+    <label>筛选层：<select id="layer-filter" onchange="applyFilter()">
+      <option value="">全部</option>
+      <option value="L1">L1 接入层</option>
+      <option value="L2">L2 网关层</option>
+      <option value="L3">L3 控制平面</option>
+      <option value="L4">L4 执行平面</option>
+      <option value="L5">L5 Harness</option>
+      <option value="L6">L6 模型层</option>
+      <option value="L7">L7 存储治理</option>
+      <option value="SEC">安全合规</option>
+    </select></label>
+    <label>复用类型：<select id="reuse-filter" onchange="applyFilter()">
+      <option value="">全部</option>
+      <option value="codex">复用 Codex</option>
+      <option value="self">自建</option>
+      <option value="partial">部分复用</option>
+    </select></label>
+    <label>优先级：<select id="prio-filter" onchange="applyFilter()">
+      <option value="">全部</option>
+      <option value="P0">P0</option>
+      <option value="P1">P1</option>
+      <option value="P2">P2</option>
+    </select></label>
+    <label>搜索：<input type="text" id="text-filter" oninput="applyFilter()" placeholder="模块名/crate/功能..."></label>
+  </div>
+
+  <div class="table-wrap">
+  <table id="module-table">
+    <thead>
+      <tr>
+        <th>#</th><th>模块名</th><th>层</th><th>功能描述</th><th>输入</th><th>输出</th>
+        <th>依赖</th><th>复用 Codex</th><th>自建</th><th>优先级</th><th>阶段</th>
+      </tr>
+    </thead>
+    <tbody id="module-tbody">
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- L1 Detail -->
+<section id="l1-detail">
+  <h2>1.x L1 接入层 · 功能详述</h2>
+  <details open>
+    <summary>1.1 Web 门户 — React+WS 前端</summary>
+    <div class="detail-body">
+      <p>React 单页应用 + WebSocket 实时连接。核心视图：</p>
+      <ul>
+        <li><strong>会话列表</strong>：按 <code>thread</code> 实体展示，支持搜索/筛选/归档</li>
+        <li><strong>任务时间线</strong>：渲染 <code>item</code> 事件流，实时增量更新</li>
+        <li><strong>审批抽屉</strong>：侧滑面板展示 <code>ApprovalTicket</code> 详情（参数脱敏、Diff 预览、风险等级）</li>
+        <li><strong>产物预览</strong>：对象存储产物在线预览（代码、文档、图片）</li>
+        <li><strong>Diff 查看</strong>：文件变更差异对比，支持行级审查</li>
+      </ul>
+    </div>
+  </details>
+  <details>
+    <summary>1.2 IM Bot — 飞书/钉钉/企微/Slack</summary>
+    <div class="detail-body">
+      <p>审批推送最佳渠道。用交互式卡片消息承载"批准/拒绝/修改后批准"三按钮，回调签名验证防伪造。按风险等级选渠道：高危→全渠道推送+邮件；中危→IM+Web；低危→仅 Web 抽屉。</p>
+    </div>
+  </details>
+  <details>
+    <summary>1.3 IDE 插件 — VS Code / JetBrains</summary>
+    <div class="detail-body">
+      <p>直接复用 Codex 的 <code>app-server-protocol</code>（JSON-RPC）与 IDE 扩展思路，把远端 Thread 映射到本地编辑器。代码 Diff 内联展示、工具审批可在 IDE 内完成。<strong>统一约束：所有入口不直连 Harness，必经 L2 网关</strong>。</p>
+    </div>
+  </details>
+  <details>
+    <summary>1.4 OpenAPI + Webhook</summary>
+    <div class="detail-body">
+      <p>RESTful API（<code>POST /v1/threads</code>、<code>POST /v1/threads/{id}/turns</code>）。Webhook 在任务完成/审批请求/配额告警时回调业务系统，支持 HMAC 签名验证与幂等投递。</p>
+    </div>
+  </details>
+  <details>
+    <summary>1.5 CLI — 复用 codex CLI + 自定义登录</summary>
+    <div class="detail-body">
+      <p>复用 <code>cli</code> crate 的本地交互能力，叠加企业登录（OIDC token 刷新）、远端 Thread 操作（start/resume/interrupt/approve）。开发者调试与 CI 集成入口。</p>
+    </div>
+  </details>
+</section>
+
+<!-- 2. L2 Gateway -->
+<section id="l2">
+  <h2>2. L2 网关层 · Gateway Layer</h2>
+  <details open>
+    <summary>2.1 API Gateway — REST 路由/校验/幂等/限流</summary>
+    <div class="detail-body">
+      <ul>
+        <li><strong>幂等</strong>：<code>Idempotency-Key</code> Header 避免重复提交产生双份计费</li>
+        <li><strong>限流三层</strong>：租户级（套餐配额）→ 用户级（并发上限）→ IP 级（防爆破）</li>
+        <li><strong>请求校验</strong>：JSON Schema 校验请求体，拒绝畸形输入</li>
+      </ul>
+    </div>
+  </details>
+  <details>
+    <summary>2.2 WebSocket 网关 — 事件推送/权限驱动订阅</summary>
+    <div class="detail-body">
+      <p>订阅权限模型：用户订阅 Thread 事件前校验 <code>membership(user, workspace)</code>；权限变更→立即断连；事件先落 Postgres 后推 WS（可回放），WS 仅展示不作为真相。</p>
+    </div>
+  </details>
+  <details>
+    <summary>2.3 认证中间件 — OIDC/SAML/SCIM/mTLS</summary>
+    <div class="detail-body">
+      <ul>
+        <li><strong>OIDC</strong>：Authorization Code + PKCE 对接 Keycloak / Okta / Azure AD</li>
+        <li><strong>SAML</strong>：遗留企业 IdP 兼容</li>
+        <li><strong>SCIM 2.0</strong>：自动同步组织架构（用户/部门/组）</li>
+        <li><strong>mTLS</strong>：服务账号用客户端证书认证，证书指纹绑定 <code>service_account</code></li>
+      </ul>
+    </div>
+  </details>
+  <details>
+    <summary>2.4 配额预扣 — 粗粒度拦截</summary>
+    <div class="detail-body">
+      <p>请求准入时预扣 token 配额（按历史均值 × 安全系数）；预扣失败→429 告知排队位置；细粒度结算在 L3 配额计费（实际用量 vs 预扣量，多退少补）。</p>
+    </div>
+  </details>
+</section>
+
+<!-- 3. L3 Control Plane -->
+<section id="l3">
+  <h2>3. L3 控制平面 · Control Plane（自建核心）</h2>
+  <details open>
+    <summary>3.1 身份租户 — Tenant/OrgUnit/User/Role/Membership, RBAC+ABAC</summary>
+    <div class="detail-body">
+      <div class="ascii-art">Tenant（租户）
+  └── OrgUnit（组织单元，可多级，映射企业部门树）
+        └── User / ServiceAccount
+              └── Role（owner / admin / developer / auditor / viewer）
+  └── Workspace（工作环境：绑定仓库、数据集、连接器、知识库范围）
+        └── Membership（成员 × 角色 × 资源作用域）</div>
+      <p><strong>权限继承</strong>：<code>Agent 可用权限 = 用户权限 ∩ 工作区权限 ∩ Agent 角色上限 ∩ 策略中心允许</code>（四者取交集，任何一项为空即拒绝）</p>
+      <p><strong>三个身份区分</strong>：用户身份（人）、Agent 身份（服务账号，权限 = 用户权限子集 ∩ 显式授予）、连接器身份（MCP/OAuth 委托令牌）</p>
+    </div>
+  </details>
+  <details>
+    <summary>3.2 任务编排 — Temporal Workflow, 两层循环</summary>
+    <div class="detail-body">
+      <p>不自建 while-loop，用 Temporal 持久化 Workflow。外层（平台）Workflow 管资源与账本（Pod 生命周期、配额、审计），长周期；内层（Harness）<code>run_turn</code> 管模型与工具，短周期。调度策略：租户权重队列 + 优先级 + 并发上限；Prod 与实验任务分池。</p>
+    </div>
+  </details>
+  <details>
+    <summary>3.3 审批中心 — ApprovalTicket, HITL, 6 边界, IM 推送</summary>
+    <div class="detail-body">
+      <div class="ascii-art">① app-server 发出审批请求事件
+② 适配层解析 → 控制面创建 ApprovalTicket（pending）
+   ├─ 内容：thread_id / turn_id / item_seq / 工具名 / 参数（脱敏）/ diff / 风险等级
+   ├─ 策略：谁可批（单人/双人/角色）、超时动作（默认拒绝）
+   └─ 快照：审批时上下文（事后可回溯"批了什么"）
+③ 推送：Web 抽屉 + IM 卡片 + 邮件（按风险等级选渠道）
+④ 用户决策（批准/拒绝/修改后批准/转交）
+⑤ 决策先落库（decided）再回写 app-server
+⑥ app-server 继续/中止 → 结果回事件流，闭环</div>
+      <p><strong>六种边界处理</strong>：Pod 崩溃 → 审批在 DB + <code>item_seq</code> 去重 + 已决策重放；超时→默认拒绝；权限撤销→失效则 ticket 作废；改参数→重新走策略求值；批量→作用域限定（限目录/工具/有效期 ≤ 1h）；审计→全部不可篡改留存。</p>
+    </div>
+  </details>
+  <details>
+    <summary>3.4 策略中心 — 策略对象, allow/deny/require_approval/dual, 漂移防护</summary>
+    <div class="detail-body">
+      <p>策略对象：<code>{tenant, org_path, role, workspace, tool, action, risk_level, data_classification}</code></p>
+      <p>决策结果：<code>allow</code> / <code>deny</code> / <code>require_approval</code> / <code>require_dual_approval</code>（四眼原则）/ <code>allow_with_audit_only</code></p>
+      <p>求值时机：任务准入一次 + <strong>每次高危工具调用前一次</strong>（准入结果非永久通行证）</p>
+      <p>漂移防护：策略快照写入任务上下文；运行中策略变更"不溯及已批准动作、对新动作用新策略"</p>
+      <p>下发产物：按 <code>(tenant, role, workspace, risk_level)</code> 生成 <code>config.toml</code> + <code>execpolicy.rules</code> + <code>enabled_tools</code> 白名单 + <code>AGENTS.md</code>，运行时注入 Pod，任务结束即焚</p>
+    </div>
+  </details>
+  <details>
+    <summary>3.5 配额计费 — 四维计量, 归因, 预算软硬阈值, 优雅暂停</summary>
+    <div class="detail-body">
+      <p><strong>四维</strong>：token（prompt/cached/reasoning/output）、工具调用次数、沙箱运行时长、存储与出站流量</p>
+      <p><strong>归因链</strong>：<code>tenant → org_unit → user → thread → turn → model</code></p>
+      <p><strong>预算控制</strong>：软阈值告警 → 降档到经济模型 → 硬阈值熔断（优雅暂停：保存 rollout 后回收 Pod，预算恢复可 resume）</p>
+    </div>
+  </details>
+  <details>
+    <summary>3.6 连接器治理 — 分级, 质量分, MCP Gateway, 凭据代理</summary>
+    <div class="detail-body">
+      <p>分类分级：官方认证 / 企业私有 / 社区（默认禁用）。质量分：可用性 × P95 延迟 × 错误率 × 权限最小化程度 → 低于阈值自动降级/下线。安全约束：<code>enabled_tools</code> 白名单优先于 <code>disabled_tools</code>；破坏性注解工具恒定需审批。</p>
+    </div>
+  </details>
+  <details>
+    <summary>3.7 知识库/RAG — ACL 随索引, 混合召回, rerank, 引用溯源</summary>
+    <div class="detail-body">
+      <p>ACL 随索引写入：每个 chunk 携带 <code>tenant_id + acl_tags + permission_version</code>。检索流程：metadata/ACL 过滤 → 稠密 + 稀疏混合召回 → rerank → 只回填支撑结论的片段（附 <code>chunk_id</code> 与权限版本）。与 Harness 衔接：知识检索做成 MCP 工具或自定义 Tool；检索权限在 Gateway 侧强制。</p>
+    </div>
+  </details>
+</section>
+
+<!-- 4. L4 Execution -->
+<section id="l4">
+  <h2>4. L4 执行平面 · Execution Plane</h2>
+  <details open>
+    <summary>4.1 Runtime 池调度 — 一 Turn 一 Pod, 预热池, 冷启动 &lt; 5s</summary>
+    <div class="detail-body">
+      <div class="table-wrap"><table>
+        <tr><th>项</th><th>设计</th></tr>
+        <tr><td>任务粒度</td><td>一个 Turn = 一个 Pod（长任务可复用，有最大时长，超期强制结算并 resume 到新 Pod）</td></tr>
+        <tr><td>镜像</td><td>预装 Codex 二进制 + 语言工具链；按语言/场景分多个镜像</td></tr>
+        <tr><td>冷启动优化</td><td>预热池 + Workspace 快照（PVC snapshot）；目标 < 5s</td></tr>
+        <tr><td>并发</td><td>租户级 + 全局 + 队列等待位；超限排队并实时告知位置</td></tr>
+        <tr><td>销毁</td><td>任务结束或空闲超时（15–30 min）后销毁；销毁前必做：上传 rollout、结算、审计</td></tr>
+      </table></div>
+    </div>
+  </details>
+  <details>
+    <summary>4.2 三层沙箱 — 容器层 + Codex 命令级 + 网络层</summary>
+    <div class="detail-body">
+      <div class="table-wrap"><table>
+        <tr><th>层</th><th>技术</th><th>防什么</th><th>复用</th></tr>
+        <tr><td>① 容器/微虚拟机</td><td>K8s Pod + Seccomp/AppArmor；高敏用 Kata/Firecracker</td><td>租户间横向逃逸、内核攻击面</td><td class="mod-self">自建</td></tr>
+        <tr><td>② 命令级 OS 沙箱</td><td>Seatbelt / Landlock+seccomp+bwrap / Windows restricted token</td><td>Agent 在工作区内乱跑命令、读 SSH key、外传数据</td><td class="mod-codex">Codex 自带</td></tr>
+        <tr><td>③ 网络层</td><td>NetworkPolicy 默认拒绝全部出站</td><td>数据外泄、C2 回连、依赖投毒外联</td><td class="mod-self">自建</td></tr>
+      </table></div>
+      <p>Linux 下 Codex 沙箱在容器中可能因宿主不支持 Landlock/seccomp 而失效。容器层不能省，需启动自检验证沙箱可用性（自检失败 = 禁止调度生产任务）。</p>
+    </div>
+  </details>
+  <details>
+    <summary>4.3 Workspace 供给 — git worktree / PVC 快照 / AGENTS.md 注入</summary>
+    <div class="detail-body">
+      <p>代码场景：从 Git 仓库 shallow clone 或挂载 PVC 快照；<code>worktree</code> crate 做并行任务隔离。非代码场景：挂载租户对象存储前缀下工作目录（只读 + 可写 scratch 分区）。AGENTS.md 注入：企业规范、项目约定、安全红线随 Workspace 下发。</p>
+    </div>
+  </details>
+  <details>
+    <summary>4.4 MCP Gateway — 凭据注入 / 白名单 / 出站审计 / 脱敏</summary>
+    <div class="detail-body">
+      <div class="ascii-art">Codex (MCP Client)
+   │  stdio / http
+   ▼
+MCP Gateway Sidecar（同 Pod，独立凭据域）
+   ├─ 从控制面换取短期凭据（TTL ≤ 任务时长）
+   ├─ 强制 enabled_tools 白名单
+   ├─ 出站请求审计 + 敏感字段脱敏
+   └─ 转发到真实 MCP Server / 企业 API</div>
+      <p>Codex 的 <code>config.toml</code> 里<strong>不出现任何真实密钥</strong>，只出现指向 Gateway 的本地地址与任务令牌。</p>
+    </div>
+  </details>
+  <details>
+    <summary>4.5 凭据代理 — 短期 JWT, 绑定 tenant+thread+turn, 即时吊销</summary>
+    <div class="detail-body">
+      <p>JWT <code>audience</code> 限定为 Model Gateway / MCP Gateway。TTL = 任务超时 + 缓冲（≤ 2h）。绑定 <code>tenant_id + thread_id + turn_id + 权限快照哈希</code>，任一不符即拒绝。即时吊销：用户点"停止任务" → 控制面吊销 → Gateway 拒绝后续调用。</p>
+      <p><strong>沙箱启动自检清单</strong>（自检不过禁止调度）：</p>
+      <ul>
+        <li>Landlock / seccomp / Seatbelt 可用性验证通过</li>
+        <li>出站网络仅能到达两个白名单地址</li>
+        <li>镜像内无长期密钥文件（镜像扫描）</li>
+        <li>只读根文件系统 + 非 root 用户</li>
+        <li>资源限额（CPU / 内存 / 磁盘 / PID）已生效</li>
+      </ul>
+    </div>
+  </details>
+</section>
+
+<!-- 5. L5 Harness -->
+<section id="l5">
+  <h2>5. L5 Harness · Agent 内核（复用 Codex，黑盒不改）</h2>
+  <details open>
+    <summary>5.1 Agent Loop — run_turn 七阶段 (core crate)</summary>
+    <div class="detail-body">
+      <div class="table-wrap"><table>
+        <tr><th>阶段</th><th>名称</th><th>职责</th></tr>
+        <tr><td>1</td><td>admission</td><td>准入检查：approval_policy + sandbox.mode + execpolicy 预检</td></tr>
+        <tr><td>2</td><td>snapshot</td><td>上下文快照：当前 Thread 状态 + 工具可见性</td></tr>
+        <tr><td>3</td><td>sampling</td><td>模型采样：经 Model Gateway 调用 LLM</td></tr>
+        <tr><td>4</td><td>tool dispatch</td><td>工具调度：ToolRouter 路由到具体工具</td></tr>
+        <tr><td>5</td><td>writeback</td><td>结果写回：工具结果回灌上下文，生成 Item 事件</td></tr>
+        <tr><td>6</td><td>compaction</td><td>压缩判定：上下文将满时触发 auto compact</td></tr>
+        <tr><td>7</td><td>complete/interrupt</td><td>Turn 完成或中断</td></tr>
+      </table></div>
+    </div>
+  </details>
+  <details>
+    <summary>5.2 工具路由 — ToolRouter (tools crate)</summary>
+    <div class="detail-body">
+      <p>统一工具定义（JSON Schema 输入输出规范）。MCP 工具适配：自动发现 MCP server 暴露的工具。动态工具解析：按上下文动态启用/禁用工具。四层调用形态：direct call / MCP call / shell exec / custom tool。</p>
+    </div>
+  </details>
+  <details>
+    <summary>5.3 ExecPolicy — Starlark 规则引擎 (execpolicy crate)</summary>
+    <div class="detail-body">
+      <p>parser 解析命令行令牌；evaluator 按规则集求值（allow/deny/require_approval）；rule types 支持通配符、路径限制、参数约束；与会话层解耦：规则集由 L3 策略中心按租户/角色生成下发。</p>
+    </div>
+  </details>
+  <details>
+    <summary>5.4 OS 沙箱 — sandboxing / linux-sandbox / bwrap / windows-sandbox-rs</summary>
+    <div class="detail-body">
+      <div class="table-wrap"><table>
+        <tr><th>平台</th><th>crate</th><th>技术</th></tr>
+        <tr><td>macOS</td><td><code>sandboxing</code></td><td>Seatbelt（sandbox-exec + .sbpl profile）</td></tr>
+        <tr><td>Linux</td><td><code>linux-sandbox</code> + <code>bwrap</code></td><td>Landlock + seccomp + bubblewrap</td></tr>
+        <tr><td>Windows</td><td><code>windows-sandbox-rs</code></td><td>Restricted token + AppContainer</td></tr>
+      </table></div>
+      <p>注意：Linux 容器内可能因宿主不支持 Landlock/seccomp 而失效，容器层（L4）不能省。</p>
+    </div>
+  </details>
+  <details>
+    <summary>5.5 上下文压缩 — compact / compact_remote_v2 (core crate)</summary>
+    <div class="detail-body">
+      <p><code>run_auto_compact</code>：上下文接近 token 上限时自动触发。保留推理轨迹（retained reasoning）：压缩不丢失关键推理链。<code>compact_remote_v2</code>：支持远程压缩（大上下文 offload）。</p>
+    </div>
+  </details>
+  <details>
+    <summary>5.6 Skills / Hooks — skills / hooks crate</summary>
+    <div class="detail-body">
+      <p><code>skills</code> crate：Markdown 程序化技能，可复用、可分享、可版本管理。<code>hooks</code> crate：生命周期钩子（Turn 开始/结束、工具调用前后、审批请求时）。企业 Skill 市场基础。</p>
+    </div>
+  </details>
+  <details>
+    <summary>5.7 MCP 客户端 — codex-mcp / rmcp-client</summary>
+    <div class="detail-body">
+      <p>连接外部 MCP 服务器（stdio / http）；把 Codex 自身暴露成 MCP 工具给其他 Agent 调；经 L4 MCP Gateway 代理（凭据注入 + 审计脱敏）。</p>
+    </div>
+  </details>
+  <details>
+    <summary>5.8 协议集成面 — app-server / app-server-protocol</summary>
+    <div class="detail-body">
+      <p>JSON-RPC 2.0 over stdio / unix socket / WebSocket。Thread → Turn → Item 三原语。<code>generate-ts</code> / <code>generate-json-schema</code> 生成 TS 类型与 JSON Schema（纳入 CI，协议变更可自动检出）。<strong>主集成面</strong>：L3 任务编排经此协议驱动 Harness。</p>
+    </div>
+  </details>
+  <details>
+    <summary>5.9 持久化 — state / thread-store / rollout / history</summary>
+    <div class="detail-body">
+      <p>Thread 跨进程重启可恢复、可 fork、可回滚。<strong>改造点</strong>：事件外送到云端（L3 任务编排消费 → Postgres）；本地状态视为"可丢弃缓存"。rollout 文件同步到对象存储（L7），Pod 销毁后可下载恢复。</p>
+    </div>
+  </details>
+  <details>
+    <summary>5.10 协作编排 — collaboration-mode-templates / agent-roles / agent-identity / agent-graph-store</summary>
+    <div class="detail-body">
+      <p>主从式 / 流水线式 / 专家路由式三种协作模式。子 Agent 派生（独立 Thread + 受限权限）。协作模板复用。Agent 身份管理与角色定义。</p>
+    </div>
+  </details>
+</section>
+
+<!-- 6. L6 Model -->
+<section id="l6">
+  <h2>6. L6 模型层 · Model Layer</h2>
+  <details open>
+    <summary>6.1 Model Gateway — 路由 / 计量 / 降级</summary>
+    <div class="detail-body">
+      <p>统一入口（可用 LiteLLM / 自建）。沙箱出站只到 Model Gateway，令牌按任务绑定、TTL ≤ 任务超时。计量：区分 prompt/cached/reasoning/output token。降级：主模型不可用时自动切备模型。</p>
+    </div>
+  </details>
+  <details>
+    <summary>6.2 多模型路由 — 经济 / 中档 / 强模型分档</summary>
+    <div class="detail-body">
+      <p>简单子任务（分类/抽取/简单问答）→ 经济模型；复杂子任务（规划/工具编排）→ 强模型；长任务中段 → 中档模型。参考阿里百炼 AUTO 路由思路，但<strong>必须在自有评测集上校准</strong>。</p>
+    </div>
+  </details>
+  <details>
+    <summary>6.3 Responses 代理 — responses-api-proxy (Codex)</summary>
+    <div class="detail-body">
+      <p>Codex 侧可指向自有端点（model_provider 指向 Model Gateway 地址）。OpenAI 兼容 API 代理，支持 streaming。</p>
+    </div>
+  </details>
+  <details>
+    <summary>6.4 Prompt Caching — 前缀缓存</summary>
+    <div class="detail-body">
+      <p>相同前缀启用 prompt caching；系统提示与工具描述做版本化，提升命中率。</p>
+    </div>
+  </details>
+  <details>
+    <summary>6.5 故障转移 — 主→备→待重试</summary>
+    <div class="detail-body">
+      <p>主模型超时/限流 → 降级备模型 → 仍失败则任务进入"待重试"而非直接失败。</p>
+    </div>
+  </details>
+  <details>
+    <summary>6.6 私有化部署 — ollama / lmstudio (Codex)</summary>
+    <div class="detail-body">
+      <p>数据不出域租户指向自建 vLLM/Ollama 端点。Codex 内置 <code>ollama</code> provider（本地 Ollama）和 <code>lmstudio</code> provider（本地 LM Studio）。高合规租户指向自建 vLLM 集群。</p>
+    </div>
+  </details>
+</section>
+
+<!-- 7. L7 Storage -->
+<section id="l7">
+  <h2>7. L7 存储与治理 · Storage & Governance</h2>
+  <details open>
+    <summary>7.1 Postgres 主库 — RLS / 分区 / 强一致</summary>
+    <div class="detail-body">
+      <div class="table-wrap"><table>
+        <tr><th>数据类型</th><th>存储方式</th><th>理由</th></tr>
+        <tr><td>结构化元数据</td><td>Postgres 主表</td><td>强一致、事务</td></tr>
+        <tr><td>会话事件（Item 流）</td><td>Postgres 分区表 + 冷归档</td><td>实时查询与回放；按月分区</td></tr>
+        <tr><td><code>item</code> 表</td><td>按 tenant_id + 时间分区</td><td>最大最热的表</td></tr>
+        <tr><td>audit_log / usage_record</td><td>只追加（WORM）</td><td>合规要求不可篡改</td></tr>
+      </table></div>
+      <p><strong>RLS 兜底</strong>：即使应用层漏加 <code>tenant_id</code> 条件，数据库层强制行级安全策略拒绝跨租户查询。</p>
+    </div>
+  </details>
+  <details>
+    <summary>7.2 对象存储 — 按租户前缀 + CMK</summary>
+    <div class="detail-body">
+      <p>rollout 文件：每 N 个 Item 或每 T 秒上传一次，结束时必传。产物：上传后经敏感信息/恶意文件扫描才对用户可见。按租户前缀 + 按租户 CMK 加密：禁用租户 CMK → 数据不可解密。</p>
+    </div>
+  </details>
+  <details>
+    <summary>7.3 向量库 — pgvector</summary>
+    <div class="detail-body">
+      <p>知识库 embedding 存储；pgvector（与 Postgres 同库）或独立 Milvus。</p>
+    </div>
+  </details>
+  <details>
+    <summary>7.4 审计日志 — WORM + SIEM 投递</summary>
+    <div class="detail-body">
+      <p>WORM（追加写存储）+ SIEM 投递；应用层账号无 DELETE/UPDATE 权限（独立角色写入，审计账号只读）。</p>
+    </div>
+  </details>
+  <details>
+    <summary>7.5 OTel 可观测 — 全链路 trace</summary>
+    <div class="detail-body">
+      <p>trace 串起"用户请求 → 任务 → 工具 → 模型"。复用 Codex <code>otel-trace-websocket</code> crate 做 trace 事件 WS 推送。<code>diagnostics</code> crate 提供诊断信息收集。指标 → Grafana；日志 → ClickHouse / ES。</p>
+    </div>
+  </details>
+  <details>
+    <summary>7.6 评测中心 — 三类数据集 + 五评测平面 + CI 门禁</summary>
+    <div class="detail-body">
+      <p><strong>三类数据集</strong>：黄金集（主路径）、对抗集（越权/注入/工具失败/数据缺失）、生产采样集（脱敏）</p>
+      <p><strong>五个评测平面</strong>：任务完成率、工具调用正确率、安全拦截率、成本/任务、体验（步骤效率、澄清次数）</p>
+      <p><strong>CI 门禁</strong>：模型/提示/工具/策略任一变更必须跑回归</p>
+    </div>
+  </details>
+</section>
+
+<!-- 8. Security -->
+<section id="sec">
+  <h2>8. 安全与合规 · 贯穿层</h2>
+  <details open>
+    <summary>8.1 四重隔离取证 — 逻辑 + 运行时 + 密钥 + 存储</summary>
+    <div class="detail-body">
+      <div class="table-wrap"><table>
+        <tr><th>取证层</th><th>方法</th><th>验证</th></tr>
+        <tr><td>逻辑</td><td>所有查询强制带 <code>tenant_id</code> + Postgres RLS 兜底</td><td>SQL 注入不跨租户</td></tr>
+        <tr><td>运行时</td><td>namespace + 节点亲和性 + NetworkPolicy</td><td>Pod 间不可达</td></tr>
+        <tr><td>密钥</td><td>按租户 CMK，租户禁用后数据不可解密</td><td>密钥撤销验证</td></tr>
+        <tr><td>存储</td><td>对象存储按租户前缀 + 独立桶策略</td><td>禁止跨前缀列举</td></tr>
+      </table></div>
+    </div>
+  </details>
+  <details>
+    <summary>8.2 KMS 按租户 CMK — HashiCorp Vault / 云 KMS</summary>
+    <div class="detail-body">
+      <p>按租户客户主密钥（CMK）；租户禁用 → 数据不可解密。与 L7 对象存储、L4 凭据代理联动。</p>
+    </div>
+  </details>
+  <details>
+    <summary>8.3 网络策略 — NetworkPolicy 默认全禁出站</summary>
+    <div class="detail-body">
+      <p>NetworkPolicy 默认拒绝全部出站；沙箱仅放行 Model Gateway + MCP Gateway；高敏租户独立节点池。</p>
+    </div>
+  </details>
+  <details>
+    <summary>8.4 内容安全 — PII / 提示注入防护 / 产物扫描</summary>
+    <div class="detail-body">
+      <p>PII 检测、提示注入防护（数据面与控制面分离：不可信内容不得改变系统策略）、产物敏感扫描、出站脱敏。</p>
+    </div>
+  </details>
+  <details>
+    <summary>8.5 红队演练 — 季度跨租户越权</summary>
+    <div class="detail-body">
+      <p>每季度一次：跨租户越权（从 A 租户沙箱尝试访问 B 资源）、提示注入（恶意指令）、供应链攻击（恶意 MCP 工具/依赖投毒）。结果作为准入条件（非可选项），发现项 100% 闭环。</p>
+    </div>
+  </details>
+</section>
+
+<!-- 9. Priority & Phase -->
+<section id="priority">
+  <h2>9. 模块优先级与阶段分布</h2>
+  <h3>9.1 按优先级</h3>
+  <div class="stats-grid">
+    <div class="stat-card red"><div class="num">26</div><div class="label">P0 MVP 必须</div></div>
+    <div class="stat-card gold"><div class="num">14</div><div class="label">P1 治理必须</div></div>
+    <div class="stat-card"><div class="num">6</div><div class="label">P2 规模化</div></div>
+  </div>
+  <h3>9.2 按阶段</h3>
+  <div class="table-wrap"><table>
+    <tr><th>阶段</th><th>目标</th><th>交付模块</th></tr>
+    <tr><td>M0（PoC 4 周）</td><td>三大假设验证</td><td>Agent Loop、OS 沙箱、协议集成面、三层沙箱、网络策略</td></tr>
+    <tr><td>M1</td><td>身份 + 骨架</td><td>身份租户（单租户）、API Gateway、WS 网关、认证中间件、Web 门户骨架、CLI</td></tr>
+    <tr><td>M2</td><td>执行闭环 + 会话落库</td><td>Runtime 池调度、Workspace 供给、任务编排、OpenAPI、Model Gateway、对象存储、配额预扣</td></tr>
+    <tr><td>M3</td><td>审批 + 策略</td><td>审批中心、策略中心、IM Bot</td></tr>
+    <tr><td>M4</td><td>产物 + 计量</td><td>配额计费（单租户）、OTel 基础、IDE 插件、Skills/Hooks</td></tr>
+    <tr><td>M5</td><td>多租户 + 隔离</td><td>身份租户（多租户）、四重隔离取证、KMS、Postgres RLS</td></tr>
+    <tr><td>M6</td><td>配额 + 计费</td><td>配额计费（多租户）、成本归因看板</td></tr>
+    <tr><td>M7</td><td>连接器 + 凭据</td><td>MCP Gateway、连接器治理、凭据代理</td></tr>
+    <tr><td>M8</td><td>评测体系</td><td>评测中心</td></tr>
+    <tr><td>M9</td><td>可观测 + 稳定</td><td>多模型路由、Prompt Caching、故障转移、OTel 全链路</td></tr>
+    <tr><td>M10</td><td>合规 + 安全</td><td>审计日志 WORM、内容安全、红队演练</td></tr>
+    <tr><td>M11</td><td>性能 + 知识库</td><td>Runtime 池优化、知识库/RAG、向量库、协作编排</td></tr>
+    <tr><td>M12</td><td>生态 + 私有化</td><td>私有化部署、连接器生态</td></tr>
+  </table></div>
+</section>
+
+<!-- 10. Dependencies -->
+<section id="deps">
+  <h2>10. 模块依赖关系</h2>
+  <div class="ascii-art">L1 接入层 ──→ L2 网关层 ──→ L3 控制面 ──→ L4 执行面 ──→ L5 Harness ──→ L6 模型层
+    │              │              │              │              │              │
+    │              │              │              │              │              ▼
+    │              │              │              │              │        L7 存储治理
+    │              │              │              │              │              │
+    └──────────────┴──────────────┴──────────────┴──────────────┴──────────────┘
+                                    安全与合规（贯穿）</div>
+  <h3>关键依赖链</h3>
+  <ol>
+    <li>用户请求 → L1 → L2 API Gateway → L2 认证中间件 → L3 身份租户 → L2 配额预扣 → L3 任务编排</li>
+    <li>L3 任务编排 → L4 Runtime 池调度 → L4 Workspace 供给 → L4 三层沙箱 → L5 app-server → L5 Agent Loop</li>
+    <li>L5 Agent Loop → L6 Model Gateway → L6 模型路由 → 模型响应</li>
+    <li>L5 Agent Loop → L5 工具路由 → L5 ExecPolicy → L4 MCP Gateway → 外部 API</li>
+    <li>L5 app-server 事件流 → L3 任务编排消费 → L7 Postgres（落库）→ L2 WS 网关 → L1 Web/IM（推送）</li>
+    <li>L3 审批中心 ← L5 app-server 审批请求 → L1 IM Bot/Web → 用户决策 → L3 审批中心回写 → L5 app-server 继续</li>
+  </ol>
+</section>
+
+<!-- Appendix A -->
+<section id="crates">
+  <h2>附录 A · Codex Crate 完整清单（105 crate）</h2>
+  <div class="table-wrap"><table>
+    <tr><th>功能域</th><th>crate</th><th>L5 模块</th></tr>
+    <tr><td>Agent 主循环</td><td><code>core</code></td><td>5.1 Agent Loop、5.5 上下文压缩</td></tr>
+    <tr><td>工具路由</td><td><code>tools</code>、<code>apply-patch</code>、<code>file-search</code>、<code>file-system</code>、<code>exec</code>、<code>shell-command</code>、<code>shell-escalation</code></td><td>5.2 工具路由</td></tr>
+    <tr><td>执行策略</td><td><code>execpolicy</code></td><td>5.3 ExecPolicy</td></tr>
+    <tr><td>OS 沙箱</td><td><code>sandboxing</code>、<code>linux-sandbox</code>、<code>bwrap</code>、<code>windows-sandbox-rs</code>、<code>windows-sandbox-service</code>、<code>mxc-sandbox</code>、<code>process-hardening</code>、<code>guardian-context</code></td><td>5.4 OS 沙箱</td></tr>
+    <tr><td>Skills/Hooks</td><td><code>skills</code>、<code>hooks</code>、<code>plugin</code>、<code>core-plugins</code></td><td>5.6 Skills/Hooks</td></tr>
+    <tr><td>MCP</td><td><code>codex-mcp</code>、<code>rmcp-client</code>、<code>connectors</code></td><td>5.7 MCP 客户端</td></tr>
+    <tr><td>集成接口</td><td><code>app-server</code>、<code>app-server-protocol</code>、<code>app-server-transport</code>、<code>app-server-client</code>、<code>app-server-test-client</code>、<code>app-server-daemon</code>、<code>app-server-protocol-noop-macros</code>、<code>exec-server</code>、<code>exec-server-protocol</code>、<code>codex-client</code>、<code>codex-api</code>、<code>core-api</code>、<code>protocol</code>、<code>stdio-to-uds</code></td><td>5.8 协议集成面</td></tr>
+    <tr><td>持久化</td><td><code>state</code>、<code>thread-store</code>、<code>rollout</code>、<code>rollout-trace</code>、<code>history</code>、<code>message-history</code></td><td>5.9 持久化</td></tr>
+    <tr><td>协作编排</td><td><code>collaboration-mode-templates</code>、<code>agent-roles</code>、<code>agent-identity</code>、<code>agent-graph-store</code></td><td>5.10 协作编排</td></tr>
+    <tr><td>模型抽象</td><td><code>model-provider-info</code>、<code>model-provider</code>、<code>responses-api-proxy</code>、<code>ollama</code>、<code>lmstudio</code>、<code>chatgpt</code>、<code>models-manager</code></td><td>L6 模型层</td></tr>
+    <tr><td>配置</td><td><code>config</code>、<code>config-schema</code>、<code>codex-home</code>、<code>install-context</code>、<code>features</code>、<code>toggles</code></td><td>配置基础设施</td></tr>
+    <tr><td>网络/安全</td><td><code>network-proxy</code>、<code>workload-identity</code>、<code>aws-auth</code>、<code>secrets</code>、<code>http-client</code></td><td>安全基础设施</td></tr>
+    <tr><td>工具链</td><td><code>git-utils</code>、<code>worktree</code>、<code>terminal-detection</code>、<code>arg0</code>、<code>ansi-escape</code>、<code>file-watcher</code>、<code>context-fragments</code>、<code>feedback</code>、<code>attachment-store</code></td><td>工具基础设施</td></tr>
+    <tr><td>可观测</td><td><code>otel-trace-websocket</code>、<code>diagnostics</code>、<code>analytics</code>、<code>build-info</code>、<code>response-debug-context</code></td><td>L7 OTel</td></tr>
+    <tr><td>CLI/TUI</td><td><code>cli</code>、<code>tui</code></td><td>L1 CLI</td></tr>
+    <tr><td>其他</td><td><code>async-utils</code>、<code>websocket-client</code>、<code>cloud-tasks</code>、<code>cloud-tasks-mock-client</code>、<code>cloud-config</code>、<code>external-agent-migration</code>、<code>code-mode</code>、<code>code-mode-runtime</code>、<code>code-mode-host</code>、<code>code-mode-protocol</code>、<code>voice-host</code>、<code>realtime-webrtc</code>、<code>v8-poc</code>、<code>login</code>、<code>prompts</code>、<code>uds</code>、<code>backend-client</code>、<code>codex-backend-openapi-models</code>、<code>codex-experimental-api-macros</code>、<code>test-binary-support</code>、<code>thread-manager-sample</code></td><td>辅助/实验</td></tr>
+  </table></div>
+</section>
+
+</main>
+</div>
+
+<script>
+// ===== Module Data =====
+const modules = [
+  // L1
+  {id:"1.1",name:"Web 门户",layer:"L1",desc:"React+WS 前端：会话列表/时间线/审批抽屉/产物预览/Diff",input:"用户操作、WS 事件流",output:"渲染页面、操作指令",deps:"L2 API Gateway、L2 WS 网关",reuse:"self",crate:"否",prio:"P0",phase:"M1-M2"},
+  {id:"1.2",name:"IM Bot",layer:"L1",desc:"飞书/钉钉/企微/Slack Bot：审批卡片推送、任务通知",input:"审批事件、任务状态变更",output:"IM 卡片、审批回写",deps:"L3 审批中心、L2 API Gateway",reuse:"self",crate:"否",prio:"P0",phase:"M3"},
+  {id:"1.3",name:"IDE 插件",layer:"L1",desc:"VS Code/JetBrains 扩展：远端 Thread 映射本地、Diff 内联审批",input:"IDE 上下文、用户指令",output:"编辑器操作、远端任务指令",deps:"L2 API Gateway、L5 app-server-protocol",reuse:"partial",crate:"app-server-protocol",prio:"P1",phase:"M4"},
+  {id:"1.4",name:"OpenAPI+Webhook",layer:"L1",desc:"REST API 供业务系统调用 + Webhook 任务完成回调",input:"外部 API 请求",output:"JSON 响应、Webhook POST",deps:"L2 API Gateway、L3 任务编排",reuse:"self",crate:"否",prio:"P0",phase:"M2"},
+  {id:"1.5",name:"CLI",layer:"L1",desc:"复用 codex CLI + 自定义登录：开发者体验入口",input:"命令行参数",output:"终端输出、任务提交",deps:"L2 认证中间件",reuse:"partial",crate:"cli",prio:"P1",phase:"M1"},
+  // L2
+  {id:"2.1",name:"API Gateway",layer:"L2",desc:"REST 路由、请求校验、幂等键、租户+用户+IP 级限流",input:"HTTP 请求",output:"路由后请求、429/403",deps:"L3 身份租户、L3 配额计费",reuse:"self",crate:"否",prio:"P0",phase:"M1"},
+  {id:"2.2",name:"WebSocket 网关",layer:"L2",desc:"会话事件推送；权限驱动订阅，变更即断连",input:"WS 连接请求、事件流",output:"WS 推送消息",deps:"L3 身份租户、L5 app-server",reuse:"self",crate:"否",prio:"P0",phase:"M1-M2"},
+  {id:"2.3",name:"认证中间件",layer:"L2",desc:"OIDC/SAML 对接 IdP、SCIM 同步、服务账号 mTLS",input:"SSO token、mTLS 证书",output:"认证上下文",deps:"L3 身份租户",reuse:"self",crate:"否",prio:"P0",phase:"M1"},
+  {id:"2.4",name:"配额预扣",layer:"L2",desc:"网关层粗粒度拦截：请求准入时预扣 token 配额",input:"请求上下文",output:"准入/拒绝决策",deps:"L3 配额计费",reuse:"self",crate:"否",prio:"P0",phase:"M2"},
+  // L3
+  {id:"3.1",name:"身份租户",layer:"L3",desc:"Tenant/OrgUnit/User/Role/Membership；RBAC+ABAC 授权引擎",input:"身份、资源请求",output:"授权决策",deps:"L2 认证中间件",reuse:"self",crate:"否",prio:"P0",phase:"M1,M5"},
+  {id:"3.2",name:"任务编排",layer:"L3",desc:"Temporal Workflow 持久化编排；两层循环（平台+Harness）",input:"任务提交、Pod 事件、审批回写",output:"Workflow 状态、调度指令",deps:"L4 Runtime 池、L5 app-server",reuse:"self",crate:"否",prio:"P0",phase:"M2"},
+  {id:"3.3",name:"审批中心",layer:"L3",desc:"ApprovalTicket 生命周期；HITL 跨进程桥接；6 种边界",input:"app-server 审批请求事件",output:"审批决策回写",deps:"L2 WS 网关、L1 IM Bot/Web",reuse:"self",crate:"否",prio:"P0",phase:"M3"},
+  {id:"3.4",name:"策略中心",layer:"L3",desc:"策略对象求值→allow/deny/require_approval/dual；漂移防护",input:"策略对象、请求上下文",output:"决策、config.toml + execpolicy",deps:"L5 ExecPolicy、L5 OS沙箱",reuse:"partial",crate:"execpolicy",prio:"P0",phase:"M3"},
+  {id:"3.5",name:"配额计费",layer:"L3",desc:"四维计量；归因；预算软硬阈值；优雅暂停",input:"实时用量事件",output:"配额状态、计费记录、熔断",deps:"L2 配额预扣、L5 Agent Loop",reuse:"self",crate:"否",prio:"P0",phase:"M4,M6"},
+  {id:"3.6",name:"连接器治理",layer:"L3",desc:"分级(official/private/community)；质量分；MCP Gateway 管理",input:"连接器注册、健康检查",output:"质量评分、上下线决策",deps:"L4 MCP Gateway、L4 凭据代理",reuse:"self",crate:"否",prio:"P1",phase:"M7"},
+  {id:"3.7",name:"知识库/RAG",layer:"L3",desc:"ACL 随索引写入；混合召回+rerank；引用溯源",input:"检索请求、知识库 chunk",output:"检索结果（附 chunk_id）",deps:"L4 MCP Gateway",reuse:"self",crate:"否",prio:"P2",phase:"M11"},
+  // L4
+  {id:"4.1",name:"Runtime 池调度",layer:"L4",desc:"一 Turn 一 Pod；预热池；冷启动<5s；并发上限；销毁回收",input:"调度指令、Pod 状态",output:"Pod 实例、调度结果",deps:"L3 任务编排、L7 Postgres",reuse:"self",crate:"否",prio:"P0",phase:"M2,M11"},
+  {id:"4.2",name:"三层沙箱",layer:"L4",desc:"①容器层(Kata/Firecracker+Seccomp)②Codex命令级③网络层(NetworkPolicy)",input:"Pod 创建请求",output:"隔离的执行环境",deps:"L5 OS沙箱、L7 网络策略",reuse:"partial",crate:"sandboxing/linux-sandbox/bwrap/windows-sandbox-rs",prio:"P0",phase:"M0,M2"},
+  {id:"4.3",name:"Workspace 供给",layer:"L4",desc:"git worktree/PVC 快照/AGENTS.md 注入",input:"任务上下文",output:"就绪的工作目录",deps:"L7 对象存储、worktree",reuse:"partial",crate:"worktree",prio:"P0",phase:"M2"},
+  {id:"4.4",name:"MCP Gateway",layer:"L4",desc:"凭据注入/白名单/出站审计/脱敏的 sidecar 代理",input:"MCP 工具调用请求",output:"代理后请求、审计日志",deps:"L3 连接器治理、L4 凭据代理",reuse:"self",crate:"否",prio:"P1",phase:"M7"},
+  {id:"4.5",name:"凭据代理",layer:"L4",desc:"短期 JWT(绑定 tenant+thread+turn)；即时吊销",input:"令牌签发请求、吊销指令",output:"短期 JWT、吊销列表",deps:"L3 身份租户、L3 策略中心",reuse:"self",crate:"否",prio:"P1",phase:"M7"},
+  // L5
+  {id:"5.1",name:"Agent Loop",layer:"L5",desc:"run_turn 七阶段：admission→snapshot→sampling→dispatch→writeback→compaction→complete",input:"用户消息、模型采样、工具结果",output:"Turn 状态、Item 事件流",deps:"L6 模型层、tools",reuse:"codex",crate:"core",prio:"P0",phase:"M0"},
+  {id:"5.2",name:"工具路由",layer:"L5",desc:"ToolRouter：统一工具定义、MCP 适配、动态解析、四层调用",input:"工具调用请求",output:"工具执行结果",deps:"core Agent Loop",reuse:"codex",crate:"tools",prio:"P0",phase:"M0"},
+  {id:"5.3",name:"ExecPolicy",layer:"L5",desc:"Starlark 规则引擎：命令 allow/deny 评估(parser+evaluator)",input:"命令行、策略规则集",output:"allow/deny 决策",deps:"L3 策略中心",reuse:"codex",crate:"execpolicy",prio:"P0",phase:"M0"},
+  {id:"5.4",name:"OS 沙箱",layer:"L5",desc:"macOS Seatbelt/Linux Landlock+seccomp+bwrap/Windows restricted token",input:"进程创建请求",output:"受限进程",deps:"L4 三层沙箱",reuse:"codex",crate:"sandboxing/linux-sandbox/bwrap/windows-sandbox-rs",prio:"P0",phase:"M0"},
+  {id:"5.5",name:"上下文压缩",layer:"L5",desc:"run_auto_compact 自动压缩；推理轨迹保留；compact_remote_v2",input:"上下文将满信号",output:"压缩后上下文",deps:"core Agent Loop",reuse:"codex",crate:"core",prio:"P0",phase:"M0"},
+  {id:"5.6",name:"Skills/Hooks",layer:"L5",desc:"Markdown 程序化技能；生命周期钩子——企业 Skill 市场基础",input:"Skill 定义、生命周期事件",output:"Skill 执行结果",deps:"core Agent Loop",reuse:"codex",crate:"skills/hooks",prio:"P1",phase:"M4,M11"},
+  {id:"5.7",name:"MCP 客户端",layer:"L5",desc:"连接外部 MCP 服务器；把 Codex 暴露成 MCP 工具",input:"MCP 工具调用",output:"MCP 响应",deps:"L4 MCP Gateway",reuse:"codex",crate:"codex-mcp/rmcp-client",prio:"P0",phase:"M0"},
+  {id:"5.8",name:"协议集成面",layer:"L5",desc:"app-server JSON-RPC 2.0；Thread→Turn→Item 三原语；类型生成",input:"JSON-RPC 请求",output:"JSON-RPC 事件流",deps:"L3 任务编排、L2 WS 网关",reuse:"codex",crate:"app-server/app-server-protocol",prio:"P0",phase:"M0"},
+  {id:"5.9",name:"持久化",layer:"L5",desc:"Thread 跨进程恢复/fork/回滚；本地 SQLite+rollout",input:"事件流、Thread 操作",output:"本地持久化状态",deps:"L3 任务编排（事件桥接）",reuse:"codex",crate:"state/thread-store/rollout/history",prio:"P0",phase:"M0"},
+  {id:"5.10",name:"协作编排",layer:"L5",desc:"子 Agent 派生与协作模板；Agent 角色与身份管理",input:"协作请求",output:"子 Agent 实例、协作结果",deps:"L3 任务编排",reuse:"codex",crate:"collaboration-mode-templates/agent-roles/agent-identity/agent-graph-store",prio:"P2",phase:"M11-M12"},
+  // L6
+  {id:"6.1",name:"Model Gateway",layer:"L6",desc:"统一模型入口：路由/计量/降级/限流",input:"模型请求 + 令牌",output:"模型响应、计量记录",deps:"L4 凭据代理",reuse:"partial",crate:"model-provider/model-provider-info",prio:"P0",phase:"M2"},
+  {id:"6.2",name:"多模型路由",layer:"L6",desc:"经济/中档/强模型分档；自有评测集校准",input:"任务分类标签",output:"路由到具体模型",deps:"6.1 Model Gateway",reuse:"self",crate:"否",prio:"P1",phase:"M9"},
+  {id:"6.3",name:"Responses 代理",layer:"L6",desc:"复用 Codex responses-api-proxy 指向自有端点",input:"模型 API 请求",output:"代理后响应",deps:"6.1 Model Gateway",reuse:"codex",crate:"responses-api-proxy",prio:"P1",phase:"M2"},
+  {id:"6.4",name:"Prompt Caching",layer:"L6",desc:"相同前缀启用 caching；系统提示版本化",input:"模型请求前缀",output:"缓存命中/未命中",deps:"6.1 Model Gateway",reuse:"self",crate:"否",prio:"P1",phase:"M9"},
+  {id:"6.5",name:"故障转移",layer:"L6",desc:"主模型超时→备模型→待重试（非直接失败）",input:"模型错误/超时",output:"降级/重试决策",deps:"6.1 Model Gateway、6.2",reuse:"self",crate:"否",prio:"P0",phase:"M9"},
+  {id:"6.6",name:"私有化部署",layer:"L6",desc:"数据不出域：vLLM/Ollama/LM Studio 端点",input:"私有模型端点配置",output:"私有模型响应",deps:"6.1 Model Gateway",reuse:"codex",crate:"ollama/lmstudio",prio:"P2",phase:"M12"},
+  // L7
+  {id:"7.1",name:"Postgres 主库",layer:"L7",desc:"RLS 兜底租户隔离；item 表按 tenant+时间分区；大字段外置",input:"SQL 读写",output:"查询结果",deps:"L3 全部子系统",reuse:"self",crate:"否",prio:"P0",phase:"M1,M5"},
+  {id:"7.2",name:"对象存储",layer:"L7",desc:"rollout/产物/快照；按租户前缀+CMK 加密",input:"文件上传/下载",output:"对象 URL + 引用",deps:"L3 任务编排、L4 Workspace",reuse:"self",crate:"否",prio:"P0",phase:"M2"},
+  {id:"7.3",name:"向量库",layer:"L7",desc:"知识库 embedding 存储；pgvector 或独立 Milvus",input:"embedding 向量",output:"ANN 检索结果",deps:"L3 知识库/RAG",reuse:"self",crate:"否",prio:"P2",phase:"M11"},
+  {id:"7.4",name:"审计日志",layer:"L7",desc:"WORM 追加写 + SIEM 投递；应用层无 DELETE/UPDATE 权限",input:"审计事件",output:"不可篡改审计记录",deps:"全部层",reuse:"self",crate:"否",prio:"P1",phase:"M10"},
+  {id:"7.5",name:"OTel 可观测",layer:"L7",desc:"全链路 trace(用户→任务→工具→模型)；指标→Grafana",input:"trace span、metric",output:"可视化看板",deps:"全部层",reuse:"partial",crate:"otel-trace-websocket/diagnostics",prio:"P1",phase:"M4,M9"},
+  {id:"7.6",name:"评测中心",layer:"L7",desc:"三类数据集+五评测平面+CI 门禁",input:"评测请求、变更触发",output:"评测报告、门禁决策",deps:"L5 全部、L3 策略中心",reuse:"self",crate:"否",prio:"P1",phase:"M8"},
+  // Security
+  {id:"8.1",name:"四重隔离取证",layer:"SEC",desc:"逻辑(RLS)+运行时(namespace+NetworkPolicy)+密钥(CMK)+存储(前缀)",input:"租户配置",output:"隔离验证报告",deps:"L7 Postgres、L4 沙箱、L7 对象存储",reuse:"self",crate:"否",prio:"P0",phase:"M5"},
+  {id:"8.2",name:"KMS 按租户 CMK",layer:"SEC",desc:"HashiCorp Vault/云 KMS；按租户客户主密钥；禁用→不可解密",input:"加密/解密请求",output:"密文/明文",deps:"L7 对象存储、L4 凭据代理",reuse:"self",crate:"否",prio:"P1",phase:"M5"},
+  {id:"8.3",name:"网络策略",layer:"SEC",desc:"NetworkPolicy 默认全禁出站；仅放行 Model Gateway+MCP Gateway",input:"网络策略声明",output:"网络隔离",deps:"L4 三层沙箱",reuse:"self",crate:"否",prio:"P0",phase:"M0,M2"},
+  {id:"8.4",name:"内容安全",layer:"SEC",desc:"PII 检测、提示注入防护、产物敏感扫描、出站脱敏",input:"文本/产物",output:"安全决策",deps:"L4 MCP Gateway、L7 对象存储",reuse:"self",crate:"否",prio:"P1",phase:"M10"},
+  {id:"8.5",name:"红队演练",layer:"SEC",desc:"季度跨租户越权演练（注入/越权/供应链）；结果作为准入条件",input:"渗透测试计划",output:"漏洞报告 + 闭环",deps:"全部层",reuse:"self",crate:"否",prio:"P1",phase:"M10+"},
+];
+
+// ===== Render Table =====
+function renderTable() {
+  const tbody = document.getElementById('module-tbody');
+  tbody.innerHTML = '';
+  modules.forEach(m => {
+    const tr = document.createElement('tr');
+    tr.dataset.layer = m.layer;
+    tr.dataset.reuse = m.reuse;
+    tr.dataset.prio = m.prio;
+    const reuseBadge = m.reuse === 'codex' ? '<span class="badge badge-codex">Codex</span>'
+      : m.reuse === 'self' ? '<span class="badge badge-self">自建</span>'
+      : '<span class="badge badge-partial">部分</span>';
+    const prioBadge = `<span class="badge badge-${m.prio.toLowerCase()}">${m.prio}</span>`;
+    const reuseCell = m.reuse === 'codex' ? 'class="mod-codex"' : m.reuse === 'self' ? 'class="mod-self"' : 'class="mod-partial"';
+    tr.innerHTML = `
+      <td>${m.id}</td>
+      <td><strong>${m.name}</strong></td>
+      <td>${m.layer === 'SEC' ? '贯穿' : m.layer}</td>
+      <td>${m.desc}</td>
+      <td>${m.input}</td>
+      <td>${m.output}</td>
+      <td>${m.deps}</td>
+      <td ${reuseCell}>${m.crate === '否' ? '—' : '<code>'+m.crate+'</code>'}</td>
+      <td>${reuseBadge}</td>
+      <td>${prioBadge}</td>
+      <td>${m.phase}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ===== Filter =====
+function applyFilter() {
+  const layer = document.getElementById('layer-filter').value;
+  const reuse = document.getElementById('reuse-filter').value;
+  const prio = document.getElementById('prio-filter').value;
+  const text = document.getElementById('text-filter').value.toLowerCase();
+  const rows = document.querySelectorAll('#module-tbody tr');
+  let visible = 0;
+  rows.forEach(row => {
+    let show = true;
+    if (layer && row.dataset.layer !== layer) show = false;
+    if (reuse && row.dataset.reuse !== reuse) show = false;
+    if (prio && row.dataset.prio !== prio) show = false;
+    if (text) {
+      const rowText = row.textContent.toLowerCase();
+      if (!rowText.includes(text)) show = false;
+    }
+    row.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+}
+
+// ===== Theme =====
+function toggleTheme() {
+  const html = document.documentElement;
+  const cur = html.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('nexus-theme', next);
+}
+(function() {
+  const saved = localStorage.getItem('nexus-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+
+// ===== Scroll Progress =====
+window.addEventListener('scroll', () => {
+  const st = window.scrollY;
+  const sh = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = (st / sh) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+});
+
+// ===== TOC Active Highlight =====
+const tocLinks = document.querySelectorAll('#toc a[data-sec]');
+const sections = document.querySelectorAll('section[id]');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(sec => {
+    const top = sec.offsetTop - 80;
+    if (window.scrollY >= top) current = sec.id;
+  });
+  tocLinks.forEach(link => {
+    link.classList.toggle('active', link.dataset.sec === current);
+  });
+});
+
+// ===== Init =====
+renderTable();
+</script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 720">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'PingFang SC','Microsoft YaHei','SimHei',sans-serif}</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#35c2b0"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8b64c"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3b82f6"/></marker>
+<linearGradient id="gt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#028090"/><stop offset="1" stop-color="#35c2b0"/></linearGradient>
+<linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07d1a"/><stop offset="1" stop-color="#e8b64c"/></linearGradient>
+<linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+<linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b21a8"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+</defs>
+<rect width="1600" height="720" fill="#0b141a"/>
+<text x="40" y="40" fill="#35c2b0" font-size="22" font-weight="700">Nexus 控制平面 / 执行平面 · 物理切分</text>
+<text x="40" y="64" fill="#9db8b4" font-size="13">最关键的一条线：长期有状态多租户控制面 ↔ 一次性单任务可销毁执行面，仅经 app-server 协议与对象存储通信</text>
+<rect x="40" y="90" width="1520" height="250" rx="14" fill="#13242e" stroke="#028090" stroke-width="2"/>
+<rect x="40" y="90" width="1520" height="34" rx="14" fill="url(#gt)"/>
+<rect x="40" y="110" width="1520" height="14" fill="url(#gt)"/>
+<text x="60" y="113" fill="#e8f2f0" font-size="14" font-weight="700">控制平面（长期有状态 · 多租户 · 强一致）</text>
+<rect x="70" y="140" width="190" height="70" rx="8" fill="#173341" stroke="#2e5a68" stroke-width="1.2"/>
+<text x="165.0" y="179.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="165" y="168" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">API/WS</text>
+<text x="165" y="184" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">网关</text>
+<rect x="280" y="140" width="190" height="70" rx="8" fill="#173341" stroke="#2e5a68" stroke-width="1.2"/>
+<text x="375.0" y="179.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="375" y="168" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">任务编排器</text>
+<text x="375" y="184" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">(Temporal)</text>
+<rect x="490" y="140" width="190" height="70" rx="8" fill="#173341" stroke="#2e5a68" stroke-width="1.2"/>
+<text x="585.0" y="179.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="585" y="168" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">审批中心</text>
+<text x="585" y="184" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">(HITL)</text>
+<rect x="700" y="140" width="190" height="70" rx="8" fill="#173341" stroke="#2e5a68" stroke-width="1.2"/>
+<text x="795.0" y="179.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="795" y="168" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">策略中心</text>
+<text x="795" y="184" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">(execpolicy)</text>
+<rect x="910" y="140" width="190" height="70" rx="8" fill="#173341" stroke="#2e5a68" stroke-width="1.2"/>
+<text x="1005.0" y="179.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="1005" y="168" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">配额计费</text>
+<text x="1005" y="184" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">(四维)</text>
+<rect x="1120" y="140" width="190" height="70" rx="8" fill="#173341" stroke="#2e5a68" stroke-width="1.2"/>
+<text x="1215.0" y="179.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="1215" y="168" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">连接器治理</text>
+<text x="1215" y="184" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">(MCP Gateway)</text>
+<rect x="1330" y="140" width="190" height="70" rx="8" fill="#173341" stroke="#2e5a68" stroke-width="1.2"/>
+<text x="1425.0" y="179.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="1425" y="168" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">知识库</text>
+<text x="1425" y="184" text-anchor="middle" fill="#e8f2f0" font-size="11.5" font-weight="700">RAG+ACL</text>
+<rect x="70" y="230" width="700" height="90" rx="8" fill="#173341" stroke="#2e5a68"/>
+<text x="420" y="258" text-anchor="middle" fill="#35c2b0" font-size="13" font-weight="700">Postgres（RLS + 分区）</text>
+<text x="420" y="280" text-anchor="middle" fill="#9db8b4" font-size="10.5">tenant · user · thread · turn · item · approval · usage · audit</text>
+<text x="420" y="298" text-anchor="middle" fill="#9db8b4" font-size="10.5">事件流幂等写入(thread_id+turn_id+item_seq) · WORM 审计</text>
+<rect x="790" y="230" width="740" height="90" rx="8" fill="#173341" stroke="#2e5a68"/>
+<text x="1160" y="258" text-anchor="middle" fill="#e8b64c" font-size="13" font-weight="700">对象存储（按租户前缀 + 按租户 CMK）</text>
+<text x="1160" y="280" text-anchor="middle" fill="#9db8b4" font-size="10.5">artifacts · rollouts · snapshots · 向量库</text>
+<text x="1160" y="298" text-anchor="middle" fill="#9db8b4" font-size="10.5">禁用租户 CMK → 数据不可解密</text>
+<path d="M800 340 L800 400" fill="none" stroke="#e8b64c" stroke-width="2.2" marker-end="url(#ag)"/>
+<text x="820" y="378" fill="#e8b64c" font-size="11" font-weight="700">① 调度指令(K8s Job/Queue)</text>
+<text x="820" y="394" fill="#35c2b0" font-size="11" font-weight="700">② app-server JSON-RPC</text>
+<rect x="40" y="400" width="1520" height="270" rx="14" fill="#13242e" stroke="#e8b64c" stroke-width="2"/>
+<rect x="40" y="400" width="1520" height="34" rx="14" fill="url(#gg)"/>
+<rect x="40" y="420" width="1520" height="14" fill="url(#gg)"/>
+<text x="60" y="423" fill="#e8f2f0" font-size="14" font-weight="700">执行平面（一次性 · 单租户单任务 · 无状态 · 可销毁）</text>
+<rect x="80" y="450" width="1440" height="200" rx="10" fill="#1a2210" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="6,4"/>
+<text x="100" y="475" fill="#fecaca" font-size="12.5" font-weight="700">Sandbox Pod（NetworkPolicy: 默认全禁出站）</text>
+<rect x="80" y="490" width="260" height="80" rx="8" fill="#13242e" stroke="#35c2b0" stroke-width="1.2"/>
+<text x="210.0" y="534.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="210" y="512" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">codex app-server</text>
+<text x="210" y="528" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">config.toml+execpolicy</text>
+<text x="210" y="544" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">运行时注入</text>
+<rect x="360" y="490" width="260" height="80" rx="8" fill="#173341" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="490.0" y="534.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="490" y="512" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">Workspace</text>
+<text x="490" y="528" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">git worktree</text>
+<text x="490" y="544" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">/PVC 快照</text>
+<rect x="640" y="490" width="260" height="80" rx="8" fill="#173341" stroke="#a855f7" stroke-width="1.2"/>
+<text x="770.0" y="534.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="770" y="512" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">MCP Gateway 侧车</text>
+<text x="770" y="528" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">凭据注入·工具白名单</text>
+<text x="770" y="544" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">出站代理·审计脱敏</text>
+<rect x="920" y="490" width="260" height="80" rx="8" fill="#173341" stroke="#e8b64c" stroke-width="1.2"/>
+<text x="1050.0" y="534.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="1050" y="512" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">凭据代理</text>
+<text x="1050" y="528" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">短期令牌(JWT)</text>
+<text x="1050" y="544" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">绑定 tenant+thread+turn</text>
+<rect x="1200" y="490" width="260" height="80" rx="8" fill="#173341" stroke="#ef4444" stroke-width="1.2"/>
+<text x="1330.0" y="534.0" text-anchor="middle" fill="#e8f2f0" font-size="12" font-weight="400"></text>
+<text x="1330" y="512" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">OS 沙箱(自带)</text>
+<text x="1330" y="528" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">Seatbelt/Landlock</text>
+<text x="1330" y="544" text-anchor="middle" fill="#e8f2f0" font-size="11" font-weight="700">+seccomp+bwrap</text>
+<rect x="80" y="595" width="1440" height="40" rx="6" fill="#173341" stroke="#028090"/>
+<text x="800" y="620" text-anchor="middle" fill="#35c2b0" font-size="12" font-weight="700">出站仅放行 → Model Gateway 与 MCP Gateway 两个白名单地址（其余全 deny）</text>
+<text x="40" y="660" fill="#9db8b4" font-size="11.5">图 2 · 控制平面 / 执行平面物理切分（三重取证：网络策略 + 独立密钥 + 独立存储前缀）</text>
+</svg>
