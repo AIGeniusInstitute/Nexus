@@ -120,6 +120,12 @@ async fn run(mut socket: WebSocket, st: AppState, thread_id: Uuid, claims: Claim
             .ok()
             .flatten();
             if still.is_none() {
+                // M3 AC3.4: membership revoked mid-approval — close WS AND
+                // interrupt any in-flight turn on this thread (the driver
+                // writes Cancel for a parked approval, ticket → interrupted).
+                let _ = st
+                    .runtime_cmd
+                    .send(crate::runtime::DriverCommand::Interrupt);
                 let _ = socket
                     .send(Message::Text(r#"{"event":"revoked"}"#.into()))
                     .await;

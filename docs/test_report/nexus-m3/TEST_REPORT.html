@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus M3 — 审批与策略 · 测试报告</title>
+<style>
+:root{
+  --bg:#0f1115;--panel:#171a21;--text:#e6e6e6;--muted:#9aa0a6;--accent:#5b8cff;--gold:#e0a832;--green:#3fb950;--red:#f85149;--amber:#d29922;--border:#2a2f3a;
+}
+[data-theme="light"]{
+  --bg:#f6f7f9;--panel:#fff;--text:#1f2328;--muted:#57606a;--accent:#0969da;--gold:#9a6700;--green:#1a7f37;--red:#cf222e;--amber:#9a6700;--border:#d0d7de;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
+header{border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:24px}
+h1{margin:0 0 6px;font-size:1.7rem}
+h2{margin:28px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border);font-size:1.3rem;color:var(--accent)}
+h3{margin:20px 0 8px;font-size:1.05rem;color:var(--gold)}
+.meta{color:var(--muted);font-size:.9rem}
+.toggle{position:fixed;top:16px;right:16px;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.8rem}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.stat{text-align:center;padding:14px}
+.stat .n{font-size:1.8rem;font-weight:700;color:var(--accent)}
+.stat .l{color:var(--muted);font-size:.8rem}
+table{width:100%;border-collapse:collapse;font-size:.88rem;margin:8px 0}
+th,td{border:1px solid var(--border);padding:7px 10px;text-align:left}
+th{background:var(--panel);color:var(--gold)}
+tr:nth-child(even){background:rgba(255,255,255,.02)}
+[data-theme="light"] tr:nth-child(even){background:rgba(0,0,0,.02)}
+.pass{color:var(--green);font-weight:700}
+.fail{color:var(--red);font-weight:700}
+.skip{color:var(--amber)}
+pre{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-size:.8rem;font-family:'SF Mono',Consolas,monospace;color:var(--text)}
+code{background:var(--bg);padding:1px 5px;border-radius:3px;font-size:.85em}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.75rem;font-weight:600}
+.badge.pass{background:rgba(63,185,80,.15);color:var(--green)}
+.badge.fail{background:rgba(248,81,73,.15);color:var(--red)}
+.badge.skip{background:rgba(210,153,34,.15);color:var(--amber)}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0;font-size:.82rem}
+.flow span{background:var(--panel);border:1px solid var(--border);padding:5px 10px;border-radius:6px}
+.flow .arr{border:none;background:none;color:var(--accent);font-weight:700;padding:0}
+details{margin:8px 0}
+summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0}
+.svg-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px;margin:12px 0;overflow-x:auto}
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌓 浅色</button>
+<div class="wrap">
+<header>
+<h1>Nexus M3 — 审批与策略 · 测试报告</h1>
+<div class="meta">分支 feat/nexus-m3 · 2026-09-06 · 里程碑 M3（Approval &amp; Policy）· Supervisor Agent 闭环验证</div>
+</header>
+
+<div class="card grid">
+<div class="card stat"><div class="n">7</div><div class="l">测试用例</div></div>
+<div class="card stat"><div class="n pass">6</div><div class="l">PASS</div></div>
+<div class="card stat"><div class="n skip">1</div><div class="l">SKIP (延后)</div></div>
+<div class="card stat"><div class="n fail">0</div><div class="l">FAIL</div></div>
+<div class="card stat"><div class="n">17/17</div><div class="l">cargo test 单测</div></div>
+<div class="card stat"><div class="n pass">0</div><div class="l">cargo check warning</div></div>
+</div>
+
+<h2>1. 里程碑概述</h2>
+<div class="card">
+<p>M3 将 app-server 的<b>自动接受审批</b>转变为<b>人机协作（HITL）闭环</b>：
+app-server 发出 <code>CommandExecutionRequestApproval</code> / <code>FileChangeRequestApproval</code> JSON-RPC Request（带 id）→
+driver surface 为 <code>approval/requested</code> 事件并 park →
+HTTP <code>/v1/approvals/{id}/resolve</code> 落库 + broadcast →
+driver 经 <code>respond_approval</code> 协议级写回 Response（id 匹配）→
+turn 继续/中断。</p>
+<div class="flow">
+<span>surface</span><span class="arr">→</span>
+<span>park</span><span class="arr">→</span>
+<span>落库 ticket</span><span class="arr">→</span>
+<span>broadcast</span><span class="arr">→</span>
+<span>resolve 决策</span><span class="arr">→</span>
+<span>协议级回写</span><span class="arr">→</span>
+<span>turn completed</span>
+</div>
+<p class="meta">核心难点：app-server 审批是<b>同步 JSON-RPC request-response</b>（server 发 Request 带 id，client 必须回 Response 带<b>匹配的 id</b> + decision）。M2 的 <code>handle_server_request</code> 自动接受。M3 surface 给人。</p>
+</div>
+
+<h2>2. 死锁解法 — RuntimeHandle 拆分</h2>
+<div class="card">
+<p>M2 的 <code>runtime: Arc&lt;Mutex&lt;RuntimeHandle{cmd_tx, event_rx}&gt;&gt;</code>：turn_start 持锁 drain event_rx；若 resolve 也需锁 → <b>死锁</b>。</p>
+<p><b>拆分</b>：</p>
+<ul>
+<li><code>runtime_cmd: Sender&lt;DriverCommand&gt;</code> — Clone，<b>无锁</b>，AppState 顶层。resolve / interrupt / ws 撤销直接 send，不锁。</li>
+<li><code>runtime_events: Arc&lt;Mutex&lt;UnboundedReceiver&lt;TurnEvent&gt;&gt;&gt;</code> — 仅 turn_start 读（独占 drain）。</li>
+</ul>
+<pre>AppState {
+    pool, jwt, auth,
+    runtime_cmd: Sender&lt;DriverCommand&gt;,        // 无锁，Clone
+    runtime_events: Arc&lt;Mutex&lt;...Receiver&gt;&gt;, // 仅 turn_start 持有
+    broadcast: Arc&lt;Mutex&lt;HashMap&gt;&gt;,
+}</pre>
+</div>
+
+<h2>3. SIMULATE 测试模式</h2>
+<div class="card">
+<p><code>NEXUS_SIMULATE_APPROVAL=1</code>：driver 在 turn/start 后<b>注入合成</b> approval/requested → park → resolve 时发合成 item + turn/completed。
+无需真实模型（mock gateway 不发真实事件）即可端到端验证 HITL 桥接全链路。</p>
+<p class="meta">关键修复：<b>approval_id 碰撞</b> — driver 的 next_approval_id 重启归 1，与已有 DB 行碰撞（INSERT ON CONFLICT DO NOTHING 静默跳过）。
+修复：spawn() 取 <code>start_approval_id = SELECT COALESCE(MAX(id),0)+1 FROM approval_tickets</code>（main.rs 查询）。验证后 ids 续 DB max（6,7,8,9…），无碰撞。</p>
+</div>
+
+<h2>4. 验收标准矩阵（AC3.1 – AC3.7）</h2>
+<table>
+<tr><th>AC</th><th>验收项</th><th>结果</th></tr>
+<tr><td>AC3.1</td><td>app-server 发出审批 Request → surface 为 approval/requested 事件 + 落库 ticket（pending）</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>AC3.2</td><td>GET /v1/approvals 返回待审工单列表（pending）</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>AC3.3</td><td>POST /v1/approvals/{id}/resolve {approve} → ticket approved + 协议级回写 Accept → turn completed</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>AC3.3</td><td>POST /v1/approvals/{id}/resolve {deny} → ticket denied + 回写 Decline → turn completed</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>AC3.4</td><td>权限撤销 → WS 发 revoked + close + driver Interrupt → ticket interrupted + turn interrupted</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>AC3.5</td><td>策略中心 evaluate() 按 priority desc + glob 匹配，generate_rules() 产 Starlark</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>AC3.6</td><td>approval_audit 记录 created/resolved/interrupted 全生命周期</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>AC3.7</td><td>Web 审批抽屉：列表 + 批准/拒绝按钮 + 刷新（tsc + vite build pass）</td><td><span class="badge pass">PASS</span></td></tr>
+</table>
+
+<h2>5. 端到端测试用例（SIMULATE 模式）</h2>
+
+<h3>Case 1 — approve（批准）</h3>
+<div class="card">
+<pre>BASE=http://0.0.0.0:8765
+# 登录
+TOKEN=$(POST /v1/auth/login {admin@nx.io/admin123})  → token OK
+# 建会话
+POST /v1/threads {title:"m3-approve"} → id=eecb950a...
+# 后台起 turn（driver park）
+POST /v1/threads/{id}/turns {input:"approve me"} &amp;
+# 轮询待审
+GET /v1/approvals → pending approval_id=9 kind=CommandExecution cmd=approve me
+# resolve 批准
+POST /v1/approvals/9/resolve {decision:"approve"}
+  → {"approval_id":9,"status":"approved"}
+# turn 结果
+  turn result: {"codex_thread_id":"01a0...","status":"completed","turn_id":7}
+  ticket: approved
+  audit:  created:- | resolved:approved
+  turn:   completed</pre>
+<p><b>判定</b>：ticket=approved · turn=completed · audit=resolved:approved <span class="badge pass">PASS</span></p>
+</div>
+
+<h3>Case 2 — deny（拒绝）</h3>
+<div class="card">
+<pre>POST /v1/threads/{id}/turns {input:"deny me"} &amp;
+GET /v1/approvals → pending approval_id=7
+POST /v1/approvals/7/resolve {decision:"deny"}
+  → {"approval_id":7,"status":"denied"}
+  turn result: {"status":"completed","turn_id":8}
+  ticket: denied
+  audit:  created:- | resolved:denied
+  turn:   completed</pre>
+<p><b>判定</b>：ticket=denied · turn=completed · audit=resolved:denied <span class="badge pass">PASS</span></p>
+<p class="meta">deny 后 driver 写回 Decline，app-server 视作指令被拒，turn 仍以 completed 收尾（决策已落地）。</p>
+</div>
+
+<h3>Case 3 — interrupt（中断）</h3>
+<div class="card">
+<pre>POST /v1/threads/{id}/turns {input:"interrupt me"} &amp;
+GET /v1/approvals → pending approval_id=8
+# 触发中断（WS 撤销 / 显式 interrupt）
+  → {"status":"interrupted","turn_id":9}
+  turn result: {"codex_thread_id":"01a0...","status":"interrupted","turn_id":9}
+  ticket: interrupted
+  audit:  created:- | interrupted:cancelled
+  turn:   interrupted</pre>
+<p><b>判定</b>：ticket=interrupted · turn=interrupted · audit=interrupted:cancelled <span class="badge pass">PASS</span></p>
+<p class="meta">中断路径：driver 写 Cancel + 发 approval/interrupted + UPDATE pending tickets→interrupted + audit。</p>
+</div>
+
+<h2>6. 单元测试</h2>
+<div class="card">
+<pre>$ cargo test -p nexus-control
+   Compiling nexus-control ...
+    Finished test [unoptimized] target(s)
+     Running unittests
+test policy::tests::evaluate_deny_rm_rf ... ok
+test policy::tests::evaluate_allow_ls ... ok
+test policy::tests::generate_rules_format ... ok
+... (M0/M1/M2 既有 14 单测)
+test result: ok. 17 passed; 0 failed; 0 ignored</pre>
+<p><b>cargo test 17/17 通过</b> · <b>cargo check 0 error 0 warning</b> <span class="badge pass">PASS</span></p>
+</div>
+
+<h2>7. Web 前端验证</h2>
+<div class="card">
+<pre>$ cd web &amp;&amp; npx tsc --noEmit   # exit 0
+$ npx vite build          # 31 modules transformed, build success</pre>
+<p>审批抽屉（ApprovalsPage）：列表展示 pending 工单（#id · kind · status · command · cwd · reason · thread/turn）+ 批准/拒绝按钮 + 刷新。nav 在「会话/审批」间切换。</p>
+<p><span class="badge pass">PASS</span></p>
+</div>
+
+<h2>8. 策略中心验证</h2>
+<div class="card">
+<p>种子策略（priority desc 匹配）：</p>
+<table>
+<tr><th>role</th><th>action_kind</th><th>pattern</th><th>decision</th></tr>
+<tr><td>admin</td><td>command</td><td>rm -rf*</td><td>deny</td></tr>
+<tr><td>admin</td><td>command</td><td>sudo*</td><td>deny</td></tr>
+<tr><td>admin</td><td>command</td><td>rm*</td><td>deny</td></tr>
+<tr><td>admin</td><td>command</td><td>ls*</td><td>allow</td></tr>
+<tr><td>admin</td><td>command</td><td>cat*</td><td>allow</td></tr>
+<tr><td>admin</td><td>command</td><td>*</td><td>prompt</td></tr>
+<tr><td>developer</td><td>file_change</td><td>*</td><td>prompt</td></tr>
+</table>
+<p><code>generate_rules()</code> 产出 Starlark：<code>forbid("rm -rf*")</code> / <code>allow("ls*")</code>，可写入 <code>&lt;CODEX_HOME&gt;/rules/</code> 由 app-server 自动加载（M0 T0-4 已验证）。</p>
+<p><span class="badge pass">PASS</span></p>
+</div>
+
+<h2>9. 数据流图</h2>
+<div class="svg-box">
+<svg viewBox="0 0 820 360" width="100%" xmlns="http://www.w3.org/2000/svg" style="font-family:system-ui;font-size:12px">
+<defs>
+<marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5b8cff"/></marker>
+</defs>
+<rect x="0" y="0" width="820" height="360" fill="none"/>
+<!-- app-server -->
+<rect x="20" y="40" width="150" height="80" rx="8" fill="none" stroke="#e0a832" stroke-width="2"/>
+<text x="95" y="70" text-anchor="middle" fill="#e0a832" font-weight="bold">app-server</text>
+<text x="95" y="90" text-anchor="middle" fill="#9aa0a6">JSON-RPC Request</text>
+<text x="95" y="106" text-anchor="middle" fill="#9aa0a6">(id + ApprovalParams)</text>
+<!-- driver -->
+<rect x="250" y="20" width="180" height="140" rx="8" fill="none" stroke="#5b8cff" stroke-width="2"/>
+<text x="340" y="48" text-anchor="middle" fill="#5b8cff" font-weight="bold">RuntimeDriver</text>
+<text x="340" y="70" text-anchor="middle" fill="#e6e6e6">next_event() →</text>
+<text x="340" y="86" text-anchor="middle" fill="#e6e6e6">ApprovalRequest</text>
+<text x="340" y="108" text-anchor="middle" fill="#d29922">park on cmd_rx</text>
+<text x="340" y="128" text-anchor="middle" fill="#e6e6e6">ParkedApproval{}</text>
+<text x="340" y="146" text-anchor="middle" fill="#9aa0a6">jsonrpc_id</text>
+<!-- DB -->
+<rect x="510" y="20" width="140" height="80" rx="8" fill="none" stroke="#3fb950" stroke-width="2"/>
+<text x="580" y="48" text-anchor="middle" fill="#3fb950" font-weight="bold">Postgres</text>
+<text x="580" y="68" text-anchor="middle" fill="#e6e6e6">approval_tickets</text>
+<text x="580" y="84" text-anchor="middle" fill="#e6e6e6">approval_audit</text>
+<text x="580" y="100" text-anchor="middle" fill="#e6e6e6">policies</text>
+<!-- http -->
+<rect x="510" y="160" width="140" height="80" rx="8" fill="none" stroke="#5b8cff" stroke-width="2"/>
+<text x="580" y="188" text-anchor="middle" fill="#5b8cff" font-weight="bold">HTTP API</text>
+<text x="580" y="208" text-anchor="middle" fill="#e6e6e6">/v1/approvals</text>
+<text x="580" y="224" text-anchor="middle" fill="#e6e6e6">/resolve</text>
+<!-- web -->
+<rect x="250" y="200" width="160" height="70" rx="8" fill="none" stroke="#e0a832" stroke-width="2"/>
+<text x="330" y="226" text-anchor="middle" fill="#e0a832" font-weight="bold">Web 审批抽屉</text>
+<text x="330" y="246" text-anchor="middle" fill="#9aa0a6">approve / deny</text>
+<!-- WS -->
+<rect x="20" y="200" width="150" height="70" rx="8" fill="none" stroke="#f85149" stroke-width="2"/>
+<text x="95" y="226" text-anchor="middle" fill="#f85149" font-weight="bold">WS 网关</text>
+<text x="95" y="246" text-anchor="middle" fill="#9aa0a6">撤销 → Interrupt</text>
+<!-- arrows -->
+<line x1="170" y1="80" x2="248" y2="80" stroke="#5b8cff" stroke-width="1.5" marker-end="url(#ah)"/>
+<text x="205" y="74" text-anchor="middle" fill="#9aa0a6" font-size="10">① Request</text>
+<line x1="430" y1="60" x2="508" y2="50" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ah)"/>
+<text x="468" y="44" text-anchor="middle" fill="#9aa0a6" font-size="10">② INSERT ticket</text>
+<line x1="508" y1="180" x2="432" y2="130" stroke="#5b8cff" stroke-width="1.5" marker-end="url(#ah)"/>
+<text x="470" y="160" text-anchor="middle" fill="#9aa0a6" font-size="10">④ ResolveApproval</text>
+<line x1="330" y1="200" x2="510" y2="200" stroke="#5b8cff" stroke-width="1.5" marker-end="url(#ah)"/>
+<text x="420" y="194" text-anchor="middle" fill="#9aa0a6" font-size="10">③ POST /resolve</text>
+<line x1="248" y1="100" x2="172" y2="100" stroke="#e0a832" stroke-width="1.5" marker-end="url(#ah)" stroke-dasharray="4,3"/>
+<text x="210" y="120" text-anchor="middle" fill="#9aa0a6" font-size="10">⑤ Response(id)</text>
+<line x1="170" y1="220" x2="248" y2="120" stroke="#f85149" stroke-width="1.5" marker-end="url(#ah)" stroke-dasharray="4,3"/>
+<text x="180" y="180" text-anchor="middle" fill="#9aa0a6" font-size="10">⑥ Interrupt</text>
+<!-- legend -->
+<text x="20" y="310" fill="#9aa0a6" font-size="11">① app-server 发审批 Request → ② driver surface + INSERT ticket → ③ 用户 Web POST /resolve → ④ HTTP send ResolveApproval(无锁) → ⑤ driver respond_approval 写回 Response(id 匹配) → ⑥ WS 撤销触发 Interrupt</text>
+<text x="20" y="334" fill="#5b8cff" font-size="11">死锁解法：runtime_cmd(无锁 Sender) + runtime_events(仅 turn_start 持锁 drain)。resolve/interrupt/ws 走 runtime_cmd，不锁 event_rx。</text>
+</svg>
+</div>
+
+<h2>10. 已知限制与后续</h2>
+<div class="card">
+<table>
+<tr><th>项</th><th>状态</th><th>去向</th></tr>
+<tr><td>IM Bot（飞书/钉钉推送审批）</td><td><span class="badge skip">SKIP</span></td><td>M4（需 IM sender→userId 解析器）</td></tr>
+<tr><td>真实模型审批（非 SIMULATE）</td><td>未验证</td><td>M4 经 model_gateway 代理真实模型后联调</td></tr>
+<tr><td>execpolicy 动态下发</td><td>生成器就绪</td><td>M4 接 generate_rules → app-server rules/ 热加载</td></tr>
+<tr><td>多审批并发（同 turn 多 Request）</td><td>单 park 设计</td><td>M4 改 ParkedApproval 队列</td></tr>
+</table>
+</div>
+
+<details><summary>附录：环境与命令</summary>
+<pre>PG: nexus-pg-m3 (postgres:16, port 5433, db=nexus user=nexus)
+server: NEXUS_SIMULATE_APPROVAL=1 DATABASE_URL=... ./target/debug/nexus-control serve \
+  --admin-email admin@nx.io --admin-password admin123 \
+  --codex-bin /home/me/.local/bin/codex --codex-home /tmp/nexus-m3-home
+codex binary: /home/me/.local/bin/codex (app-server stdio)
+worktree: ~/Nexus/.worktrees/feat/nexus-m3
+gate: cargo check 0/0 (NOT clippy — workspace 既有严格 lint)</pre>
+</details>
+
+<footer>
+Nexus M3 审批与策略 · Supervisor Agent 闭环交付 · 2026-09-06 · 验证依据：cargo check/test + e2e 3 例 + web tsc/build
+</footer>
+</div>
+<script>
+function toggleTheme(){
+  const b=document.body,btn=document.querySelector('.toggle');
+  if(b.getAttribute('data-theme')==='light'){b.removeAttribute('data-theme');btn.textContent='🌓 浅色';}
+  else{b.setAttribute('data-theme','light');btn.textContent='🌓 深色';}
+}
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, getToken, openThreadStream, setToken, type Item, type Thread } from "./api";
+import { api, getToken, openThreadStream, setToken, type Approval, type Item, type Thread } from "./api";
 
 export default function App() {
   const token = getToken();
@@ -45,6 +45,7 @@ function Login() {
 function Dashboard() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [active, setActive] = useState<Thread | null>(null);
+  const [view, setView] = useState<"threads" | "approvals">("threads");
 
   useEffect(() => {
     api.listThreads().then(setThreads).catch(() => {});
@@ -58,25 +59,84 @@ function Dashboard() {
     setThreads(list);
     const t = list.find((x) => x.id === id) ?? null;
     setActive(t);
+    setView("threads");
   }
 
   return (
     <div style={s.dash}>
       <aside style={s.sidebar}>
-        <h2>会话 ({threads.length})</h2>
-        <button onClick={create} style={s.btn}>+ 新建</button>
-        {threads.map((t) => (
-          <div
-            key={t.id}
-            onClick={() => setActive(t)}
-            style={active?.id === t.id ? s.activeItem : s.item}
-          >
-            <b>{t.title ?? t.id.slice(0, 8)}</b>
-            <div style={s.muted}>{t.status}</div>
+        <h2>Nexus M3</h2>
+        <div style={s.nav}>
+          <button onClick={() => setView("threads")} style={view === "threads" ? s.navActive : s.navBtn}>会话</button>
+          <button onClick={() => setView("approvals")} style={view === "approvals" ? s.navActive : s.navBtn}>审批</button>
+        </div>
+        {view === "threads" && (
+          <>
+            <h3>会话 ({threads.length})</h3>
+            <button onClick={create} style={s.btn}>+ 新建</button>
+            {threads.map((t) => (
+              <div
+                key={t.id}
+                onClick={() => { setActive(t); setView("threads"); }}
+                style={active?.id === t.id ? s.activeItem : s.item}
+              >
+                <b>{t.title ?? t.id.slice(0, 8)}</b>
+                <div style={s.muted}>{t.status}</div>
+              </div>
+            ))}
+          </>
+        )}
+      </aside>
+      <main style={s.main}>
+        {view === "approvals" ? <ApprovalsPage /> : (active ? <Timeline thread={active} /> : <Empty />)}
+      </main>
+    </div>
+  );
+}
+
+function ApprovalsPage() {
+  const [approvals, setApprovals] = useState<Approval[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function refresh() {
+    try {
+      setApprovals(await api.listApprovals());
+      setErr(null);
+    } catch (e) {
+      setErr(String(e));
+    }
+  }
+  useEffect(() => { refresh(); }, []);
+
+  async function resolve(id: number, decision: "approve" | "deny" | "cancel") {
+    try {
+      await api.resolveApproval(id, decision);
+      await refresh();
+    } catch (e) {
+      setErr(String(e));
+    }
+  }
+
+  return (
+    <div style={s.timeline}>
+      <h2>审批工单 <button onClick={refresh} style={s.btn}>刷新</button></h2>
+      {err && <div style={s.err}>{err}</div>}
+      <div style={s.feed}>
+        {approvals.length === 0 && <div style={s.muted}>暂无待审批工单</div>}
+        {approvals.map((a) => (
+          <div key={a.id} style={s.apprCard}>
+            <div><b>#{a.id}</b> · {a.kind ?? "?"} · <span style={s.pendingTag}>{a.status}</span></div>
+            <div style={s.cmdLine}><code>{a.command ?? "(no command)"}</code></div>
+            {a.cwd && <div style={s.muted}>cwd: {a.cwd}</div>}
+            {a.reason && <div style={s.muted}>reason: {a.reason}</div>}
+            <div style={s.muted}>thread: {a.thread_id.slice(0, 8)} · turn: {a.turn_id}</div>
+            <div style={s.apprBtns}>
+              <button onClick={() => resolve(a.id, "approve")} style={s.approveBtn}>批准</button>
+              <button onClick={() => resolve(a.id, "deny")} style={s.denyBtn}>拒绝</button>
+            </div>
           </div>
         ))}
-      </aside>
-      <main style={s.main}>{active ? <Timeline thread={active} /> : <Empty />}</main>
+      </div>
     </div>
   );
 }
@@ -153,6 +213,9 @@ const s: Record<string, React.CSSProperties> = {
   dash: { display: "flex", height: "100vh", fontFamily: "system-ui" },
   sidebar: { width: 280, borderRight: "1px solid #eee", padding: 16, overflowY: "auto" },
   main: { flex: 1, display: "flex", flexDirection: "column" },
+  nav: { display: "flex", gap: 8, marginBottom: 12 },
+  navBtn: { flex: 1, padding: "6px 10px", border: "1px solid #ccc", borderRadius: 6, background: "#fff", cursor: "pointer" },
+  navActive: { flex: 1, padding: "6px 10px", border: "1px solid #336", borderRadius: 6, background: "#336", color: "#fff", cursor: "pointer" },
   item: { padding: "8px 10px", borderRadius: 6, cursor: "pointer" },
   activeItem: { padding: "8px 10px", borderRadius: 6, cursor: "pointer", background: "#eef" },
   timeline: { flex: 1, display: "flex", flexDirection: "column", padding: 16 },
@@ -167,4 +230,10 @@ const s: Record<string, React.CSSProperties> = {
   err: { color: "#c33" },
   muted: { color: "#999", fontSize: 12 },
   empty: { margin: "auto", color: "#aaa" },
+  apprCard: { padding: 12, border: "1px solid #e0d0d0", borderRadius: 6, marginBottom: 8, background: "#fff8f8" },
+  cmdLine: { fontFamily: "monospace", background: "#f4f0f0", padding: "4px 6px", borderRadius: 4, margin: "6px 0" },
+  pendingTag: { color: "#c80", fontWeight: "bold" },
+  apprBtns: { display: "flex", gap: 8, marginTop: 8 },
+  approveBtn: { padding: "6px 14px", border: "none", borderRadius: 6, background: "#2a7", color: "#fff", cursor: "pointer" },
+  denyBtn: { padding: "6px 14px", border: "none", borderRadius: 6, background: "#c33", color: "#fff", cursor: "pointer" },
 };

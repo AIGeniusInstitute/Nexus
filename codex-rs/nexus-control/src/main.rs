@@ -838,9 +838,20 @@ fn run_serve(
         )?;
 
         // M2: spawn the runtime driver thread (owns app-server process).
+        // M3: the handle is SPLIT — cmd_tx (Clone, lock-free) goes straight
+        // into AppState; event_rx lives behind a mutex (only turn_start reads).
+        // Seed the approval-id counter from DB max so driver-generated ids
+        // never collide with existing rows across restarts.
+        let start_approval_id: i64 = sqlx::query_scalar(
+            "SELECT COALESCE(MAX(id), 0) + 1 FROM approval_tickets",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(1);
         let runtime_handle = nexus_control::runtime::spawn(
             codex_bin.to_path_buf(),
             codex_home.to_path_buf(),
+            start_approval_id,
         );
         println!("runtime driver spawned (codex_bin={}, codex_home={})",
             codex_bin.display(), codex_home.display());
@@ -855,7 +866,8 @@ fn run_serve(
             pool,
             jwt,
             auth,
-            runtime: std::sync::Arc::new(tokio::sync::Mutex::new(runtime_handle)),
+            runtime_cmd: runtime_handle.cmd_tx,
+            runtime_events: std::sync::Arc::new(tokio::sync::Mutex::new(runtime_handle.event_rx)),
             broadcast: std::sync::Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
         };
         let app = nexus_control::http_server::router(state);

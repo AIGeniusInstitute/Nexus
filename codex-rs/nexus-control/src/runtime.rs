@@ -1,16 +1,20 @@
-//! Runtime adapter (T2-1): bridges the synchronous blocking Codex app-server
-//! stdio client to the async axum runtime via a dedicated driver thread +
-//! tokio channels.
+//! Runtime adapter: bridges the synchronous blocking Codex app-server stdio
+//! client to the async axum runtime via a dedicated driver thread + tokio
+//! channels.
 //!
-//! Architecture: a single `std::thread` owns the `AppServerProcess` and
-//! performs all blocking stdio I/O. The async side sends `DriverCommand`s via
-//! a `std::sync::mpsc::Sender` (Clone-able) and receives `TurnEvent`s via a
-//! `tokio::sync::mpsc::UnboundedReceiver`. Commands serialize naturally — a
-//! single app-server process serves one turn at a time (acceptable for M2
-//! single-tenant MVP; M5+ adds a K8s pool).
+//! M2: a single `std::thread` owns the `AppServerProcess` and performs all
+//! blocking stdio I/O. The async side sends `DriverCommand`s via a
+//! `std::sync::mpsc::Sender` (Clone-able) and receives `TurnEvent`s via a
+//! `tokio::sync::mpsc::UnboundedReceiver`.
 //!
-//! `interrupt` = kill + respawn + `thread/resume` (the M0-proven path; we do
-//! not introduce concurrent stdin/stdout select — Simplicity First).
+//! M3: HITL approval bridge. The driver **surfaces** app-server approval
+//! requests (instead of auto-accepting), emits an `approval/requested` event,
+//! then **parks** on the command channel until a `ResolveApproval` (or
+//! `Interrupt`) arrives. On resolve it writes the JSON-RPC response back and
+//! resumes draining. The `RuntimeHandle` is split: `cmd_tx` is `Clone` and
+//! stored lock-free in `AppState` (so the approval-resolve handler can send
+//! without contending the mutex that `turn_start` holds while draining
+//! `event_rx`) — this breaks the deadlock that would otherwise occur.
 
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -18,22 +22,23 @@ use std::thread;
 
 use anyhow::Context;
 use codex_app_server_protocol::{
-    AskForApproval, SandboxPolicy, ServerNotification, ThreadResumeParams,
-    ThreadStartParams, TurnStartParams, UserInput,
+    AskForApproval, SandboxPolicy, ServerNotification, ThreadResumeParams, ThreadStartParams,
+    TurnStartParams, UserInput,
 };
 use serde_json::Value;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use uuid::Uuid;
 
-use crate::stdio_client::AppServerProcess;
+use crate::stdio_client::{AppServerProcess, StreamEvent};
+// Re-export so handlers can reference `runtime::ApprovalKind` / `runtime::DecisionInput`.
+pub use crate::stdio_client::{ApprovalKind, DecisionInput};
 
 /// Commands sent from the async side to the driver thread.
 #[derive(Debug)]
 pub enum DriverCommand {
     /// Run a turn. `codex_thread_id` is `Some` when resuming an existing
-    /// app-server thread (read from `threads.codex_thread_id`); `None` for a
-    /// fresh `thread/start`. `start_seq` is the max seq already persisted for
-    /// this thread (so the driver continues the monotonic thread-level seq).
+    /// app-server thread; `None` for a fresh `thread/start`. `start_seq` is
+    /// the max seq already persisted for this thread.
     RunTurn {
         thread_id: Uuid,
         codex_thread_id: Option<String>,
@@ -44,6 +49,12 @@ pub enum DriverCommand {
     /// Interrupt the in-flight turn: kill the app-server child. The next
     /// `RunTurn` respawns + resumes.
     Interrupt,
+    /// M3: resolve a pending approval. `approval_id` is the Nexus-side ticket
+    /// id generated when the approval request was surfaced.
+    ResolveApproval {
+        approval_id: i64,
+        decision: DecisionInput,
+    },
     Shutdown,
 }
 
@@ -52,22 +63,30 @@ pub enum DriverCommand {
 pub struct TurnEvent {
     pub thread_id: Uuid,
     pub turn_db_id: i64,
-    /// Monotonic thread-level sequence (continues across turns / resumes).
     pub seq: i64,
-    /// Wire method / notification type, e.g. `item/started`, `turn/completed`.
+    /// Wire method / notification type, e.g. `item/started`, `turn/completed`,
+    /// `approval/requested`, `nexus/error`.
     pub item_type: String,
-    /// app-server `ThreadItem.id` (String) — the idempotency key for `items`.
     pub codex_item_id: Option<String>,
-    /// Serialized item / notification payload (stored as `items.content_ref`).
     pub content_ref: Option<String>,
-    /// Raw notification JSON (stored as `app_server_events.event_json`).
     pub raw_json: Value,
-    /// Token usage, populated on `thread/tokenUsage/updated`.
     pub usage: Option<Usage>,
-    /// The resolved app-server thread id (populated on the synthetic
-    /// `thread/ready` event after thread/start or resume).
     pub codex_thread_id: Option<String>,
     pub is_turn_completed: bool,
+    /// M3: present only for `approval/requested` events. Carries the
+    /// Nexus-side approval id + the command/cwd/kind for ticket persistence.
+    pub approval: Option<ApprovalInfo>,
+}
+
+/// M3: approval metadata carried on an `approval/requested` TurnEvent.
+#[derive(Debug, Clone)]
+pub struct ApprovalInfo {
+    pub approval_id: i64,
+    pub kind: ApprovalKind,
+    pub command: Option<String>,
+    pub cwd: Option<String>,
+    pub reason: Option<String>,
+    pub raw_params: Value,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -78,32 +97,46 @@ pub struct Usage {
     pub model: Option<String>,
 }
 
-/// Handle held by the async side (behind `Arc<tokio::sync::Mutex<..>>`).
+/// The async-side runtime state. Split (M3):
+/// - `cmd_tx` is `Clone` and stored **lock-free** in `AppState` so the
+///   approval-resolve / interrupt handlers can send without contending the
+///   mutex guarding `event_rx` (held by `turn_start` for the whole turn).
+/// - `event_rx` lives behind `Arc<Mutex<..>>`; only `turn_start` reads it.
 pub struct RuntimeHandle {
     pub cmd_tx: Sender<DriverCommand>,
     pub event_rx: UnboundedReceiver<TurnEvent>,
 }
 
 /// Spawn the runtime driver thread and return the async-side handle.
-pub fn spawn(codex_bin: PathBuf, codex_home: PathBuf) -> RuntimeHandle {
+///
+/// `start_approval_id` seeds the monotonic approval-id counter (M3). It MUST
+/// be `> max(approval_tickets.id)` so the driver-generated ids never collide
+/// with existing DB rows (callers typically pass `SELECT max(id)+1`).
+pub fn spawn(codex_bin: PathBuf, codex_home: PathBuf, start_approval_id: i64) -> RuntimeHandle {
     let (cmd_tx, cmd_rx) = mpsc::channel::<DriverCommand>();
     let (event_tx, event_rx) = unbounded_channel::<TurnEvent>();
     let _thread = thread::Builder::new()
         .name("nexus-runtime-driver".into())
-        .spawn(move || driver_loop(codex_bin, codex_home, cmd_rx, event_tx))
+        .spawn(move || {
+            driver_loop(codex_bin, codex_home, cmd_rx, event_tx, start_approval_id)
+        })
         .expect("spawn nexus runtime driver");
     RuntimeHandle { cmd_tx, event_rx }
 }
 
-/// The driver thread main loop. Owns the app-server process; blocking stdio
-/// lives here, never on the async runtime.
+/// The driver thread main loop.
 fn driver_loop(
     codex_bin: PathBuf,
     codex_home: PathBuf,
     cmd_rx: Receiver<DriverCommand>,
     event_tx: UnboundedSender<TurnEvent>,
+    start_approval_id: i64,
 ) {
     let mut proc: Option<AppServerProcess> = None;
+    // Monotonic per-process approval id (M3). Seeded from `start_approval_id`
+    // (DB max+1) so it never collides with existing rows across restarts.
+    let mut next_approval_id: i64 = start_approval_id.max(1);
+    let simulate_approval = std::env::var("NEXUS_SIMULATE_APPROVAL").is_ok();
 
     for cmd in cmd_rx.iter() {
         match cmd {
@@ -115,6 +148,12 @@ fn driver_loop(
                 }
             }
 
+            DriverCommand::ResolveApproval { .. } => {
+                // A resolve with no parked approval is a no-op (e.g. the turn
+                // already completed / was interrupted). Drop it.
+                tracing::warn!("runtime: ResolveApproval with no parked approval — drop");
+            }
+
             DriverCommand::RunTurn {
                 thread_id,
                 codex_thread_id,
@@ -123,7 +162,7 @@ fn driver_loop(
                 start_seq,
             } => {
                 // Lazily spawn + initialize on first use, after interrupt, or
-                // when the previous child has died (e.g. killed externally).
+                // when the previous child has died.
                 if !proc.as_mut().is_some_and(|p| p.is_alive()) {
                     if let Some(mut dead) = proc.take() {
                         dead.kill();
@@ -143,9 +182,7 @@ fn driver_loop(
                 }
                 let p = proc.as_mut().unwrap();
 
-                // Resolve the app-server thread id: resume if known (codex
-                // persists thread state to CODEX_HOME, so a fresh process can
-                // resume an existing thread), else start a new one.
+                // Resolve the app-server thread id (resume if known).
                 let resolved = if let Some(cid) = codex_thread_id.clone() {
                     match p.thread_resume(ThreadResumeParams {
                         thread_id: cid.clone(),
@@ -168,8 +205,6 @@ fn driver_loop(
                     }
                 };
 
-                // Synthetic "thread/ready" carries the resolved codex_thread_id
-                // so the async side can persist it on the threads row.
                 let _ = event_tx.send(TurnEvent {
                     thread_id,
                     turn_db_id,
@@ -181,9 +216,9 @@ fn driver_loop(
                     codex_thread_id: Some(resolved.clone()),
                     usage: None,
                     is_turn_completed: false,
+                    approval: None,
                 });
 
-                // turn/start.
                 let turn_resp = match p.turn_start(TurnStartParams {
                     thread_id: resolved.clone(),
                     client_user_message_id: None,
@@ -191,7 +226,7 @@ fn driver_loop(
                         text: input,
                         text_elements: Vec::new(),
                     }],
-                    approval_policy: Some(AskForApproval::Never),
+                    approval_policy: Some(AskForApproval::OnRequest),
                     sandbox_policy: Some(SandboxPolicy::ReadOnly {
                         network_access: true,
                     }),
@@ -205,23 +240,175 @@ fn driver_loop(
                 };
                 let _codex_turn_id = turn_resp.turn.id;
 
-                // Drain notifications until turn/completed.
                 let mut seq = start_seq;
-                loop {
-                    let notif = match p.next_notification() {
-                        Ok(n) => n,
+
+                // M3: SIMULATE mode — a self-contained mini-flow that exercises
+                // the full HITL bridge (emit approval/requested → park →
+                // resolve → emit turn/completed) WITHOUT a real model. Used
+                // only in tests (`NEXUS_SIMULATE_APPROVAL=1`). Does NOT enter
+                // the real notification drain (the mock model emits nothing).
+                if simulate_approval {
+                    let approval_id = next_approval_id;
+                    next_approval_id += 1;
+                    seq += 1;
+                    let _ = event_tx.send(TurnEvent {
+                        thread_id,
+                        turn_db_id,
+                        seq,
+                        item_type: "approval/requested".into(),
+                        codex_item_id: Some(format!("sim-item-{approval_id}")),
+                        content_ref: Some("rm -rf /tmp/nexus-sim".into()),
+                        raw_json: serde_json::json!({
+                            "command": "rm -rf /tmp/nexus-sim",
+                            "cwd": "/tmp",
+                            "kind": "command_execution",
+                        }),
+                        usage: None,
+                        codex_thread_id: None,
+                        is_turn_completed: false,
+                        approval: Some(ApprovalInfo {
+                            approval_id,
+                            kind: ApprovalKind::CommandExecution,
+                            command: Some("rm -rf /tmp/nexus-sim".into()),
+                            cwd: Some("/tmp".into()),
+                            reason: None,
+                            raw_params: serde_json::json!({
+                                "command": "rm -rf /tmp/nexus-sim",
+                                "simulated": true,
+                            }),
+                        }),
+                    });
+                    // Park until resolve / interrupt.
+                    match park_for_decision(&cmd_rx, approval_id) {
+                        Some(decision) => {
+                            tracing::info!(?decision, "simulated approval resolved");
+                            // Emit a synthetic item + turn/completed so the
+                            // async side finalizes the turn.
+                            seq += 1;
+                            let _ = event_tx.send(TurnEvent {
+                                thread_id,
+                                turn_db_id,
+                                seq,
+                                item_type: "item/completed".into(),
+                                codex_item_id: Some(format!("sim-item-{approval_id}")),
+                                content_ref: Some(format!("approved: {decision:?}")),
+                                raw_json: serde_json::json!({"simulated": true}),
+                                usage: None,
+                                codex_thread_id: None,
+                                is_turn_completed: false,
+                                approval: None,
+                            });
+                            seq += 1;
+                            let _ = event_tx.send(TurnEvent {
+                                thread_id,
+                                turn_db_id,
+                                seq,
+                                item_type: "turn/completed".into(),
+                                codex_item_id: None,
+                                content_ref: None,
+                                raw_json: Value::Null,
+                                usage: None,
+                                codex_thread_id: None,
+                                is_turn_completed: true,
+                                approval: None,
+                            });
+                        }
+                        None => {
+                            // Interrupted / shutdown.
+                            let _ = event_tx.send(TurnEvent {
+                                thread_id,
+                                turn_db_id,
+                                seq: seq + 1,
+                                item_type: "approval/interrupted".into(),
+                                codex_item_id: None,
+                                content_ref: None,
+                                raw_json: Value::Null,
+                                usage: None,
+                                codex_thread_id: None,
+                                is_turn_completed: true,
+                                approval: None,
+                            });
+                        }
+                    }
+                    continue; // turn done; next command
+                }
+
+                // Real drain: notifications until turn/completed, surfacing approvals.
+                let mut parked: Option<ParkedApproval> = None;
+                'turn_drain: loop {
+                    // If we are parked on an approval, wait for resolve/interrupt
+                    // instead of reading more from the stream.
+                    if let Some(pa) = parked.take() {
+                        match park_real_approval(
+                            &cmd_rx,
+                            &event_tx,
+                            thread_id,
+                            turn_db_id,
+                            pa,
+                            p,
+                        ) {
+                            ParkOutcome::Resolved => {
+                                // response written; resume draining.
+                                continue 'turn_drain;
+                            }
+                            ParkOutcome::Interrupted => break 'turn_drain,
+                            ParkOutcome::Shutdown => {
+                                if let Some(mut dead) = proc.take() {
+                                    dead.kill();
+                                }
+                                return;
+                            }
+                        }
+                    }
+
+                    let ev = match p.next_event() {
+                        Ok(StreamEvent::Notification(n)) => n,
+                        Ok(StreamEvent::ApprovalRequest(ar)) => {
+                            let approval_id = next_approval_id;
+                            next_approval_id += 1;
+                            seq += 1;
+                            let _ = event_tx.send(TurnEvent {
+                                thread_id,
+                                turn_db_id,
+                                seq,
+                                item_type: "approval/requested".into(),
+                                codex_item_id: Some(ar.item_id.clone()),
+                                content_ref: ar.command.clone(),
+                                raw_json: serde_json::to_value(&ar.raw_params)
+                                    .unwrap_or(Value::Null),
+                                usage: None,
+                                codex_thread_id: None,
+                                is_turn_completed: false,
+                                approval: Some(ApprovalInfo {
+                                    approval_id,
+                                    kind: ar.kind.clone(),
+                                    command: ar.command.clone(),
+                                    cwd: ar.cwd.clone(),
+                                    reason: ar.reason.clone(),
+                                    raw_params: ar.raw_params.clone(),
+                                }),
+                            });
+                            // Park: remember the jsonrpc_id + kind to write back.
+                            parked = Some(ParkedApproval {
+                                approval_id,
+                                jsonrpc_id: ar.jsonrpc_id,
+                                kind: ar.kind,
+                            });
+                            continue 'turn_drain;
+                        }
                         Err(e) => {
-                            tracing::error!(error = %e, "runtime: notification stream ended");
+                            tracing::error!(error = %e, "runtime: stream ended");
                             emit_error(&event_tx, thread_id, turn_db_id, seq, &e);
-                            break;
+                            break 'turn_drain;
                         }
                     };
-                    let method = notif.method.clone();
-                    let raw = serde_json::to_value(&notif).unwrap_or(Value::Null);
+
+                    let method = ev.method.clone();
+                    let raw = serde_json::to_value(&ev).unwrap_or(Value::Null);
                     seq += 1;
 
                     let (codex_item_id, content_ref, usage, is_completed) =
-                        match ServerNotification::try_from(notif) {
+                        match ServerNotification::try_from(ev) {
                             Ok(sn) => map_notification(&sn),
                             Err(e) => {
                                 tracing::warn!(error = %e, %method, "runtime: notification parse failed");
@@ -240,18 +427,121 @@ fn driver_loop(
                         usage,
                         codex_thread_id: None,
                         is_turn_completed: is_completed,
+                        approval: None,
                     });
 
                     if is_completed {
-                        break;
+                        break 'turn_drain;
                     }
                 }
             }
         }
     }
-    // On loop exit, kill any lingering child.
     if let Some(mut p) = proc.take() {
         p.kill();
+    }
+}
+
+/// A parked (in-flight) approval awaiting a human decision.
+struct ParkedApproval {
+    approval_id: i64,
+    jsonrpc_id: codex_app_server_protocol::RequestId,
+    kind: ApprovalKind,
+}
+
+/// Outcome of parking on a real (non-simulated) approval.
+enum ParkOutcome {
+    /// Human decided; response written back to app-server.
+    Resolved,
+    /// Interrupt received; turn should abort.
+    Interrupted,
+    /// Shutdown received; driver should exit.
+    Shutdown,
+}
+
+/// Park the driver on the command channel for a REAL approval request, writing
+/// the JSON-RPC response back when a `ResolveApproval` (matching
+/// `approval_id`) or `Interrupt` arrives.
+fn park_real_approval(
+    cmd_rx: &Receiver<DriverCommand>,
+    event_tx: &UnboundedSender<TurnEvent>,
+    thread_id: Uuid,
+    turn_db_id: i64,
+    pa: ParkedApproval,
+    p: &mut AppServerProcess,
+) -> ParkOutcome {
+    loop {
+        match cmd_rx.recv() {
+            Ok(DriverCommand::ResolveApproval { approval_id, decision })
+                if approval_id == pa.approval_id =>
+            {
+                match p.respond_approval(pa.jsonrpc_id.clone(), pa.kind.clone(), decision) {
+                    Ok(()) => return ParkOutcome::Resolved,
+                    Err(e) => {
+                        tracing::error!(error = %e, "respond_approval failed");
+                        emit_error(event_tx, thread_id, turn_db_id, 0, &e);
+                        return ParkOutcome::Interrupted;
+                    }
+                }
+            }
+            Ok(DriverCommand::ResolveApproval { approval_id, .. }) => {
+                tracing::warn!(approval_id, "stale ResolveApproval (not parked) — ignore");
+                continue;
+            }
+            Ok(DriverCommand::Interrupt) => {
+                // Best-effort Cancel response so the server tears down cleanly.
+                let _ = p.respond_approval(
+                    pa.jsonrpc_id.clone(),
+                    pa.kind.clone(),
+                    DecisionInput::Cancel,
+                );
+                let _ = event_tx.send(TurnEvent {
+                    thread_id,
+                    turn_db_id,
+                    seq: 0,
+                    item_type: "approval/interrupted".into(),
+                    codex_item_id: None,
+                    content_ref: None,
+                    raw_json: Value::Null,
+                    usage: None,
+                    codex_thread_id: None,
+                    is_turn_completed: true,
+                    approval: None,
+                });
+                return ParkOutcome::Interrupted;
+            }
+            Ok(DriverCommand::Shutdown) => {
+                let _ = p.respond_approval(
+                    pa.jsonrpc_id.clone(),
+                    pa.kind.clone(),
+                    DecisionInput::Cancel,
+                );
+                return ParkOutcome::Shutdown;
+            }
+            Ok(other) => {
+                tracing::warn!(?other, "unexpected command while parked — queue ignored");
+                continue;
+            }
+            Err(_) => return ParkOutcome::Shutdown,
+        }
+    }
+}
+
+/// Park for a SIMULATED approval (no real jsonrpc_id to write back). Returns
+/// `Some(decision)` if resolved, `None` if interrupted/shutdown.
+fn park_for_decision(cmd_rx: &Receiver<DriverCommand>, approval_id: i64) -> Option<DecisionInput> {
+    loop {
+        match cmd_rx.recv() {
+            Ok(DriverCommand::ResolveApproval { approval_id: aid, decision })
+                if aid == approval_id =>
+            {
+                return Some(decision);
+            }
+            Ok(DriverCommand::Interrupt) => return None,
+            Ok(DriverCommand::Shutdown) => return None,
+            Ok(_) => continue,
+            Err(_) => return None,
+        }
     }
 }
 
@@ -289,7 +579,7 @@ fn map_notification(
     }
 }
 
-/// Extract the `id` field from a `ThreadItem` (all variants carry `id: String`).
+/// Extract the `id` field from a `ThreadItem`.
 fn item_id(item: &codex_app_server_protocol::ThreadItem) -> Option<String> {
     let val = serde_json::to_value(item).ok()?;
     val.get("id")
@@ -315,6 +605,7 @@ fn emit_error(
         raw_json: serde_json::json!({ "error": e.to_string() }),
         usage: None,
         codex_thread_id: None,
-        is_turn_completed: true, // treat error as turn termination
+        is_turn_completed: true,
+        approval: None,
     });
 }
