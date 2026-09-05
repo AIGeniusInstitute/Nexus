@@ -17,7 +17,9 @@
 //! `event_rx`) — this breaks the deadlock that would otherwise occur.
 
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicI64, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::Arc;
 use std::thread;
 
 use anyhow::Context;
@@ -97,11 +99,11 @@ pub struct Usage {
     pub model: Option<String>,
 }
 
-/// The async-side runtime state. Split (M3):
-/// - `cmd_tx` is `Clone` and stored **lock-free** in `AppState` so the
-///   approval-resolve / interrupt handlers can send without contending the
-///   mutex guarding `event_rx` (held by `turn_start` for the whole turn).
-/// - `event_rx` lives behind `Arc<Mutex<..>>`; only `turn_start` reads it.
+/// The async-side runtime state for a SINGLE driver (M2/M3). Kept for
+/// backward-compat with the M0 PoC CLIs and any single-driver caller.
+/// `cmd_tx` is `Clone` and stored lock-free; `event_rx` is consumed by one
+/// `turn_start` drain. M5 `spawn_pool` supersedes this for multi-driver
+/// concurrency — the per-slot state there is managed by `DriverPool`/`DriverGuard`.
 pub struct RuntimeHandle {
     pub cmd_tx: Sender<DriverCommand>,
     pub event_rx: UnboundedReceiver<TurnEvent>,
@@ -115,13 +117,141 @@ pub struct RuntimeHandle {
 pub fn spawn(codex_bin: PathBuf, codex_home: PathBuf, start_approval_id: i64) -> RuntimeHandle {
     let (cmd_tx, cmd_rx) = mpsc::channel::<DriverCommand>();
     let (event_tx, event_rx) = unbounded_channel::<TurnEvent>();
+    let approval_counter = Arc::new(AtomicI64::new(start_approval_id.max(1)));
     let _thread = thread::Builder::new()
         .name("nexus-runtime-driver".into())
         .spawn(move || {
-            driver_loop(codex_bin, codex_home, cmd_rx, event_tx, start_approval_id)
+            driver_loop(codex_bin, codex_home, cmd_rx, event_tx, approval_counter)
         })
         .expect("spawn nexus runtime driver");
     RuntimeHandle { cmd_tx, event_rx }
+}
+
+// ===========================================================================
+// M5: Driver pool — N independent driver threads, each owning its own
+// app-server process + event channel. Breaks the global-mutex serialization
+// of M3/M4 (one `event_rx` behind an `Arc<Mutex<..>>` held for the whole
+// turn). turn_start `acquire()`s a free slot, drains that slot's `event_rx`
+// exclusively (no shared mutex), and `release()`s on turn end via
+// `DriverGuard`'s `Drop`.
+// ===========================================================================
+
+/// One pool slot. `event_rx` is `Some` when the slot is free, taken out
+/// (`None`) while a turn is draining it.
+struct DriverSlot {
+    event_rx: Option<UnboundedReceiver<TurnEvent>>,
+}
+
+/// A pool of N independent driver threads.
+pub struct DriverPool {
+    slots: Vec<std::sync::Mutex<DriverSlot>>,
+    /// Clone-able command senders, indexed by slot. Resolve/interrupt
+    /// handlers route to the slot holding the in-flight turn via `turn_slots`.
+    cmd_txs: Vec<Sender<DriverCommand>>,
+    /// Free-slot queue. `acquire` dequeues an idx; `DriverGuard::drop`
+    /// enqueues it back. Unbounded (bounded by pool_size in practice).
+    free_tx: tokio::sync::mpsc::UnboundedSender<usize>,
+    free_rx: tokio::sync::Mutex<tokio::sync::mpsc::UnboundedReceiver<usize>>,
+}
+
+/// RAII guard over an acquired pool slot. Drains `event_rx` exclusively;
+/// on drop, returns the receiver to its slot and enqueues the slot back to
+/// the free-list.
+pub struct DriverGuard {
+    pub idx: usize,
+    event_rx: Option<UnboundedReceiver<TurnEvent>>,
+    pool: Arc<DriverPool>,
+}
+
+impl DriverGuard {
+    /// Clone the command sender for this slot (for the initial `RunTurn`
+    /// dispatch from `turn_start`).
+    pub fn cmd_tx(&self) -> Sender<DriverCommand> {
+        self.pool.cmd_txs[self.idx].clone()
+    }
+
+    /// Exclusive mutable access to this slot's event stream (drain it in
+    /// `turn_start`). The receiver is returned to its slot on `Drop`.
+    pub fn event_rx_mut(&mut self) -> &mut UnboundedReceiver<TurnEvent> {
+        self.event_rx.as_mut().expect("guard event_rx taken before drain")
+    }
+}
+
+impl Drop for DriverGuard {
+    fn drop(&mut self) {
+        // Return the event receiver to its slot.
+        if let Some(rx) = self.event_rx.take() {
+            if let Ok(mut slot) = self.pool.slots[self.idx].lock() {
+                slot.event_rx = Some(rx);
+            }
+        }
+        // Mark this slot free again.
+        let _ = self.pool.free_tx.send(self.idx);
+    }
+}
+
+impl DriverPool {
+    /// Acquire a free driver slot, waiting until one is available. Returns
+    /// `None` only if the free-list channel is closed (pool dropped).
+    pub async fn acquire(self: &Arc<Self>) -> Option<DriverGuard> {
+        let idx = self.free_rx.lock().await.recv().await?;
+        let event_rx = {
+            let mut slot = self.slots[idx].lock().unwrap();
+            slot.event_rx.take()
+        };
+        Some(DriverGuard { idx, event_rx, pool: Arc::clone(self) })
+    }
+
+    /// Look up the command sender for slot `idx` (for resolve/interrupt
+    /// routing). Returns `None` for an out-of-range idx.
+    pub fn cmd_tx(&self, idx: usize) -> Option<Sender<DriverCommand>> {
+        self.cmd_txs.get(idx).cloned()
+    }
+}
+
+/// Spawn a pool of `pool_size` independent driver threads and return the
+/// async-side pool handle.
+///
+/// `start_approval_id` seeds the GLOBAL monotonic approval-id counter (M5):
+/// unlike M3's per-driver counter, this counter is shared via `AtomicI64` so
+/// ids generated by different drivers never collide. Callers typically pass
+/// `SELECT max(id)+1 FROM approval_tickets`.
+pub fn spawn_pool(
+    codex_bin: PathBuf,
+    codex_home: PathBuf,
+    pool_size: usize,
+    start_approval_id: i64,
+) -> Arc<DriverPool> {
+    let pool_size = pool_size.max(1);
+    let (free_tx, free_rx) = tokio::sync::mpsc::unbounded_channel::<usize>();
+    let approval_counter = Arc::new(AtomicI64::new(start_approval_id.max(1)));
+    let mut slots = Vec::with_capacity(pool_size);
+    let mut cmd_txs = Vec::with_capacity(pool_size);
+    for i in 0..pool_size {
+        let (cmd_tx, cmd_rx) = mpsc::channel::<DriverCommand>();
+        let (event_tx, event_rx) = unbounded_channel::<TurnEvent>();
+        let counter = Arc::clone(&approval_counter);
+        // Clone per-iteration so each closure owns its own copy (the loop
+        // body runs pool_size times; a bare `move ||` would capture the
+        // outer PathBuf by move on the first iteration).
+        let bin = codex_bin.clone();
+        let home = codex_home.clone();
+        let _thread = thread::Builder::new()
+            .name(format!("nexus-driver-{i}"))
+            .spawn(move || {
+                driver_loop(bin, home, cmd_rx, event_tx, counter)
+            })
+            .expect("spawn nexus driver");
+        slots.push(std::sync::Mutex::new(DriverSlot { event_rx: Some(event_rx) }));
+        cmd_txs.push(cmd_tx);
+        let _ = free_tx.send(i); // initially all slots free
+    }
+    Arc::new(DriverPool {
+        slots,
+        cmd_txs,
+        free_tx,
+        free_rx: tokio::sync::Mutex::new(free_rx),
+    })
 }
 
 /// The driver thread main loop.
@@ -130,12 +260,12 @@ fn driver_loop(
     codex_home: PathBuf,
     cmd_rx: Receiver<DriverCommand>,
     event_tx: UnboundedSender<TurnEvent>,
-    start_approval_id: i64,
+    approval_counter: Arc<AtomicI64>,
 ) {
     let mut proc: Option<AppServerProcess> = None;
-    // Monotonic per-process approval id (M3). Seeded from `start_approval_id`
-    // (DB max+1) so it never collides with existing rows across restarts.
-    let mut next_approval_id: i64 = start_approval_id.max(1);
+    // M5: global monotonic approval id shared across all drivers (AtomicI64),
+    // seeded from `start_approval_id` (DB max+1) so it never collides with
+    // existing rows OR with ids generated by sibling drivers.
     let simulate_approval = std::env::var("NEXUS_SIMULATE_APPROVAL").is_ok();
 
     for cmd in cmd_rx.iter() {
@@ -248,8 +378,7 @@ fn driver_loop(
                 // only in tests (`NEXUS_SIMULATE_APPROVAL=1`). Does NOT enter
                 // the real notification drain (the mock model emits nothing).
                 if simulate_approval {
-                    let approval_id = next_approval_id;
-                    next_approval_id += 1;
+                    let approval_id = approval_counter.fetch_add(1, Ordering::SeqCst);
                     seq += 1;
                     let _ = event_tx.send(TurnEvent {
                         thread_id,
@@ -373,8 +502,7 @@ fn driver_loop(
                     let ev = match p.next_event() {
                         Ok(StreamEvent::Notification(n)) => n,
                         Ok(StreamEvent::ApprovalRequest(ar)) => {
-                            let approval_id = next_approval_id;
-                            next_approval_id += 1;
+                            let approval_id = approval_counter.fetch_add(1, Ordering::SeqCst);
                             seq += 1;
                             let _ = event_tx.send(TurnEvent {
                                 thread_id,
