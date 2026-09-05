@@ -1,0 +1,4 @@
+# codex-sandbox 是 strip 后的 codex 二进制（~297MB），不入 git
+# 构建镜像前本地生成：
+#   cp /home/me/.local/bin/codex codex-sandbox && strip codex-sandbox
+codex-sandbox

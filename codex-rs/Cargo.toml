@@ -145,6 +145,7 @@ members = [
     "codex-experimental-api-macros",
     "plugin",
     "model-provider",
+    "nexus-control",
 ]
 resolver = "2"
 
