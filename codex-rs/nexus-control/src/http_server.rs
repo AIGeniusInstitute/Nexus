@@ -1,5 +1,9 @@
 //! HTTP API gateway: axum router + handlers + idempotency/rate-limit middleware (T1-2/T1-3).
 //! M2: turn_start drives the real app-server runtime; interrupt endpoint added.
+//! M3: HITL approval — turn_start persists approval tickets and broadcasts
+//! `approval/requested`; new `/v1/approvals` resolve/list endpoints. The
+//! runtime handle is SPLIT: `runtime_cmd` (lock-free, Clone) for sending
+//! commands, `runtime_events` (mutex-guarded) for the single turn_start drain.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -14,20 +18,25 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::PgPool;
+use std::sync::mpsc::Sender;
 use tokio::sync::{broadcast, Mutex};
 use uuid::Uuid;
 
 use crate::auth::{AuthProvider, AuthUser, JwtIssuer};
-use crate::runtime::{self, RuntimeHandle};
+use crate::runtime::{self, DriverCommand, TurnEvent};
 
 #[derive(Clone)]
 pub struct AppState {
     pub pool: PgPool,
     pub jwt: Arc<JwtIssuer>,
     pub auth: Arc<dyn AuthProvider>,
-    /// Single runtime driver handle (M2: single app-server process, turns
-    /// serialized via this mutex).
-    pub runtime: Arc<Mutex<RuntimeHandle>>,
+    /// M3: lock-free command channel (Clone). Resolve / interrupt handlers
+    /// send through this WITHOUT locking — breaks the deadlock with turn_start
+    /// (which holds `runtime_events` for the whole turn).
+    pub runtime_cmd: Sender<DriverCommand>,
+    /// M3: single event receiver, guarded by a mutex. Only `turn_start` reads
+    /// it; holding the lock for the whole turn serializes turns (M2 semantics).
+    pub runtime_events: Arc<Mutex<tokio::sync::mpsc::UnboundedReceiver<TurnEvent>>>,
     /// Per-thread broadcast channels for live WS push.
     pub broadcast: Arc<Mutex<HashMap<Uuid, broadcast::Sender<Value>>>>,
 }
@@ -55,6 +64,9 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/threads/{id}/turns", post(turn_start))
         .route("/v1/threads/{id}/turns/{turn_id}/interrupt", post(turn_interrupt))
         .route("/v1/threads/{id}/items", get(items_list))
+        .route("/v1/threads/{id}/approvals", get(thread_approvals))
+        .route("/v1/approvals", get(approvals_list))
+        .route("/v1/approvals/{aid}/resolve", post(approval_resolve))
         .route("/v1/ws/threads/{id}/events", get(crate::ws::ws_handler))
         .layer(middleware::from_fn_with_state(state.clone(), idempotency_layer))
         .layer(middleware::from_fn_with_state(state.clone(), user_rate_limit))
@@ -189,9 +201,8 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
 
     let input = req.input.unwrap_or_else(|| "(empty turn)".into());
 
-    // Dispatch to the runtime driver (single mutex serializes turns).
-    let mut rh = st.runtime.lock().await;
-    if rh.cmd_tx
+    // Dispatch to the runtime driver.
+    if st.runtime_cmd
         .send(runtime::DriverCommand::RunTurn {
             thread_id: id,
             codex_thread_id: codex_thread_id.clone(),
@@ -205,16 +216,80 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
     }
 
     let bcast = thread_broadcast(&st, id).await;
-    // Drain events until turn/completed (or nexus/error).
+    // Hold the event-receiver lock for the whole turn (serializes turns).
+    let mut rx = st.runtime_events.lock().await;
     let mut last_usage: Option<runtime::Usage> = None;
     let mut resolved_codex_thread_id: Option<String> = codex_thread_id.clone();
-    while let Some(ev) = rh.event_rx.recv().await {
+    let mut final_status = "completed".to_string();
+    while let Some(ev) = rx.recv().await {
         // Persist codex_thread_id on first resolve.
         if let Some(cid) = &ev.codex_thread_id {
             resolved_codex_thread_id = Some(cid.clone());
             let _ = sqlx::query("UPDATE threads SET codex_thread_id=$1 WHERE id=$2")
                 .bind(cid).bind(id).execute(&st.pool).await;
         }
+
+        // M3: approval/requested — persist a pending ticket, audit, broadcast;
+        // then keep draining (driver is parked, no more events until resolve).
+        if ev.item_type == "approval/requested" {
+            if let Some(ap) = &ev.approval {
+                let kind_str = match ap.kind {
+                    runtime::ApprovalKind::CommandExecution => "command_execution",
+                    runtime::ApprovalKind::FileChange => "file_change",
+                };
+                // 先落库再回写（R3：Pod 崩溃后 pending ticket 不丢）。
+                let _ = sqlx::query(
+                    "INSERT INTO approval_tickets
+                       (id, thread_id, turn_id, tenant_id, kind, status, item_id,
+                        jsonrpc_id, command, cwd, reason, raw_params, created_at)
+                     VALUES ($1,$2,$3,$4,$5,'pending',$6,$7,$8,$9,$10,$11,NOW())
+                     ON CONFLICT (id) DO NOTHING",
+                )
+                .bind(ap.approval_id).bind(id).bind(turn_db_id).bind(c.tid)
+                .bind(kind_str).bind(ev.codex_item_id.as_deref())
+                .bind(ev.raw_json.clone())  // jsonrpc_id stored as raw event (sim) — see note
+                .bind(ap.command.as_deref()).bind(ap.cwd.as_deref())
+                .bind(ap.reason.as_deref()).bind(&ap.raw_params)
+                .execute(&st.pool).await;
+                let _ = sqlx::query(
+                    "INSERT INTO approval_audit (approval_id, actor_user_id, action, params_digest)
+                     VALUES ($1,$2,'created',$3)",
+                )
+                .bind(ap.approval_id).bind(c.uid).bind(ap.command.as_deref())
+                .execute(&st.pool).await;
+            }
+            let frame = serde_json::json!({
+                "thread_id": id, "seq": ev.seq, "type": ev.item_type,
+                "content": ev.content_ref,
+                "approval_id": ev.approval.as_ref().map(|a| a.approval_id),
+                "command": ev.approval.as_ref().and_then(|a| a.command.clone()),
+            });
+            let _ = bcast.send(frame);
+            continue;
+        }
+
+        if ev.item_type == "approval/interrupted" {
+            final_status = "interrupted".to_string();
+            // Mark any pending tickets for this thread as interrupted.
+            let _ = sqlx::query(
+                "UPDATE approval_tickets SET status='interrupted'
+                 WHERE thread_id=$1 AND status='pending'",
+            )
+            .bind(id).execute(&st.pool).await;
+            let _ = sqlx::query(
+                "INSERT INTO approval_audit (approval_id, actor_user_id, action, decision)
+                 SELECT id, $2, 'interrupted', 'cancelled' FROM approval_tickets
+                 WHERE thread_id=$1 AND status='interrupted'
+                 ON CONFLICT DO NOTHING",
+            )
+            .bind(id).bind(c.uid).execute(&st.pool).await;
+            let _ = bcast.send(serde_json::json!({
+                "thread_id": id, "seq": ev.seq, "type": ev.item_type,
+            }));
+            if ev.is_turn_completed { break; }
+            continue;
+        }
+
         // app_server_events: raw event log (idempotent on thread+seq).
         let _ = sqlx::query(
             "INSERT INTO app_server_events (thread_id, turn_id, seq, event_json)
@@ -241,7 +316,7 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
             last_usage = Some(u.clone());
         }
 
-        // Broadcast to WS subscribers (ignore send errors — no subscribers).
+        // Broadcast to WS subscribers.
         let frame = serde_json::json!({
             "thread_id": id, "seq": ev.seq, "type": ev.item_type,
             "content": ev.content_ref, "item_id": ev.codex_item_id,
@@ -252,28 +327,30 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
             break;
         }
     }
-    drop(rh);
+    drop(rx);
 
     // Finalize the turn.
-    let status = match &last_usage {
-        Some(u) => {
-            let _ = sqlx::query(
-                "UPDATE turns SET status='completed', completed_at=NOW(),
-                     input_tokens=$1, output_tokens=$2, cost_micros=$3
-                 WHERE id=$4",
-            )
-            .bind(u.input_tokens).bind(u.output_tokens).bind(u.cost_micros)
-            .bind(turn_db_id).execute(&st.pool).await;
-            "completed"
-        }
-        None => {
-            // No usage observed (mock gateway) — still mark completed.
-            let _ = sqlx::query(
-                "UPDATE turns SET status='completed', completed_at=NOW() WHERE id=$1",
-            )
-            .bind(turn_db_id).execute(&st.pool).await;
-            "completed"
-        }
+    let status = if final_status == "interrupted" {
+        let _ = sqlx::query(
+            "UPDATE turns SET status='interrupted', completed_at=NOW() WHERE id=$1",
+        )
+        .bind(turn_db_id).execute(&st.pool).await;
+        "interrupted"
+    } else if let Some(u) = &last_usage {
+        let _ = sqlx::query(
+            "UPDATE turns SET status='completed', completed_at=NOW(),
+                 input_tokens=$1, output_tokens=$2, cost_micros=$3
+             WHERE id=$4",
+        )
+        .bind(u.input_tokens).bind(u.output_tokens).bind(u.cost_micros)
+        .bind(turn_db_id).execute(&st.pool).await;
+        "completed"
+    } else {
+        let _ = sqlx::query(
+            "UPDATE turns SET status='completed', completed_at=NOW() WHERE id=$1",
+        )
+        .bind(turn_db_id).execute(&st.pool).await;
+        "completed"
     };
 
     Ok(Json(serde_json::json!({
@@ -297,12 +374,105 @@ async fn turn_interrupt(
     if owned.is_none() {
         return Err((StatusCode::NOT_FOUND, "turn not found".into()));
     }
-    let rh = st.runtime.lock().await;
-    let _ = rh.cmd_tx.send(runtime::DriverCommand::Interrupt);
-    drop(rh);
+    // M3: lock-free send (no contention with turn_start's event_rx lock).
+    let _ = st.runtime_cmd.send(runtime::DriverCommand::Interrupt);
     let _ = sqlx::query("UPDATE turns SET status='interrupted', completed_at=NOW() WHERE id=$1")
         .bind(turn_id).execute(&st.pool).await;
     Ok(Json(serde_json::json!({ "turn_id": turn_id, "status": "interrupted" })))
+}
+
+// ---------- M3: Approvals ----------
+#[derive(Deserialize)]
+struct ResolveReq { decision: String } // approve | deny | cancel
+
+async fn approval_resolve(
+    AuthUser(c): AuthUser,
+    State(st): State<AppState>,
+    Path(aid): Path<i64>,
+    Json(req): Json<ResolveReq>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    // Load ticket, verify tenant + pending.
+    let row: Option<(String,)> = sqlx::query_as(
+        "SELECT status FROM approval_tickets WHERE id=$1 AND tenant_id=$2",
+    )
+    .bind(aid).bind(c.tid).fetch_optional(&st.pool).await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = match row {
+        Some((s,)) => s,
+        None => return Err((StatusCode::NOT_FOUND, "approval not found".into())),
+    };
+    if status != "pending" {
+        return Err((StatusCode::CONFLICT, format!("approval already {status}")));
+    }
+    let decision = match req.decision.as_str() {
+        "approve" => runtime::DecisionInput::Approve,
+        "deny" => runtime::DecisionInput::Deny,
+        "cancel" => runtime::DecisionInput::Cancel,
+        _ => return Err((StatusCode::BAD_REQUEST, "decision must be approve|deny|cancel".into())),
+    };
+    let new_status = match &decision {
+        runtime::DecisionInput::Approve => "approved",
+        runtime::DecisionInput::Deny => "denied",
+        runtime::DecisionInput::Cancel => "cancelled",
+    };
+    let _ = sqlx::query(
+        "UPDATE approval_tickets SET status=$1, decided_by=$2, decided_at=NOW() WHERE id=$3",
+    )
+    .bind(new_status).bind(c.uid).bind(aid).execute(&st.pool).await;
+    let _ = sqlx::query(
+        "INSERT INTO approval_audit (approval_id, actor_user_id, action, decision)
+         VALUES ($1,$2,'resolved',$3)",
+    )
+    .bind(aid).bind(c.uid).bind(new_status).execute(&st.pool).await;
+    // Lock-free dispatch to the parked driver.
+    if st.runtime_cmd
+        .send(runtime::DriverCommand::ResolveApproval { approval_id: aid, decision })
+        .is_err()
+    {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, "runtime driver gone".into()));
+    }
+    Ok(Json(serde_json::json!({ "approval_id": aid, "status": new_status })))
+}
+
+#[derive(Serialize, sqlx::FromRow)]
+struct ApprovalRow {
+    id: i64,
+    thread_id: Uuid,
+    turn_id: i64,
+    kind: Option<String>,
+    status: String,
+    command: Option<String>,
+    cwd: Option<String>,
+    reason: Option<String>,
+    created_at: DateTime<Utc>,
+}
+
+async fn approvals_list(AuthUser(c): AuthUser, State(st): State<AppState>) -> Result<Json<Vec<ApprovalRow>>, (StatusCode, String)> {
+    let rows = sqlx::query_as::<_, ApprovalRow>(
+        "SELECT id, thread_id, turn_id, kind, status, command, cwd, reason, created_at
+         FROM approval_tickets WHERE tenant_id=$1 AND status='pending'
+         ORDER BY created_at DESC LIMIT 100",
+    )
+    .bind(c.tid).fetch_all(&st.pool).await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn thread_approvals(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<Uuid>) -> Result<Json<Vec<ApprovalRow>>, (StatusCode, String)> {
+    // Verify thread belongs to tenant.
+    let owned: Option<(Uuid,)> = sqlx::query_as("SELECT id FROM threads WHERE id=$1 AND tenant_id=$2")
+        .bind(id).bind(c.tid).fetch_optional(&st.pool).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if owned.is_none() {
+        return Err((StatusCode::NOT_FOUND, "thread not found".into()));
+    }
+    let rows = sqlx::query_as::<_, ApprovalRow>(
+        "SELECT id, thread_id, turn_id, kind, status, command, cwd, reason, created_at
+         FROM approval_tickets WHERE thread_id=$1 ORDER BY created_at DESC LIMIT 200",
+    )
+    .bind(id).fetch_all(&st.pool).await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
 }
 
 #[derive(Serialize, sqlx::FromRow)]
@@ -356,7 +526,6 @@ async fn idempotency_layer(State(st): State<AppState>, req: axum::extract::Reque
         }
     }
     let resp = next.run(req).await;
-    // Only cache 2xx.
     if !resp.status().is_success() {
         return resp;
     }
@@ -375,7 +544,6 @@ async fn idempotency_layer(State(st): State<AppState>, req: axum::extract::Reque
 
 // ---------- Middleware: per-user rate limit (DB token bucket, 1-min window) ----------
 async fn user_rate_limit(State(st): State<AppState>, req: axum::extract::Request, next: Next) -> Response {
-    // Parse JWT manually (avoid consuming the AuthUser extractor before the handler).
     let uid = match req.headers().get(axum::http::header::AUTHORIZATION).and_then(|h| h.to_str().ok()).and_then(|h| h.strip_prefix("Bearer ")) {
         Some(tok) => match st.jwt.verify(tok) { Ok(c) => Some(c.uid), Err(_) => None },
         None => None,
@@ -407,15 +575,13 @@ async fn user_rate_limit(State(st): State<AppState>, req: axum::extract::Request
     next.run(req).await
 }
 
-// ---------- Middleware: stateless auth gate (for protected routes only) ----------
-// Routes mounted under /v1 require a Bearer JWT except /v1/auth/login.
+// ---------- Middleware: stateless auth gate ----------
 async fn require_auth_stateless(req: axum::extract::Request, next: Next) -> Response {
     let path = req.uri().path();
     let is_public = path == "/health" || path == "/v1/auth/login" || path.starts_with("/v1/ws/");
     if is_public {
         return next.run(req).await;
     }
-    // Non-public /v1 paths: 401 if no Bearer.
     let has_bearer = req.headers().get(axum::http::header::AUTHORIZATION)
         .and_then(|h| h.to_str().ok())
         .map(|h| h.starts_with("Bearer "))

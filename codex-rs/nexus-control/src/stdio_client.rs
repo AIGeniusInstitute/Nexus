@@ -51,6 +51,49 @@ use uuid::Uuid;
 const GRACEFUL_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
 const GRACEFUL_SHUTDOWN_POLL: Duration = Duration::from_millis(100);
 
+/// Which kind of approval the app-server is asking about (M3).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ApprovalKind {
+    CommandExecution,
+    FileChange,
+}
+
+/// A simplified, Nexus-side approval decision (M3). Mapped to the appropriate
+/// protocol enum (`CommandExecutionApprovalDecision` / `FileChangeApprovalDecision`)
+/// when writing the JSON-RPC response back to the app-server.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DecisionInput {
+    Approve,
+    Deny,
+    Cancel,
+}
+
+/// A surfaced app-server approval request (M3). The driver parks on this until
+/// a `ResolveApproval` command arrives, then writes the JSON-RPC response with
+/// the matching `jsonrpc_id`.
+#[derive(Debug, Clone)]
+pub struct ApprovalRequest {
+    /// Original JSON-RPC request id (used to match the response).
+    pub jsonrpc_id: RequestId,
+    pub kind: ApprovalKind,
+    pub thread_id: String,
+    pub turn_id: String,
+    pub item_id: String,
+    pub command: Option<String>,
+    pub cwd: Option<String>,
+    pub reason: Option<String>,
+    /// Full params JSON (for audit / display, with secrets stripped upstream).
+    pub raw_params: Value,
+}
+
+/// What the driver reads from the app-server stream (M3): either a notification
+/// to forward, or an approval request that must be surfaced (not auto-accepted).
+#[derive(Debug, Clone)]
+pub enum StreamEvent {
+    Notification(JSONRPCNotification),
+    ApprovalRequest(ApprovalRequest),
+}
+
 /// A stdio connection to a `codex app-server` child process.
 pub struct AppServerProcess {
     child: Child,
@@ -211,6 +254,100 @@ impl AppServerProcess {
     pub fn next_server_notification(&mut self) -> Result<Option<ServerNotification>> {
         let notification = self.next_notification()?;
         Ok(ServerNotification::try_from(notification).ok())
+    }
+
+    /// M3: read the next stream event. Like `next_notification`, but when the
+    /// server sends an approval request (`CommandExecutionRequestApproval` /
+    /// `FileChangeRequestApproval`), it is **surfaced** as
+    /// `StreamEvent::ApprovalRequest` instead of being auto-accepted. Other
+    /// server requests are still auto-handled (M2 behavior).
+    pub fn next_event(&mut self) -> Result<StreamEvent> {
+        if let Some(n) = self.pending_notifications.pop_front() {
+            return Ok(StreamEvent::Notification(n));
+        }
+        loop {
+            let message = self.read_jsonrpc_message()?;
+            match message {
+                JSONRPCMessage::Notification(n) => return Ok(StreamEvent::Notification(n)),
+                JSONRPCMessage::Response(_) | JSONRPCMessage::Error(_) => continue,
+                JSONRPCMessage::Request(req) => {
+                    // Classify without consuming `req` on the non-approval path
+                    // (handle_server_request needs the original JSONRPCRequest).
+                    match ServerRequest::try_from(req.clone()) {
+                        Ok(ServerRequest::CommandExecutionRequestApproval { request_id, params }) => {
+                            // Capture raw_params BEFORE moving fields out of `params`.
+                            let raw_params =
+                                serde_json::to_value(&params).unwrap_or(Value::Null);
+                            return Ok(StreamEvent::ApprovalRequest(ApprovalRequest {
+                                jsonrpc_id: request_id,
+                                kind: ApprovalKind::CommandExecution,
+                                thread_id: params.thread_id,
+                                turn_id: params.turn_id,
+                                item_id: params.item_id,
+                                command: params.command,
+                                cwd: params.cwd.map(|p| p.to_string()),
+                                reason: params.reason,
+                                raw_params,
+                            }));
+                        }
+                        Ok(ServerRequest::FileChangeRequestApproval { request_id, params }) => {
+                            let raw_params =
+                                serde_json::to_value(&params).unwrap_or(Value::Null);
+                            return Ok(StreamEvent::ApprovalRequest(ApprovalRequest {
+                                jsonrpc_id: request_id,
+                                kind: ApprovalKind::FileChange,
+                                thread_id: params.thread_id,
+                                turn_id: params.turn_id,
+                                item_id: params.item_id,
+                                command: None,
+                                cwd: params.grant_root
+                                    .map(|p| p.to_string_lossy().into_owned()),
+                                reason: params.reason,
+                                raw_params,
+                            }));
+                        }
+                        // Non-approval server request: auto-handle (M2 path).
+                        Ok(_) | Err(_) => {
+                            self.handle_server_request(req)?;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// M3: write back the JSON-RPC response for a surfaced approval request.
+    /// `jsonrpc_id` must be the original request id; `decision` is the
+    /// Nexus-side decision mapped to the appropriate protocol enum.
+    pub fn respond_approval(
+        &mut self,
+        jsonrpc_id: RequestId,
+        kind: ApprovalKind,
+        decision: DecisionInput,
+    ) -> Result<()> {
+        let result: Value = match kind {
+            ApprovalKind::CommandExecution => {
+                let d = match decision {
+                    DecisionInput::Approve => CommandExecutionApprovalDecision::Accept,
+                    DecisionInput::Deny => CommandExecutionApprovalDecision::Decline,
+                    DecisionInput::Cancel => CommandExecutionApprovalDecision::Cancel,
+                };
+                serde_json::to_value(CommandExecutionRequestApprovalResponse { decision: d })?
+            }
+            ApprovalKind::FileChange => {
+                let d = match decision {
+                    DecisionInput::Approve => FileChangeApprovalDecision::Accept,
+                    DecisionInput::Deny => FileChangeApprovalDecision::Decline,
+                    DecisionInput::Cancel => FileChangeApprovalDecision::Cancel,
+                };
+                serde_json::to_value(FileChangeRequestApprovalResponse { decision: d })?
+            }
+        };
+        let message = JSONRPCMessage::Response(JSONRPCResponse {
+            id: jsonrpc_id,
+            result,
+        });
+        self.write_jsonrpc_message(message)
     }
 
     /// Kill the child process (non-graceful).

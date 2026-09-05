@@ -16,6 +16,18 @@ export interface Item {
   created_at: string;
 }
 
+export interface Approval {
+  id: number;
+  thread_id: string;
+  turn_id: number;
+  kind: string | null;
+  status: string;
+  command: string | null;
+  cwd: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
 export interface LoginResp {
   token: string;
   user_id: number;
@@ -65,6 +77,12 @@ export const api = {
     }),
   listItems: (threadId: string, since = 0) =>
     req<Item[]>(`/v1/threads/${threadId}/items?since=${since}`),
+  listApprovals: () => req<Approval[]>("/v1/approvals"),
+  resolveApproval: (id: number, decision: "approve" | "deny" | "cancel") =>
+    req<{ approval_id: number; status: string }>(
+      `/v1/approvals/${id}/resolve`,
+      { method: "POST", body: JSON.stringify({ decision }) }
+    ),
 };
 
 // Open a WS subscription to a thread's event stream.
