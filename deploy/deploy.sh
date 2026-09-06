@@ -137,6 +137,29 @@ fi
 cp "$CODEX_RS/nexus-control/tests/mcp_echo_server.py" "$BIN_DIR/mcp_echo_server.py" 2>/dev/null || warn "mcp_echo_server.py 未找到（非致命）"
 chmod +x "$BIN_DIR/mcp_echo_server.py" 2>/dev/null || true
 
+# 4) Web 控制台静态产物：npm install + vite build → 复制到上下文 web-dist/
+WEB_SRC="$CODEX_RS/nexus-control/web"
+WEB_DIST_CTX="$SCRIPT_DIR/web-dist"
+if [[ "$NO_BUILD" -eq 1 && -d "$WEB_DIST_CTX" && -f "$WEB_DIST_CTX/index.html" ]]; then
+  ok "跳过前端构建（--no-build），复用已有 $WEB_DIST_CTX"
+else
+  if ! command -v npm >/dev/null 2>&1; then
+    err "未找到 npm。请先安装 Node.js（含 npm），或用 --no-build 复用已构建产物。"
+    exit 1
+  fi
+  log "构建 Web 控制台（npm install + vite build）..."
+  (cd "$WEB_SRC" && env -u NODE_ENV npm install --include=dev --no-audit --no-fund)
+  # esbuild postinstall 可能被 allow-scripts 拦截，手动补装二进制
+  if [[ -f "$WEB_SRC/node_modules/esbuild/install.js" ]] && ! "$WEB_SRC/node_modules/.bin/esbuild" --version >/dev/null 2>&1; then
+    node "$WEB_SRC/node_modules/esbuild/install.js" 2>/dev/null || true
+  fi
+  (cd "$WEB_SRC" && env -u NODE_ENV npm run build)
+  rm -rf "$WEB_DIST_CTX"
+  mkdir -p "$WEB_DIST_CTX"
+  cp -r "$WEB_SRC/dist/." "$WEB_DIST_CTX/"
+  ok "Web 控制台产物就位: $(du -sh "$WEB_DIST_CTX" | cut -f1)"
+fi
+
 # ---------- Docker 构建 + 启动 ----------
 log "构建 Docker 镜像 nexus-control:latest ..."
 (cd "$SCRIPT_DIR" && docker compose --env-file .env build)

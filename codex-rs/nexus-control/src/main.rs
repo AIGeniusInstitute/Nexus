@@ -813,7 +813,7 @@ fn run_serve(
     codex_bin: &std::path::Path,
     codex_home: &std::path::Path,
 ) -> Result<()> {
-    println!("=== Nexus M18: serve ===");
+    println!("=== Nexus Web Console: serve ===");
     let rt = rt()?;
     rt.block_on(async move {
         let pool = nexus_control::db::connect(database_url).await?;
@@ -898,6 +898,9 @@ fn run_serve(
             codex_home: codex_home.to_path_buf(),
             broadcast: std::sync::Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
             base_url: format!("http://{}", addr.replace("0.0.0.0", "127.0.0.1")),
+            web_dir: std::path::PathBuf::from(
+                std::env::var("NEXUS_WEB_DIR").unwrap_or_else(|_| "/app/web-dist".to_string()),
+            ),
         };
         let app = nexus_control::http_server::router(state);
         let listener = tokio::net::TcpListener::bind(addr)

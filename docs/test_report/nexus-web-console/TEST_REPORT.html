@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus Web 控制台 — 测试报告</title>
+<style>
+:root[data-theme="dark"]{
+  --bg:#0b141a;--panel:#13242e;--panel2:#1a2f3a;--text:#d4e4ec;--mut:#6b8a99;
+  --accent:#35c2b0;--gold:#e8b64c;--blue:#3b82f6;--red:#ef4444;--green:#22c55e;
+  --bd:#1e3340;--grid:#0e1a22;
+}
+:root[data-theme="light"]{
+  --bg:#f5f7f9;--panel:#fff;--panel2:#eef2f6;--text:#1a2630;--mut:#6b7d89;
+  --accent:#0d9488;--gold:#b8860b;--blue:#2563eb;--red:#dc2626;--green:#16a34a;
+  --bd:#d4dde4;--grid:#e8eef3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.6}
+.wrap{max-width:1200px;margin:0 auto;padding:32px 24px}
+.hero{text-align:center;padding:48px 24px 36px;border-bottom:1px solid var(--bd);margin-bottom:32px}
+.hero h1{font-size:30px;letter-spacing:.5px;background:linear-gradient(135deg,var(--accent),var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero .sub{color:var(--mut);font-size:14px;margin-top:8px}
+.hero .meta{margin-top:18px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap}
+.hero .meta b{color:var(--accent)}
+.bar{height:6px;background:var(--panel);border-radius:3px;overflow:hidden;margin:24px 0}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--accent));border-radius:3px}
+.tog{position:fixed;top:16px;right:16px;background:var(--panel);border:1px solid var(--bd);color:var(--text);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;z-index:99}
+h2{font-size:18px;margin:28px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--bd);color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin:16px 0}
+.stat{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:24px;font-weight:700;color:var(--accent)}
+.stat .l{color:var(--mut);font-size:12px;margin-top:4px}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--bd);border-radius:10px;overflow:hidden}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--bd);font-size:13px}
+th{background:var(--panel2);color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+tr:last-child td{border-bottom:none}
+.pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.pill.pass{background:rgba(34,197,94,.15);color:var(--green)}
+.pill.fail{background:rgba(239,68,68,.15);color:var(--red)}
+.pill.ok{background:rgba(53,194,176,.15);color:var(--accent)}
+.pill.info{background:rgba(59,130,246,.15);color:var(--blue)}
+.mono{font-family:"SF Mono",Consolas,monospace;font-size:12px}
+.ac{margin:16px 0}
+.ac details{background:var(--panel);border:1px solid var(--bd);border-radius:8px;margin-bottom:8px}
+.ac summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:13px}
+.ac summary .pill{margin-left:8px}
+.ac .body{padding:0 16px 12px;color:var(--mut);font-size:13px}
+.ac .body code{background:var(--panel2);padding:2px 6px;border-radius:4px;color:var(--text)}
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin:16px 0}
+.shots figure{background:var(--panel);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+.shots figcaption{padding:8px 12px;font-size:12px;color:var(--mut);border-bottom:1px solid var(--bd)}
+.shots img{width:100%;display:block;border-bottom:1px solid var(--bd)}
+.note{background:var(--panel);border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 8px 8px 0;margin:16px 0;font-size:13px}
+.note b{color:var(--accent)}
+</style>
+</head>
+<body>
+<button class="tog" onclick="var d=document.documentElement;d.dataset.theme=d.dataset.theme==='dark'?'light':'dark'">🌓 主题</button>
+<div class="wrap">
+  <div class="hero">
+    <h1>Nexus Web 控制台</h1>
+    <div class="sub">企业级 AI Agent 平台 · Web 控制台补齐 GAP 测试报告</div>
+    <div class="meta">
+      <span>日期 <b>2026-09-06</b></span>
+      <span>分支 <b>feat/nexus-web-console</b></span>
+      <span>用例 <b>12</b> / 12 PASS</span>
+    </div>
+    <div class="bar"><i style="width:100%"></i></div>
+  </div>
+
+  <div class="grid">
+    <div class="stat"><div class="v">12/12</div><div class="l">AC 通过率</div></div>
+    <div class="stat"><div class="v">25/25</div><div class="l">系统测试零回归</div></div>
+    <div class="stat"><div class="v">11</div><div class="l">能力域页面</div></div>
+    <div class="stat"><div class="v">44</div><div class="l">API 路由覆盖</div></div>
+    <div class="stat"><div class="v">0</div><div class="l">cargo error/warning</div></div>
+    <div class="stat"><div class="v">190KB</div><div class="l">前端 bundle</div></div>
+  </div>
+
+  <h2>验证矩阵</h2>
+  <table>
+    <tr><th>AC</th><th>验收项</th><th>验证方法</th><th>结果</th></tr>
+    <tr><td>AC1</td><td>Docker 首页可访问（ServeDir 生效）</td><td><code>curl -s -o/dev/null -w "%{http_code}" localhost:8765/</code></td><td><span class="pill pass">200 PASS</span></td></tr>
+    <tr><td>AC2</td><td>11 个能力域页面可导航</td><td>playwright 逐页 hash 路由截图</td><td><span class="pill pass">11/11 PASS</span></td></tr>
+    <tr><td>AC3</td><td>登录鉴权闭环</td><td>POST /v1/auth/login → JWT → localStorage → Shell 渲染</td><td><span class="pill pass">PASS</span></td></tr>
+    <tr><td>AC4</td><td>后端编译零错误零警告</td><td><code>cargo check -p nexus-control</code></td><td><span class="pill pass">0/0 PASS</span></td></tr>
+    <tr><td>AC5</td><td>前端构建零错误</td><td><code>npm run build</code> (tsc -b + vite)</td><td><span class="pill pass">44 modules PASS</span></td></tr>
+    <tr><td>AC6</td><td>Docker 镜像含 web-dist</td><td>deploy.sh 全流程 + compose up healthy</td><td><span class="pill pass">PASS</span></td></tr>
+    <tr><td>AC7</td><td>静态文件不经鉴权（API 优先）</td><td>/ 返回 index.html；/v1/* 仍需 Bearer</td><td><span class="pill pass">PASS</span></td></tr>
+    <tr><td>AC8</td><td>主题切换（深/浅双主题）</td><td>localStorage nexus.theme 持久化</td><td><span class="pill pass">PASS</span></td></tr>
+    <tr><td>AC9</td><td>WS 时间线增量推送</td><td>openThreadStream → 实时事件追加</td><td><span class="pill pass">PASS</span></td></tr>
+    <tr><td>AC10</td><td>M1–M19 全部 API 可达</td><td>sys-test 25/25 零回归</td><td><span class="pill pass">25/25 PASS</span></td></tr>
+    <tr><td>AC11</td><td>roadmap_progress 更新</td><td>M0→M0–M19 全完成 + Web</td><td><span class="pill pass">PASS</span></td></tr>
+    <tr><td>AC12</td><td>一键部署可复现</td><td>deploy.sh --purge → deploy.sh 全流程</td><td><span class="pill pass">PASS</span></td></tr>
+  </table>
+
+  <h2>系统测试零回归（25/25）</h2>
+  <div class="note"><b>关键证据</b>：<code>scripts/sys-test.sh</code> 端到端 25 用例 Docker 全 PASS，覆盖 M1–M19 全里程碑（login/auth-me/thread CRUD/M3 审批闭环/M4 计量/M6 策略/M10 审计/M11 timeline/M12 eval/M13 KB/M14 fork/M15 pool/M16 连接器/M17 skills/M18 协作 3 模式/M19 MCP echo）。Web 控制台改动为外科手术式（ServeDir fallback + 前端新建文件），44 路由 handler 零触碰。</div>
+  <table>
+    <tr><th>用例</th><th>状态</th><th>详情</th></tr>
+    <tr><td>M1-login</td><td><span class="pill pass">PASS</span></td><td class="mono">JWT len=183</td></tr>
+    <tr><td>M1-auth-me</td><td><span class="pill pass">PASS</span></td><td class="mono">200 perms=['*:*']</td></tr>
+    <tr><td>M3-approval-loop</td><td><span class="pill pass">PASS</span></td><td class="mono">approval=17 approve→completed</td></tr>
+    <tr><td>M4-usage</td><td><span class="pill pass">PASS</span></td><td class="mono">200</td></tr>
+    <tr><td>M6-policy-rules/feedback</td><td><span class="pill pass">PASS</span></td><td class="mono">200</td></tr>
+    <tr><td>M10-audit-logs</td><td><span class="pill pass">PASS</span></td><td class="mono">200</td></tr>
+    <tr><td>M11-timeline</td><td><span class="pill pass">PASS</span></td><td class="mono">200</td></tr>
+    <tr><td>M13-kbs</td><td><span class="pill pass">PASS</span></td><td class="mono">200</td></tr>
+    <tr><td>M15-pool</td><td><span class="pill pass">PASS</span></td><td class="mono">pool=4 warmed=4 free=4</td></tr>
+    <tr><td>M18-orch(3 mode)</td><td><span class="pill pass">PASS</span></td><td class="mono">orch 7/8/9 completed</td></tr>
+    <tr><td>M19-mcp-echo/quality</td><td><span class="pill pass">PASS</span></td><td class="mono">mcp=true echo:verify score=1.0</td></tr>
+    <tr><td colspan="2" style="color:var(--mut)">…（共 25 项）</td><td><span class="pill ok">25/25</span></td></tr>
+  </table>
+
+  <h2>页面截图</h2>
+  <div class="shots">
+    <figure><figcaption>01 — 登录页</figcaption><img src="nexus-web-shots/01-login.png"></figure>
+    <figure><figcaption>总览页（里程碑矩阵+架构）</figcaption><img src="nexus-web-shots/overview.png"></figure>
+    <figure><figcaption>会话时间线（WS 增量）</figcaption><img src="nexus-web-shots/threads.png"></figure>
+    <figure><figcaption>审批中心</figcaption><img src="nexus-web-shots/approvals.png"></figure>
+    <figure><figcaption>协作编排（3 模式）</figcaption><img src="nexus-web-shots/orchestration.png"></figure>
+    <figure><figcaption>知识库 RAG</figcaption><img src="nexus-web-shots/kb.png"></figure>
+    <figure><figcaption>技能市场</figcaption><img src="nexus-web-shots/skills.png"></figure>
+    <figure><figcaption>连接器市场（MCP）</figcaption><img src="nexus-web-shots/connectors.png"></figure>
+    <figure><figcaption>用量计量</figcaption><img src="nexus-web-shots/usage.png"></figure>
+    <figure><figcaption>策略中心</figcaption><img src="nexus-web-shots/policy.png"></figure>
+    <figure><figcaption>评测中心</figcaption><img src="nexus-web-shots/evals.png"></figure>
+    <figure><figcaption>审计日志（WORM）</figcaption><img src="nexus-web-shots/audit.png"></figure>
+  </div>
+
+  <h2>GAP 审查与修复</h2>
+  <table>
+    <tr><th>维度</th><th>审查前</th><th>修复后</th></tr>
+    <tr><td>首页</td><td>404（从不服务静态文件）</td><td><span class="pill ok">ServeDir fallback → 200</span></td></tr>
+    <tr><td>前端覆盖</td><td>3 文件 3 视图（M1–M4）</td><td><span class="pill ok">11 页企业控制台</span></td></tr>
+    <tr><td>里程碑前端</td><td>M6–M19 零前端</td><td><span class="pill ok">13 里程碑全覆盖</span></td></tr>
+    <tr><td>Docker 镜像</td><td>不含前端</td><td><span class="pill ok">web-dist 入镜像</span></td></tr>
+    <tr><td>roadmap_progress</td><td>停在 M0</td><td><span class="pill ok">M0–M19 全完成</span></td></tr>
+  </table>
+
+  <div class="note" style="margin-top:24px"><b>结论</b>：Nexus Web 控制台 GAP 全部补齐。后端 ServeDir 静态服务（0 error）+ 前端 11 页企业控制台（44 modules 构建）+ Docker 镜像集成 + 25/25 系统测试零回归。用户反馈"首页没有、不像企业级平台"的 GAP 已完全消除。</div>
+</div>
+</body>
+</html>
