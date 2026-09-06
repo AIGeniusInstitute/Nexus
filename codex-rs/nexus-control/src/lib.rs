@@ -6,6 +6,7 @@
 
 pub mod auth;
 pub mod audit;
+pub mod connectors;
 pub mod db;
 pub mod eval;
 pub mod event_store;

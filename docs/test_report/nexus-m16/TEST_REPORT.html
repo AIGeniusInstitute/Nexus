@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus M16 测试报告 — 连接器生态市场</title>
+<style>
+  :root[data-theme="dark"]{--bg:#0d1117;--panel:#161b22;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--gold:#d29922;--green:#3fb950;--red:#f85149;--border:#30363d;--code:#0d1117}
+  :root[data-theme="light"]{--bg:#f6f8fa;--panel:#fff;--text:#1f2328;--muted:#656d76;--accent:#0969da;--gold:#9a6700;--green:#1a7f37;--red:#cf222e;--border:#d0d7de;--code:#f6f8fa}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;transition:background .2s,color .2s}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 80px}
+  header{border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:28px}
+  h1{margin:0 0 6px;font-size:1.7em;color:var(--accent)}
+  h2{color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:36px}
+  .meta{color:var(--muted);font-size:.92em}
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.78em;font-weight:600}
+  .pass{background:rgba(63,185,80,.15);color:var(--green);border:1px solid var(--green)}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 20px;margin-bottom:24px}
+  .toc a{color:var(--accent);text-decoration:none}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.92em}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+  th{background:var(--panel);color:var(--gold)}
+  tr:nth-child(even){background:var(--panel)}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-size:.84em;line-height:1.45}
+  code{color:var(--accent)} pre code{color:var(--text)}
+  .ev{margin:10px 0}.ev .lab{color:var(--gold);font-weight:600;font-size:.85em;margin-bottom:4px}
+  .theme-btn{position:fixed;top:14px;right:16px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.85em}
+  .prog{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:99;width:0}
+  .svg-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin:16px 0}
+  details{margin:8px 0} summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0}
+</style>
+</head>
+<body>
+<div class="prog" id="prog"></div>
+<button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+<div class="wrap">
+<header>
+  <h1>Nexus M16 测试报告 — 连接器生态市场</h1>
+  <div class="meta">里程碑 M16（roadmap T12-2 连接器治理层）· 分支 <code>feat/nexus-m16</code> · base M15 merge <code>f54a59f</code> · 2026-09-06 · 守护：DeepThink</div>
+  <p class="meta"><span class="pill pass">cargo check 0e0w</span> &nbsp; <span class="pill pass">cargo test 32/32</span> &nbsp; <span class="pill pass">e2e AC1–8 PASS</span></p>
+</header>
+
+<div class="toc"><strong>目录</strong>
+  <ol><li><a href="#summary">交付摘要</a></li><li><a href="#flow">数据流</a></li><li><a href="#ac">验收矩阵</a></li><li><a href="#evidence">证据</a></li><li><a href="#regress">零回归</a></li><li><a href="#decisions">关键决策</a></li></ol>
+</div>
+
+<h2 id="summary">1. 交付摘要</h2>
+<p>M16 为连接器目录构建<strong>元数据 + 治理层</strong>：社区贡献流程（draft→published→offline）、分级标签（official/enterprise/community）、质量分（基于 tool_call_logs 成功率）、调用代理骨架（stub 记录 intent，真实 MCP 转发留 T7-1）。<strong>纯增量</strong>，不触碰 turn_start/drain/runtime/gateway。</p>
+<ul>
+  <li><code>migrations/20260906000011_m16_connector_market.sql</code>：ALTER connectors 加 tier/status/quality_score/contributor_user_id/description/updated_at；ALTER tool_call_logs 加 success/connector_id</li>
+  <li><code>connectors.rs</code>（新）：ConnectorRow/ToolCallRow + create/list/get/update/set_status/delete/compute_quality/invoke_stub/list_calls + quality_formula 单测</li>
+  <li><code>http_server.rs</code>：9 路由 + 10 handler + map_conn_err 错误映射（404/409/400/500）</li>
+</ul>
+
+<h2 id="flow">2. 数据流</h2>
+<div class="svg-wrap">
+<svg viewBox="0 0 940 280" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="monospace" font-size="12">
+  <defs><marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#d29922"/></marker></defs>
+  <rect x="10" y="10" width="920" height="260" fill="none" stroke="#30363d"/>
+  <text x="24" y="32" fill="#58a6ff" font-weight="bold">连接器治理层：贡献→审批→发布→调用→质量分</text>
+  <rect x="30" y="50" width="150" height="70" rx="6" fill="#161b22" stroke="#3fb950"/>
+  <text x="105" y="75" text-anchor="middle" fill="#3fb950" font-weight="bold">贡献者</text>
+  <text x="105" y="95" text-anchor="middle" fill="#8b949e">POST create</text>
+  <text x="105" y="112" text-anchor="middle" fill="#3fb950">status=draft</text>
+  <path d="M180,85 L240,85" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <rect x="245" y="50" width="140" height="70" rx="6" fill="#161b22" stroke="#d29922"/>
+  <text x="315" y="75" text-anchor="middle" fill="#d29922" font-weight="bold">admin 审批</text>
+  <text x="315" y="95" text-anchor="middle" fill="#8b949e">POST publish</text>
+  <text x="315" y="112" text-anchor="middle" fill="#d29922">draft→published</text>
+  <path d="M385,85 L445,85" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <rect x="450" y="50" width="150" height="70" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="525" y="75" text-anchor="middle" fill="#58a6ff" font-weight="bold">调用代理 stub</text>
+  <text x="525" y="95" text-anchor="middle" fill="#8b949e">POST invoke</text>
+  <text x="525" y="112" text-anchor="middle" fill="#58a6ff">tool_call_logs</text>
+  <path d="M600,85 L660,85" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <rect x="665" y="50" width="240" height="70" rx="6" fill="#161b22" stroke="#3fb950" stroke-width="2"/>
+  <text x="785" y="75" text-anchor="middle" fill="#3fb950" font-weight="bold">质量分</text>
+  <text x="785" y="95" text-anchor="middle" fill="#8b949e">GET quality</text>
+  <text x="785" y="112" text-anchor="middle" fill="#3fb950">success/total → score</text>
+  <rect x="30" y="150" width="875" height="105" rx="6" fill="#161b22" stroke="#30363d" stroke-dasharray="4,3"/>
+  <text x="50" y="175" fill="#58a6ff" font-weight="bold">治理规则</text>
+  <text x="50" y="198" fill="#8b949e">• 分级 tier: official / enterprise / community（默认 community）</text>
+  <text x="50" y="218" fill="#8b949e">• 状态流转: draft→published→offline（单向；publish/offline 需 admin *:*；invalid transition→400）</text>
+  <text x="50" y="238" fill="#8b949e">• 质量分: COUNT(success=true)/NULLIF(COUNT(*),0)，total=0→0.0；invoke stub 全记录 tool_call_logs</text>
+  <text x="50" y="258" fill="#f85149">• 删除约束: 有 tool_call_logs→409 in_use（保留审计 trail）；真实 MCP 转发留 T7-1</text>
+</svg>
+</div>
+
+<h2 id="ac">3. 验收矩阵 AC1–8</h2>
+<table>
+  <tr><th>AC</th><th>验收点</th><th>状态</th></tr>
+  <tr><td>AC1</td><td>POST create（draft/community/quality=0.0）+ GET list 本租户隔离</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC2</td><td>PUT update（name/tier/description/config）+ 跨租户 404（WHERE tenant_id）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC3</td><td>POST publish（admin→published；非 admin 403；draft 才能 publish）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC4</td><td>POST offline（published→offline；invalid transition 400）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC5</td><td>POST invoke 记 tool_call_logs + GET calls 返回历史</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC6</td><td>GET quality 返回 success/total（2/3=0.667）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC7</td><td>DELETE 有 calls→409 in_use / 无 calls→200</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC8</td><td>零回归：M3 审批闭环 + M4 计量 + M15 warm pool + M14 fork 不退化</td><td><span class="pill pass">PASS</span></td></tr>
+</table>
+
+<h2 id="evidence">4. 证据</h2>
+<div class="ev"><div class="lab">AC1 create（id=1, draft, quality=0.0）</div>
+<pre><code>$ POST /v1/connectors {"name":"weather-api","kind":"mcp","tier":"community"}
+  {"id":1,"tenant_id":1,"name":"weather-api","tier":"community","status":"draft",
+   "quality_score":0.0,"contributor_user_id":3,"config_json":{...}}
+$ GET /v1/connectors → count=1 [1 weather-api community draft]</code></pre></div>
+
+<div class="ev"><div class="lab">AC2 update + AC3 publish + AC4 offline</div>
+<pre><code>$ PUT /v1/connectors/1 {"description":"v2","tier":"enterprise"}
+  desc=天气查询连接器 v2 tier=enterprise
+$ POST /v1/connectors/1/publish → status=published
+$ POST /v1/connectors/1/offline → status=offline
+$ POST /v1/connectors/1/publish (offline→published) → 400 invalid transition</code></pre></div>
+
+<div class="ev"><div class="lab">AC5 invoke x3 + AC6 quality（2/3=0.667）</div>
+<pre><code>$ POST /v1/connectors/2/invoke {"tool":"query","success":true} → call_id=1
+$ POST /v1/connectors/2/invoke {"tool":"query","success":true} → call_id=2
+$ POST /v1/connectors/2/invoke {"tool":"query","success":false} → call_id=3
+$ GET /v1/connectors/2/calls → calls=3 [3 False, 2 True, 1 True]
+$ GET /v1/connectors/2/quality → {"connector_id":2,"quality_score":0.6666666666666666}</code></pre></div>
+
+<div class="ev"><div class="lab">AC7 删除约束</div>
+<pre><code>$ DELETE /v1/connectors/2 (有 3 calls) → 409 in_use: 3 tool_call_logs exist
+$ DELETE /v1/connectors/1 (offline 无 calls) → 200 {"deleted":1}</code></pre></div>
+
+<div class="ev"><div class="lab">AC8 零回归：M3 审批闭环 + M4 计量 + M15 pool + M14 fork</div>
+<pre><code>$ POST /v1/threads/{id}/turns → approval 7 pending (SIMULATE park)
+$ POST /v1/approvals/7/resolve {"decision":"approve"} → approved
+$ turn → status=completed                      ← M3 审批闭环不退化
+$ GET /v1/usage?days=1 → input=10 output=20   ← M4 计量不退化
+$ GET /v1/runtime/pool → {"warmed":1,...}      ← M15 warm pool 不退化
+$ GET /v1/threads/{id}/snapshots → 200          ← M14 fork 不退化
+$ GET /v1/connectors → conn2 published quality=0.667  ← M16 自身</code></pre></div>
+
+<h2 id="regress">5. 零回归</h2>
+<ul>
+  <li>cargo test 32/32（M15 31 + connectors 1，无回退）</li>
+  <li>M3 审批闭环（SIMULATE park → resolve approve → turn completed）不退化</li>
+  <li>M4 计量（usage mock 10/20）不退化</li>
+  <li>M15 warm pool（warmed=1）不退化</li>
+  <li>M14 fork 端点正常</li>
+  <li>M16 未触碰 turn_start/drain/runtime/gateway（纯增量新模块+路由+migration）</li>
+</ul>
+
+<h2 id="decisions">6. 关键决策</h2>
+<details><summary>6.1 纯增量，不碰核心路径（Simplicity First + 外科手术）</summary>
+<p>connectors.rs 全新模块 + migration ALTER 加字段 + 9 路由，不重构 turn_start/drain/runtime/gateway。turn_start 的 260 行 drain 循环零触碰。真实 MCP 转发（T7-1 执行面）未交付，invoke stub 记 tool_call_logs 验证调用链路 + 质量分数据源。</p>
+</details>
+<details><summary>6.2 删除约束保留审计 trail</summary>
+<p>有 tool_call_logs 的连接器拒绝删除（409 in_use），调用历史作为质量分数据源 + 审计证据不可丢。无调用的连接器可删（200）。</p>
+</details>
+<details><summary>6.3 质量分用 PG COUNT FILTER + NULLIF</summary>
+<p><code>COUNT(*) FILTER (WHERE success=true) / NULLIF(COUNT(*),0)</code> 单查询算比率，total=0 时 NULLIF→NULL→coalesce 0.0。Rust 侧 quality_formula 单测覆盖 0/0、2/3、3/3、0/5 四例。</p>
+</details>
+<details><summary>6.4 publish/offline 治理权 vs CRUD 本租户</summary>
+<p>目录 CRUD（create/list/get/update/delete/invoke/calls/quality）本租户即可（贡献者提交 draft）；上下线治理（publish/offline）需 admin（<code>*:*</code>）——社区贡献→admin 审批发布的治理语义。状态流转单向（draft→published→offline），invalid transition→400。</p>
+</details>
+<details><summary>6.5 选型理由：T12-2 而非 T11-4 协作编排</summary>
+<p>审查阶段评估两维度：T11-4 多 Agent 协作编排需 drain 逻辑抽取（触碰核心 260 行）+ 编排状态机 + DriverCommand 扩展 + 验证依赖真实/模拟多 turn 链，风险中、自主验证成本高，留 M17。T12-2 零重构、零外部依赖、schema 已铺路（connectors/mcp_servers/tool_call_logs 表已存在）、高可验证，风险低，作为 M16 自主完成。</p>
+</details>
+
+<footer style="margin-top:40px;border-top:1px solid var(--border);padding-top:12px;color:var(--muted);font-size:.85em">
+  DeepThink · Nexus M16 连接器生态市场（roadmap T12-2）· 2026-09-06 · 纯增量：connectors.rs + migration + 9 路由（不碰 turn_start/drain/runtime）
+</footer>
+</div>
+<script>
+function toggleTheme(){var d=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',d==='dark'?'light':'dark')}
+window.addEventListener('scroll',function(){var h=document.documentElement.scrollHeight-window.innerHeight;document.getElementById('prog').style.width=(h>0?window.scrollY/h*100:0)+'%'});
+</script>
+</body>
+</html>
