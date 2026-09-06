@@ -78,6 +78,9 @@ pub struct TurnEvent {
     /// M3: present only for `approval/requested` events. Carries the
     /// Nexus-side approval id + the command/cwd/kind for ticket persistence.
     pub approval: Option<ApprovalInfo>,
+    /// M7: present only for `execpolicy/amendment` events. The argv prefix
+    /// the human accepted as an amendment (to be merged into policies).
+    pub amendment: Option<Vec<String>>,
 }
 
 /// M3: approval metadata carried on an `approval/requested` TurnEvent.
@@ -89,6 +92,8 @@ pub struct ApprovalInfo {
     pub cwd: Option<String>,
     pub reason: Option<String>,
     pub raw_params: Value,
+    /// M7: app-server-proposed execpolicy amendment (argv prefix), if any.
+    pub proposed_amendment: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -347,6 +352,7 @@ fn driver_loop(
                     usage: None,
                     is_turn_completed: false,
                     approval: None,
+                    amendment: None,
                 });
 
                 let turn_resp = match p.turn_start(TurnStartParams {
@@ -384,6 +390,13 @@ fn driver_loop(
                     // 策略自学习（3 次 deny → 学习 deny 规则）。
                     let sim_command = std::env::var("NEXUS_SIMULATE_COMMAND")
                         .unwrap_or_else(|_| "rm -rf /tmp/nexus-sim".into());
+                    // M7: app-server-proposed execpolicy amendment (argv prefix
+                    // to allow without prompting). Default ["ls"]. Set
+                    // NEXUS_SIMULATE_AMENDMENT_COMMAND='["npm","install"]' to demo.
+                    let sim_amendment: Vec<String> = std::env::var("NEXUS_SIMULATE_AMENDMENT_COMMAND")
+                        .ok()
+                        .and_then(|s| serde_json::from_str::<Vec<String>>(&s).ok())
+                        .unwrap_or_else(|| vec!["ls".to_string()]);
                     seq += 1;
                     let _ = event_tx.send(TurnEvent {
                         thread_id,
@@ -410,12 +423,37 @@ fn driver_loop(
                                 "command": sim_command,
                                 "simulated": true,
                             }),
+                            proposed_amendment: Some(sim_amendment.clone()),
                         }),
+                        amendment: None,
                     });
                     // Park until resolve / interrupt.
                     match park_for_decision(&cmd_rx, approval_id) {
                         Some(decision) => {
                             tracing::info!(?decision, "simulated approval resolved");
+                            // M7: if the human accepted the proposed amendment,
+                            // emit an execpolicy/amendment event so the async
+                            // side merges it into policies + refreshes .rules.
+                            if let DecisionInput::ApproveWithAmendment { command } = &decision {
+                                seq += 1;
+                                let _ = event_tx.send(TurnEvent {
+                                    thread_id,
+                                    turn_db_id,
+                                    seq,
+                                    item_type: "execpolicy/amendment".into(),
+                                    codex_item_id: Some(format!("sim-item-{approval_id}")),
+                                    content_ref: Some(command.join(" ")),
+                                    raw_json: serde_json::json!({
+                                        "amendment": command,
+                                        "simulated": true,
+                                    }),
+                                    usage: None,
+                                    codex_thread_id: None,
+                                    is_turn_completed: false,
+                                    approval: None,
+                                    amendment: Some(command.clone()),
+                                });
+                            }
                             // M4: 注入合成 tokenUsage（input=10/output=20/
                             // model=nexus-gateway-mock），使 usage_records 落库
                             // + cost 推导可端到端验证，无需真实模型。
@@ -440,6 +478,7 @@ fn driver_loop(
                                 codex_thread_id: None,
                                 is_turn_completed: false,
                                 approval: None,
+                                amendment: None,
                             });
                             seq += 1;
                             let _ = event_tx.send(TurnEvent {
@@ -454,6 +493,7 @@ fn driver_loop(
                                 codex_thread_id: None,
                                 is_turn_completed: true,
                                 approval: None,
+                                amendment: None,
                             });
                         }
                         None => {
@@ -470,6 +510,7 @@ fn driver_loop(
                                 codex_thread_id: None,
                                 is_turn_completed: true,
                                 approval: None,
+                                amendment: None,
                             });
                         }
                     }
@@ -528,7 +569,9 @@ fn driver_loop(
                                     cwd: ar.cwd.clone(),
                                     reason: ar.reason.clone(),
                                     raw_params: ar.raw_params.clone(),
+                                    proposed_amendment: ar.proposed_amendment.clone(),
                                 }),
+                                amendment: None,
                             });
                             // Park: remember the jsonrpc_id + kind to write back.
                             parked = Some(ParkedApproval {
@@ -570,6 +613,7 @@ fn driver_loop(
                         codex_thread_id: None,
                         is_turn_completed: is_completed,
                         approval: None,
+                        amendment: None,
                     });
 
                     if is_completed {
@@ -617,8 +661,33 @@ fn park_real_approval(
             Ok(DriverCommand::ResolveApproval { approval_id, decision })
                 if approval_id == pa.approval_id =>
             {
+                // M7: capture amendment command before moving `decision`.
+                let amendment_cmd: Option<Vec<String>> = match &decision {
+                    DecisionInput::ApproveWithAmendment { command } => Some(command.clone()),
+                    _ => None,
+                };
                 match p.respond_approval(pa.jsonrpc_id.clone(), pa.kind.clone(), decision) {
-                    Ok(()) => return ParkOutcome::Resolved,
+                    Ok(()) => {
+                        // M7: emit execpolicy/amendment event for the async
+                        // side to merge into policies + refresh .rules.
+                        if let Some(cmd) = amendment_cmd {
+                            let _ = event_tx.send(TurnEvent {
+                                thread_id,
+                                turn_db_id,
+                                seq: 0,
+                                item_type: "execpolicy/amendment".into(),
+                                codex_item_id: None,
+                                content_ref: Some(cmd.join(" ")),
+                                raw_json: serde_json::json!({"amendment": cmd}),
+                                usage: None,
+                                codex_thread_id: None,
+                                is_turn_completed: false,
+                                approval: None,
+                                amendment: Some(cmd),
+                            });
+                        }
+                        return ParkOutcome::Resolved;
+                    }
                     Err(e) => {
                         tracing::error!(error = %e, "respond_approval failed");
                         emit_error(event_tx, thread_id, turn_db_id, 0, &e);
@@ -649,6 +718,7 @@ fn park_real_approval(
                     codex_thread_id: None,
                     is_turn_completed: true,
                     approval: None,
+                    amendment: None,
                 });
                 return ParkOutcome::Interrupted;
             }
@@ -749,5 +819,6 @@ fn emit_error(
         codex_thread_id: None,
         is_turn_completed: true,
         approval: None,
+        amendment: None,
     });
 }

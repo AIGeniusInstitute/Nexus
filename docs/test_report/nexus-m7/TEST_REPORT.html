@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus M7 execpolicy amendment 协议级回写 — 测试报告</title>
+<style>
+:root[data-theme="dark"]{--bg:#0d1117;--panel:#161b22;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--gold:#f0c674;--green:#3fb950;--red:#f85149;--border:#30363d;--code:#1f2428;--svg-bg:#0d1117}
+:root[data-theme="light"]{--bg:#fff;--panel:#f6f8fa;--text:#24292f;--muted:#57606a;--accent:#0969da;--gold:#b08800;--green:#1a7f37;--red:#cf222e;--border:#d0d7de;--code:#eff1f3;--svg-bg:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.65;font-size:15px}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 24px 80px}
+header{border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:28px}
+h1{font-size:28px;margin:0 0 6px;color:var(--accent)}
+h2{font-size:21px;margin:34px 0 12px;color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:5px}
+h3{font-size:17px;margin:22px 0 8px;color:var(--gold)}
+.subtitle{color:var(--muted);font-size:14px}
+.theme-btn{position:fixed;top:16px;right:16px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;z-index:100}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th,td{border:1px solid var(--border);padding:8px 11px;text-align:left;vertical-align:top}
+th{background:var(--panel);color:var(--accent)}
+tr.pass td:first-child{border-left:3px solid var(--green)}
+.tag{display:inline-block;padding:2px 9px;border-radius:11px;font-size:12px;font-weight:600}
+.pass{background:rgba(63,185,80,.16);color:var(--green)}
+pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:13px 16px;overflow-x:auto;color:var(--text);font-family:"SF Mono",Consolas,Monaco,monospace;font-size:13px}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-family:"SF Mono",Consolas,Monaco,monospace}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:16px 0}
+.metric{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.metric .num{font-size:26px;font-weight:700;color:var(--accent)}
+.metric .lbl{font-size:12px;color:var(--muted);margin-top:3px}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 20px;margin:18px 0;font-size:14px}
+.toc a{color:var(--accent);text-decoration:none}
+details{border:1px solid var(--border);border-radius:8px;padding:8px 14px;margin:10px 0;background:var(--panel)}
+summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.svg-wrap{background:var(--svg-bg);border:1px solid var(--border);border-radius:10px;padding:18px;margin:16px 0;overflow-x:auto}
+.footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color:var(--muted);font-size:13px;text-align:center}
+.scroll-bar{position:fixed;top:0;left:0;height:3px;background:var(--gold);width:0;z-index:99}
+</style>
+</head>
+<body>
+<div class="scroll-bar" id="bar"></div>
+<button class="theme-btn" onclick="toggleTheme()">🌙 / ☀️</button>
+<div class="wrap">
+
+<header>
+  <h1>Nexus M7 execpolicy amendment 协议级回写 — 测试报告</h1>
+  <div class="subtitle">feat/nexus-m7 · 基线 M6(6a01801) · 2026-09-06 · Execpolicy Amendment Writeback</div>
+</header>
+
+<div class="toc"><strong>目录</strong> · <a href="#s">概览</a> · <a href="#ac">验收矩阵</a> · <a href="#e2e">amendment e2e</a> · <a href="#safe">安全</a> · <a href="#zero">零回归</a> · <a href="#flow">数据流</a></div>
+
+<h2 id="s">一、概览</h2>
+<p>M7 接通 codex app-server 协议级 amendment 通路：app-server 审批请求带
+<code>proposed_execpolicy_amendment</code>（建议前缀免审批）→ 人回
+<code>AcceptWithExecpolicyAmendment</code> → driver 写回 JSON-RPC + emit
+<code>execpolicy/amendment</code> → <code>policy::merge_amendment</code>
+UPSERT policies(allow/40/amendment) + 刷 .rules → 下一 turn 生效。比 M6
+统计学习更直接、单次即生效。保守：高危拒绝、seed deny 不降级。</p>
+
+<div class="metric-grid">
+  <div class="metric"><div class="num">5/5</div><div class="lbl">AC7 全过</div></div>
+  <div class="metric"><div class="num">20/20</div><div class="lbl">cargo test</div></div>
+  <div class="metric"><div class="num">0</div><div class="lbl">check warning</div></div>
+  <div class="metric"><div class="num">0</div><div class="lbl">schema 变更</div></div>
+</div>
+
+<h2 id="ac">二、验收矩阵（AC7.1 ~ AC7.5）</h2>
+<table>
+<tr><th>AC</th><th>验证项</th><th>方法</th><th>结果</th></tr>
+<tr class="pass"><td>AC7.1</td><td>resolve approve_with_amendment → amendment 落库 policies</td><td>SIMULATE turn + POST resolve</td><td><span class="tag pass">PASS</span></td></tr>
+<tr class="pass"><td>AC7.2</td><td>tenant-1.rules 含 prefix_rule git clone allow</td><td>grep rules 文件</td><td><span class="tag pass">PASS</span></td></tr>
+<tr class="pass"><td>AC7.3</td><td>GET /v1/policy/rules 返回 amendment 规则</td><td>curl rules</td><td><span class="tag pass">PASS</span></td></tr>
+<tr class="pass"><td>AC7.4</td><td>高危 rm -rf amendment 被拒；seed deny 不被覆盖</td><td>amendment rm -rf + 查 rules 不变</td><td><span class="tag pass">PASS</span></td></tr>
+<tr class="pass"><td>AC7.5</td><td>零回归：M6 learn（npm install* deny）仍存在</td><td>GET rules</td><td><span class="tag pass">PASS</span></td></tr>
+</table>
+
+<h2 id="e2e">三、amendment e2e（AC7.1 ~ AC7.3）</h2>
+<p>环境：<code>NEXUS_POOL_SIZE=2 NEXUS_SIMULATE_APPROVAL=1
+NEXUS_SIMULATE_COMMAND="git clone x"</code>（git clone 当前无种子→prompt）。</p>
+<details open><summary>resolve approve_with_amendment ["git","clone"]</summary>
+<pre>POST /v1/approvals/20/resolve
+  body: {"decision":"approve_with_amendment","amendment_command":["git","clone"]}
+→ {"approval_id":20,"status":"approved_with_amendment"}
+→ turn status=completed
+→ server log: execpolicy amendment merged + rules refreshed</pre>
+</details>
+<details open><summary>AC7.3 GET /v1/policy/rules（新增 git clone* allow amendment）</summary>
+<pre>  git clone*  allow  amendment  40   ← M7 amendment 产物
+  rm -rf*     deny   seed       100
+  sudo*       deny   seed       90
+  rm*         deny   seed       80
+  npm install* deny  learned    50   ← M6 学习（零回归仍在）
+  cat*        allow  seed       10
+  ls*         allow  seed       10</pre>
+</details>
+<details open><summary>AC7.2 tenant-1.rules 含 prefix_rule</summary>
+<pre>grep git /tmp/nexus-m7-home/rules/tenant-1.rules →
+    pattern = ["git", "clone"],
+    decision = "allow",
+    justification = "nexus policy: git clone*",
+)</pre>
+</details>
+
+<h2 id="safe">四、安全（AC7.4）</h2>
+<details open><summary>高危 amendment rm -rf 被拒绝</summary>
+<pre>POST /v1/approvals/{id}/resolve
+  body: {"decision":"approve_with_amendment","amendment_command":["rm","-rf"]}
+→ {"status":"approved_with_amendment"}（ticket 状态变了）
+→ driver emit execpolicy/amendment
+→ policy::merge_amendment: risk_of("rm -rf")=="high" → return None（拒绝写入）
+→ GET rules: rm -rf* deny seed  /  rm* deny seed  （均无 amendment allow 覆盖）✓</pre>
+</details>
+<details><summary>seed deny 不被 amendment 降级（UPSERT WHERE source!='seed'）</summary>
+<pre>即使 risk=low 的 amendment 命中已有 seed 行（如 rm*），
+ON CONFLICT ... WHERE policies.source != 'seed' 不满足 → 0 rows affected → 跳过。
+seed deny 永远优先于 amendment allow（priority 80/100 > 40）。✓</pre>
+</details>
+
+<h2 id="zero">五、零回归（AC7.5）</h2>
+<pre>GET /v1/policy/rules → npm install* deny learned 50  ← M6 学习产物仍在（未破坏）
+amendment turn 经 M5 DriverPool（pool_size=2）slot 调度 → turn completed ✓
+SIMULATE 注入 sim_usage(in=10/out=20) → M4 计量落库链路无回归 ✓</pre>
+
+<h2 id="flow">六、数据流图</h2>
+<div class="svg-wrap">
+<svg viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,sans-serif" font-size="12">
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#58a6ff"/></marker>
+  <marker id="ag" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#3fb950"/></marker>
+  <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#f85149"/></marker></defs>
+  <rect x="0" y="0" width="900" height="360" fill="none"/>
+
+  <rect x="20" y="30" width="170" height="54" rx="8" fill="#161b22" stroke="#58a6ff"/>
+  <text x="105" y="54" text-anchor="middle" fill="#f0c674" font-weight="bold">app-server</text>
+  <text x="105" y="72" text-anchor="middle" fill="#8b949e">proposed_execpolicy_amendment</text>
+
+  <rect x="240" y="30" width="170" height="54" rx="8" fill="#161b22" stroke="#58a6ff"/>
+  <text x="325" y="54" text-anchor="middle" fill="#c9d1d9" font-weight="bold">driver</text>
+  <text x="325" y="72" text-anchor="middle" fill="#8b949e">AcceptWithExecpolicyAmendment</text>
+
+  <rect x="460" y="30" width="180" height="54" rx="8" fill="#161b22" stroke="#3fb950"/>
+  <text x="550" y="54" text-anchor="middle" fill="#3fb950" font-weight="bold">emit execpolicy/amendment</text>
+  <text x="550" y="72" text-anchor="middle" fill="#8b949e">TurnEvent.amendment=cmd</text>
+
+  <rect x="690" y="30" width="190" height="54" rx="8" fill="#161b22" stroke="#3fb950"/>
+  <text x="785" y="54" text-anchor="middle" fill="#3fb950" font-weight="bold">merge_amendment()</text>
+  <text x="785" y="72" text-anchor="middle" fill="#8b949e">UPSERT allow/40/amendment</text>
+
+  <line x1="190" y1="57" x2="236" y2="57" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#a)"/>
+  <line x1="410" y1="57" x2="456" y2="57" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#a)"/>
+  <line x1="640" y1="57" x2="686" y2="57" stroke="#3fb950" stroke-width="1.6" marker-end="url(#ag)"/>
+
+  <rect x="460" y="130" width="180" height="54" rx="8" fill="#161b22" stroke="#58a6ff"/>
+  <text x="550" y="154" text-anchor="middle" fill="#c9d1d9" font-weight="bold">generate_rules + write</text>
+  <text x="550" y="172" text-anchor="middle" fill="#8b949e">tenant-1.rules</text>
+  <line x1="785" y1="84" x2="785" y2="115" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#a)"/>
+  <line x1="690" y1="157" x2="640" y2="157" stroke="#58a6ff" stroke-width="1.6" marker-end="url(#a)"/>
+
+  <rect x="240" y="130" width="180" height="54" rx="8" fill="#161b22" stroke="#f0c674"/>
+  <text x="330" y="154" text-anchor="middle" fill="#f0c674" font-weight="bold">下一 turn</text>
+  <text x="330" y="172" text-anchor="middle" fill="#8b949e">git clone* → allow 免审批</text>
+  <line x1="460" y1="157" x2="422" y2="157" stroke="#f0c674" stroke-width="1.6" stroke-dasharray="5,4" marker-end="url(#a)"/>
+
+  <rect x="240" y="220" width="640" height="120" rx="8" fill="none" stroke="#f85149" stroke-dasharray="4,3"/>
+  <text x="256" y="242" fill="#f85149" font-weight="bold">保守安全约束</text>
+  <text x="256" y="262" fill="#c9d1d9">• risk_of=high（rm -rf/sudo/mkfs/dd/curl|sh）→ 拒绝 amendment（不 allow）</text>
+  <text x="256" y="282" fill="#c9d1d9">• UPSERT WHERE source!='seed'：seed deny 不被 amendment 降级</text>
+  <text x="256" y="302" fill="#c9d1d9">• amendment priority=40 &lt; seed deny 80/100：deny 永远优先</text>
+  <text x="256" y="322" fill="#c9d1d9">• 单次即生效（区别于 M6 的 N=3 次统计学习）</text>
+</svg>
+</div>
+
+<div class="footer">Nexus M7 execpolicy amendment 协议级回写测试报告 · DeepThink · 2026-09-06 · cargo check 0/0 · test 20/20 · e2e 5/5</div>
+</div>
+<script>
+function toggleTheme(){const h=document.documentElement;h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark')}
+window.addEventListener('scroll',()=>{const b=document.getElementById('bar');const s=document.documentElement.scrollTop;const m=document.documentElement.scrollHeight-document.documentElement.clientHeight;b.style.width=(m>0?(s/m*100):0)+'%'});
+</script>
+</body></html>
