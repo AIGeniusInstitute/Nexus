@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus M11 测试报告 — 全链路 tracing + timeline 聚合</title>
+<style>
+  :root[data-theme="dark"]{--bg:#0d1117;--panel:#161b22;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--gold:#d29922;--green:#3fb950;--red:#f85149;--border:#30363d;--code:#0d1117}
+  :root[data-theme="light"]{--bg:#f6f8fa;--panel:#fff;--text:#1f2328;--muted:#656d76;--accent:#0969da;--gold:#9a6700;--green:#1a7f37;--red:#cf222e;--border:#d0d7de;--code:#f6f8fa}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;transition:background .2s,color .2s}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 80px}
+  header{border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:28px}
+  h1{margin:0 0 6px;font-size:1.7em;color:var(--accent)}
+  h2{color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:36px}
+  h3{color:var(--accent);margin-top:24px}
+  .meta{color:var(--muted);font-size:.92em}
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.78em;font-weight:600}
+  .pass{background:rgba(63,185,80,.15);color:var(--green);border:1px solid var(--green)}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 20px;margin-bottom:24px}
+  .toc a{color:var(--accent);text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.92em}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+  th{background:var(--panel);color:var(--gold)}
+  tr:nth-child(even){background:var(--panel)}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-size:.84em;line-height:1.45}
+  code{color:var(--accent)}
+  pre code{color:var(--text)}
+  .ev{margin:10px 0}
+  .ev .lab{color:var(--gold);font-weight:600;font-size:.85em;margin-bottom:4px}
+  .theme-btn{position:fixed;top:14px;right:16px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.85em}
+  .prog{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:99;width:0}
+  .svg-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin:16px 0}
+  details{margin:8px 0} summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0}
+</style>
+</head>
+<body>
+<div class="prog" id="prog"></div>
+<button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+<div class="wrap">
+<header>
+  <h1>Nexus M11 测试报告 — 全链路 tracing + timeline 聚合查询</h1>
+  <div class="meta">里程碑 M11 · 分支 <code>feat/nexus-m11</code> · base M10 merge <code>e55b57f</code> · 2026-09-06 · 守护：DeepThink</div>
+  <p class="meta"><span class="pill pass">cargo check 0e0w</span> &nbsp; <span class="pill pass">cargo test 27/27</span> &nbsp; <span class="pill pass">e2e AC11.1–11.5 PASS</span></p>
+</header>
+
+<div class="toc"><strong>目录</strong>
+  <ol><li><a href="#summary">交付摘要</a></li><li><a href="#flow">数据流</a></li><li><a href="#ac">验收矩阵</a></li><li><a href="#evidence">证据</a></li><li><a href="#regress">零回归</a></li><li><a href="#decisions">关键决策</a></li></ol>
+</div>
+
+<h2 id="summary">1. 交付摘要</h2>
+<p>M11 为 Nexus 控制面补齐<strong>可观测维度</strong>：每个 turn 生成稳定 <code>trace_id</code>（UUID，PG default），贯穿 M10 audit 埋点；新增两个只读查询 API——<strong>timeline 聚合</strong>（turns+items+approvals 按 thread_id 合并时间线）与 <strong>trace 关联</strong>（按 trace_id 聚合 audit_logs + 关联 turn）。</p>
+<ul>
+  <li>新 migration <code>20260906000007_m11_tracing.sql</code>：turns.trace_id UUID + idx_turns_trace + idx_audit_trace</li>
+  <li>新模块 <code>src/timeline.rs</code>：<code>TimelineEntry</code> + <code>thread_timeline()</code>（3 query+Rust 合并排序）+ <code>trace_lookup()</code></li>
+  <li><code>http_server.rs</code>：turn_start RETURNING trace_id；3 处埋点传 trace_id；2 路由</li>
+  <li><code>main.rs</code>：标题 "Nexus M11: serve"</li>
+</ul>
+<p><strong>不改 codex 内核</strong>（全部 nexus-control crate）。<strong>不动</strong> M3/M10 表结构（仅 turns 加列 + 填充 trace_id）。</p>
+
+<h2 id="flow">2. 数据流</h2>
+<div class="svg-wrap">
+<svg viewBox="0 0 920 360" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="monospace" font-size="12">
+  <defs><marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#d29922"/></marker></defs>
+  <rect x="10" y="10" width="900" height="340" fill="none" stroke="#30363d"/>
+  <text x="24" y="32" fill="#58a6ff" font-weight="bold">trace_id 贯穿 + timeline/trace 查询</text>
+  <rect x="30" y="60" width="200" height="50" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="130" y="82" text-anchor="middle" fill="#c9d1d9">turn_start</text>
+  <text x="130" y="100" text-anchor="middle" fill="#8b949e">INSERT turns RETURNING</text>
+  <text x="130" y="116" text-anchor="middle" fill="#8b949e">id, trace_id (UUID)</text>
+  <rect x="30" y="130" width="200" height="40" rx="6" fill="#161b22" stroke="#d29922"/>
+  <text x="130" y="155" text-anchor="middle" fill="#d29922">audit_log(trace_id=...)</text>
+  <rect x="320" y="60" width="180" height="110" rx="8" fill="#161b22" stroke="#3fb950"/>
+  <text x="410" y="85" text-anchor="middle" fill="#3fb950" font-weight="bold">turns</text>
+  <text x="410" y="105" text-anchor="middle" fill="#c9d1d9">trace_id UUID</text>
+  <text x="410" y="125" text-anchor="middle" fill="#8b949e">+items</text>
+  <text x="410" y="143" text-anchor="middle" fill="#8b949e">+approval_tickets</text>
+  <text x="410" y="161" text-anchor="middle" fill="#8b949e">+audit_logs.trace_id</text>
+  <path d="M230,85 L315,90" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <path d="M230,150 L315,130" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <rect x="580" y="60" width="280" height="50" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="720" y="82" text-anchor="middle" fill="#58a6ff">GET /v1/threads/{id}/timeline</text>
+  <text x="720" y="100" text-anchor="middle" fill="#8b949e">turns∪items∪approvals by thread_id</text>
+  <rect x="580" y="130" width="280" height="50" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="720" y="152" text-anchor="middle" fill="#58a6ff">GET /v1/traces/{trace_id}</text>
+  <text x="720" y="170" text-anchor="middle" fill="#8b949e">turn + audit_logs by trace_id</text>
+  <path d="M500,100 L575,85" stroke="#58a6ff" marker-end="url(#arr)" fill="none" stroke-dasharray="3,3"/>
+  <path d="M500,130 L575,150" stroke="#58a6ff" marker-end="url(#arr)" fill="none" stroke-dasharray="3,3"/>
+  <rect x="320" y="220" width="540" height="110" rx="8" fill="none" stroke="#d29922" stroke-dasharray="4,3"/>
+  <text x="330" y="244" fill="#d29922" font-weight="bold">trace_id 关联链：</text>
+  <text x="330" y="266" fill="#c9d1d9">turn.trace_id ──┬── audit_logs.trace_id (TEXT, M10 填充)</text>
+  <text x="330" y="286" fill="#c9d1d9">                └── trace_lookup → turn + audit 同 trace_id</text>
+  <text x="330" y="312" fill="#8b949e">timeline 不靠 trace_id（按 thread_id 聚合结构回放）</text>
+</svg>
+</div>
+
+<h2 id="ac">3. 验收矩阵 AC11.1–11.5</h2>
+<table>
+  <tr><th>AC</th><th>验收点</th><th>状态</th></tr>
+  <tr><td>AC11.1</td><td>turns.trace_id 列存在，新 turn 自动生成 UUID</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC11.2</td><td>turn.complete / approval.resolve / turn.interrupt 的 audit_logs.trace_id 非空</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC11.3</td><td>GET /v1/threads/{id}/timeline 返回 turns+items+approvals 合并时间线（ts 升序）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC11.4</td><td>GET /v1/traces/{trace_id} 返回 turn + audit_logs（同 trace_id）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC11.5</td><td>零回归：SIMULATE turn+approval+计量路径不退化</td><td><span class="pill pass">PASS</span></td></tr>
+</table>
+
+<h2 id="evidence">4. 证据</h2>
+<div class="ev"><div class="lab">cargo check / test</div>
+<pre><code>$ cargo check -p nexus-control   # 0 error 0 warning
+$ cargo test -p nexus-control     # 27 passed; 0 failed
+test timeline::tests::timeline_sort_is_stable_ascending ... ok</code></pre></div>
+
+<div class="ev"><div class="lab">AC11.1/11.2 trace_id 生成 + audit 贯穿</div>
+<pre><code>$ curl -s -X POST "$BASE/v1/threads/$TID/turns" ...
+{"codex_thread_id":"01a0752a-...","status":"completed","turn_id":35}
+$ psql -tc "SELECT trace_id FROM audit_logs WHERE action='turn.complete' ORDER BY id DESC LIMIT 1;"
+ 5ed6ea65-5caf-4237-b643-ed11fe392e79</code></pre></div>
+
+<div class="ev"><div class="lab">AC11.3 timeline</div>
+<pre><code>$ curl -s "$BASE/v1/threads/$TID/timeline" -H "$AUTH"
+ count= 3
+   turn     2026-09-06T05:20:03 34 ['model','status']
+   approval 2026-09-06T05:20:04 34 ['command','kind','policy_decision']
+   item     2026-09-06T05:20:09 34 ['content_ref','item_type','seq']</code></pre></div>
+
+<div class="ev"><div class="lab">AC11.4 trace lookup</div>
+<pre><code>$ curl -s "$BASE/v1/traces/5ed6ea65-..." -H "$AUTH"
+ turn= 35 status= completed model= nexus-gateway-mock tokens= 10 20
+ audit count= 2
+   approval.resolve trace_id= 5ed6ea65
+   turn.complete     trace_id= 5ed6ea65</code></pre></div>
+
+<h2 id="regress">5. 零回归</h2>
+<ul>
+  <li>cargo test 27/27（M10 的 26 + timeline 1，无回退）</li>
+  <li>SIMULATE turn completed + approval resolved + 计量落库（mock 10/20 tokens）</li>
+  <li>M10 audit WORM + 查询 API 路径不退化（trace_id 是新增列/字段填充，不改 audit_logs 既有列）</li>
+  <li>M9 真实模型/gateway 路径<strong>未触碰</strong>（trace_id 仅 http_server 层）</li>
+</ul>
+
+<h2 id="decisions">6. 关键决策</h2>
+<details><summary>6.1 trace_id 仅 http_server 层（不经 driver/runtime）</summary>
+<p>trace_id 在 turn_start INSERT 时由 PG default 生成，http_server 读取后传给 audit 埋点。不经 DriverCommand/TurnEvent/stdio_client——Simplicity First：M10 audit 埋点已在 http_server，trace_id 在此层贯穿即可，避免改 runtime/stdio_client 的大面积涟漪。</p>
+</details>
+<details><summary>6.2 timeline Rust 合并 3 query（非 SQL UNION）</summary>
+<p>turns/items/approval_tickets 行异构（content_ref vs command vs status），SQL UNION 需统一 cast 到 text，脆且丢类型。Rust 端 3 个 query_as 各自强类型 + sort_by(ts) 合并，清晰且类型安全。</p>
+</details>
+<details><summary>6.3 timeline 不含 audit_logs</summary>
+<p>职责分离：timeline 是结构回放（turn/item/approval 发生了什么），trace 是审计关联（谁/为什么决策）。audit 有 M10 独立查询 API + M11 trace API，不强塞进 timeline。</p>
+</details>
+<details><summary>6.4 audit_logs.trace_id 是 TEXT（bind 字符串）</summary>
+<p>M10 建 audit_logs.trace_id 为 TEXT 存 UUID 字符串。trace_lookup 的 audit query bind <code>trace_id.to_string()</code>（非 Uuid），避免 PG UUID vs text 类型不匹配；turn query bind Uuid（turns.trace_id 是 UUID）。</p>
+</details>
+<details><summary>6.5 坑：input_tokens INT4 非 INT8</summary>
+<p>trace_lookup turn query 初版声明 <code>Option&lt;i64&gt;</code> → ColumnDecode "i64 (INT8) not compatible with INT4"。turns.input_tokens 是 <code>integer</code>（INT4 NOT NULL default 0），改 i32。</p>
+</details>
+
+<footer style="margin-top:40px;border-top:1px solid var(--border);padding-top:12px;color:var(--muted);font-size:.85em">
+  DeepThink · Nexus M11 全链路 tracing + timeline 聚合 · 2026-09-06 · 所有改动在 codex-rs/nexus-control crate 内
+</footer>
+</div>
+<script>
+function toggleTheme(){var d=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',d==='dark'?'light':'dark')}
+window.addEventListener('scroll',function(){var h=document.documentElement.scrollHeight-window.innerHeight;document.getElementById('prog').style.width=(h>0?window.scrollY/h*100:0)+'%'});
+</script>
+</body>
+</html>

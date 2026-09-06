@@ -29,6 +29,7 @@ use crate::audit;
 use crate::metering;
 use crate::policy;
 use crate::runtime::{self, DriverCommand};
+use crate::timeline;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -80,6 +81,8 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/policy/rules", get(policy_rules))
         .route("/v1/audit/logs", get(audit_logs))
         .route("/v1/audit/logs/{id}", get(audit_log_get))
+        .route("/v1/threads/{id}/timeline", get(thread_timeline_handler))
+        .route("/v1/traces/{trace_id}", get(trace_lookup_handler))
         .route("/v1/ws/threads/{id}/events", get(crate::ws::ws_handler))
         .layer(middleware::from_fn_with_state(state.clone(), idempotency_layer))
         .layer(middleware::from_fn_with_state(state.clone(), user_rate_limit))
@@ -217,13 +220,14 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
             format!("too_many_concurrent_turns: limit={limit}")));
     }
 
-    // Create the turn row (status running).
-    let trow: (i64,) = sqlx::query_as(
-        "INSERT INTO turns (thread_id, status, started_at) VALUES ($1, 'running', NOW()) RETURNING id",
+    // Create the turn row (status running). M11: RETURNING trace_id.
+    let trow: (i64, Uuid) = sqlx::query_as(
+        "INSERT INTO turns (thread_id, status, started_at) VALUES ($1, 'running', NOW()) RETURNING id, trace_id",
     )
     .bind(id).fetch_one(&st.pool).await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let turn_db_id = trow.0;
+    let trace_id = trow.1;
 
     // Max seq persisted for this thread (continue monotonic thread-level seq).
     let max_seq: i64 = sqlx::query_scalar(
@@ -446,7 +450,7 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
         "completed"
     };
 
-    // M10: audit turn completion (best-effort).
+    // M10: audit turn completion (best-effort). M11: carry trace_id.
     let detail = serde_json::json!({
         "thread_id": id, "status": status,
         "codex_thread_id": resolved_codex_thread_id.clone(),
@@ -454,7 +458,7 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
     audit::audit_log(
         &st.pool, c.tid, Some(c.uid), "turn.complete",
         Some("turn"), Some(&turn_db_id.to_string()),
-        Some(&detail), None,
+        Some(&detail), Some(&trace_id.to_string()),
     ).await;
 
     Ok(Json(serde_json::json!({
@@ -489,10 +493,15 @@ async fn turn_interrupt(
     }
     let _ = sqlx::query("UPDATE turns SET status='interrupted', completed_at=NOW() WHERE id=$1")
         .bind(turn_id).execute(&st.pool).await;
+    // M11: look up trace_id to correlate the audit record.
+    let trace_id: Option<String> = sqlx::query_scalar(
+        "SELECT trace_id::text FROM turns WHERE id=$1")
+        .bind(turn_id).fetch_optional(&st.pool).await.ok().flatten();
     // M10: audit interrupt.
     audit::audit_log(
         &st.pool, c.tid, Some(c.uid), "turn.interrupt",
-        Some("turn"), Some(&turn_id.to_string()), None, None,
+        Some("turn"), Some(&turn_id.to_string()), None,
+        trace_id.as_deref(),
     ).await;
     Ok(Json(serde_json::json!({ "turn_id": turn_id, "status": "interrupted" })))
 }
@@ -583,14 +592,17 @@ async fn approval_resolve(
         tracing::info!(?learned, "policy auto-learned + rules refreshed");
     }
 
-    // M10: audit the approval resolution (decision + command).
+    // M10: audit the approval resolution (decision + command). M11: trace_id.
+    let trace_id: Option<String> = sqlx::query_scalar(
+        "SELECT trace_id::text FROM turns WHERE id=$1")
+        .bind(turn_id).fetch_optional(&st.pool).await.ok().flatten();
     let detail = serde_json::json!({
         "decision": new_status, "turn_id": turn_id, "command": command,
     });
     audit::audit_log(
         &st.pool, c.tid, Some(c.uid), "approval.resolve",
         Some("approval"), Some(&aid.to_string()),
-        Some(&detail), None,
+        Some(&detail), trace_id.as_deref(),
     ).await;
 
     // M5: dispatch the resolve to the driver slot running this turn. If the
@@ -741,6 +753,34 @@ async fn audit_log_get(
         Some(r) => Ok(Json(r)),
         None => Err((StatusCode::NOT_FOUND, "audit log not found".into())),
     }
+}
+
+// ---------- M11: Timeline + trace lookup ----------
+async fn thread_timeline_handler(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<Uuid>,
+) -> Result<Json<Vec<timeline::TimelineEntry>>, (StatusCode, String)> {
+    // Verify the thread belongs to the caller's tenant.
+    let owned: Option<(Uuid,)> = sqlx::query_as(
+        "SELECT id FROM threads WHERE id=$1 AND tenant_id=$2",
+    )
+    .bind(id).bind(c.tid).fetch_optional(&st.pool).await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if owned.is_none() {
+        return Err((StatusCode::NOT_FOUND, "thread not found".into()));
+    }
+    let rows = timeline::thread_timeline(&st.pool, id).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn trace_lookup_handler(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(trace_id): Path<Uuid>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let is_admin = c.perms.iter().any(|p| p == "*:*");
+    let tenant_filter = if is_admin { None } else { Some(c.tid) };
+    let v = timeline::trace_lookup(&st.pool, trace_id, tenant_filter).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
 }
 
 #[derive(Serialize, sqlx::FromRow)]
