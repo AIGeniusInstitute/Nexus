@@ -26,6 +26,7 @@ use uuid::Uuid;
 
 use crate::auth::{AuthProvider, AuthUser, JwtIssuer};
 use crate::audit;
+use crate::connectors;
 use crate::eval;
 use crate::fork;
 use crate::kb;
@@ -97,6 +98,13 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/threads/{id}/snapshots/{sid}/fork", post(snapshot_fork))
         .route("/v1/threads/{id}/snapshots/{sid}/rollback", post(snapshot_rollback))
         .route("/v1/runtime/pool", get(runtime_pool_status))
+        .route("/v1/connectors", post(connector_create).get(connector_list))
+        .route("/v1/connectors/{id}", get(connector_get).put(connector_update).delete(connector_delete))
+        .route("/v1/connectors/{id}/publish", post(connector_publish))
+        .route("/v1/connectors/{id}/offline", post(connector_offline))
+        .route("/v1/connectors/{id}/quality", get(connector_quality))
+        .route("/v1/connectors/{id}/invoke", post(connector_invoke))
+        .route("/v1/connectors/{id}/calls", get(connector_calls))
         .route("/v1/ws/threads/{id}/events", get(crate::ws::ws_handler))
         .layer(middleware::from_fn_with_state(state.clone(), idempotency_layer))
         .layer(middleware::from_fn_with_state(state.clone(), user_rate_limit))
@@ -152,6 +160,118 @@ async fn runtime_pool_status(
     State(st): State<AppState>,
 ) -> Json<runtime::PoolStatus> {
     Json(st.driver_pool.status())
+}
+
+// ---------- M16 Connectors 生态市场 ----------
+#[derive(Deserialize)]
+struct ConnectorQuery {
+    status: Option<String>,
+    limit: Option<i64>,
+}
+
+/// 映射 connectors:: 错误到 HTTP 状态码：
+/// RowNotFound → 404, in_use → 409, invalid transition → 400, else 500。
+fn map_conn_err(e: anyhow::Error) -> (StatusCode, String) {
+    let s = e.to_string();
+    if s.contains("RowNotFound") || s.contains("not found") {
+        (StatusCode::NOT_FOUND, s)
+    } else if s.contains("in_use") {
+        (StatusCode::CONFLICT, s)
+    } else if s.contains("invalid transition") {
+        (StatusCode::BAD_REQUEST, s)
+    } else {
+        (StatusCode::INTERNAL_SERVER_ERROR, s)
+    }
+}
+
+async fn connector_create(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Json(req): Json<connectors::CreateReq>,
+) -> Result<Json<connectors::ConnectorRow>, (StatusCode, String)> {
+    let row = connectors::create_connector(&st.pool, c.tid, c.uid, req).await
+        .map_err(map_conn_err)?;
+    Ok(Json(row))
+}
+
+async fn connector_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Query(q): Query<ConnectorQuery>,
+) -> Result<Json<Vec<connectors::ConnectorRow>>, (StatusCode, String)> {
+    let rows = connectors::list_connectors(&st.pool, c.tid, q.status.as_deref()).await
+        .map_err(map_conn_err)?;
+    Ok(Json(rows))
+}
+
+async fn connector_get(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<connectors::ConnectorRow>, (StatusCode, String)> {
+    let row = connectors::get_connector(&st.pool, c.tid, id).await.map_err(map_conn_err)?;
+    Ok(Json(row))
+}
+
+async fn connector_update(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+    Json(req): Json<connectors::UpdateReq>,
+) -> Result<Json<connectors::ConnectorRow>, (StatusCode, String)> {
+    let row = connectors::update_connector(&st.pool, c.tid, id, req).await
+        .map_err(map_conn_err)?;
+    Ok(Json(row))
+}
+
+async fn connector_delete(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    connectors::delete_connector(&st.pool, c.tid, id).await.map_err(map_conn_err)?;
+    Ok(Json(serde_json::json!({ "deleted": id })))
+}
+
+async fn connector_publish(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<connectors::ConnectorRow>, (StatusCode, String)> {
+    let is_admin = c.perms.iter().any(|p| p == "*:*");
+    if !is_admin {
+        return Err((StatusCode::FORBIDDEN, "admin only".into()));
+    }
+    let row = connectors::set_status(&st.pool, c.tid, id, "published").await
+        .map_err(map_conn_err)?;
+    Ok(Json(row))
+}
+
+async fn connector_offline(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<connectors::ConnectorRow>, (StatusCode, String)> {
+    let is_admin = c.perms.iter().any(|p| p == "*:*");
+    if !is_admin {
+        return Err((StatusCode::FORBIDDEN, "admin only".into()));
+    }
+    let row = connectors::set_status(&st.pool, c.tid, id, "offline").await
+        .map_err(map_conn_err)?;
+    Ok(Json(row))
+}
+
+async fn connector_quality(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let score = connectors::compute_quality(&st.pool, c.tid, id).await
+        .map_err(map_conn_err)?;
+    Ok(Json(serde_json::json!({ "connector_id": id, "quality_score": score })))
+}
+
+async fn connector_invoke(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+    Json(req): Json<connectors::InvokeReq>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let call_id = connectors::invoke_stub(&st.pool, c.tid, id, req).await
+        .map_err(map_conn_err)?;
+    Ok(Json(serde_json::json!({ "call_id": call_id, "stub": true })))
+}
+
+async fn connector_calls(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+    Query(q): Query<ConnectorQuery>,
+) -> Result<Json<Vec<connectors::ToolCallRow>>, (StatusCode, String)> {
+    let limit = q.limit.unwrap_or(100).clamp(1, 1000);
+    let rows = connectors::list_calls(&st.pool, c.tid, id, limit).await
+        .map_err(map_conn_err)?;
+    Ok(Json(rows))
 }
 
 // ---------- Auth ----------
