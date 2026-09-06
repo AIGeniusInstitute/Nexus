@@ -26,10 +26,14 @@ RUN chmod +x /usr/local/bin/nexus-control /usr/local/bin/codex
 COPY bin/mcp_echo_server.py /app/mcp_echo_server.py
 RUN chmod +x /app/mcp_echo_server.py
 
+# Web 控制台静态产物（deploy.sh 构建 web/dist 后复制到上下文 web-dist/）
+COPY web-dist/ /app/web-dist/
+
 # codex_home：config.toml + rules/ + 子进程工作目录（volume 持久化）
 RUN mkdir -p /app/.codex
 ENV NEXUS_CODEX_BIN=/usr/local/bin/codex
 ENV NEXUS_CODEX_HOME=/app/.codex
+ENV NEXUS_WEB_DIR=/app/web-dist
 WORKDIR /app
 
 EXPOSE 8765

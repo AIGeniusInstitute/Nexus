@@ -1,308 +1,153 @@
-import { useEffect, useState } from "react";
-import { api, getToken, openThreadStream, setToken, type Approval, type DailyUsage, type Item, type Thread } from "./api";
+import React from "react";
+import { api, getToken, setToken, clearToken, openThreadStream, type LoginResp } from "./api";
+import { Button, Pill, useAsync } from "./ui";
 
-export default function App() {
-  const token = getToken();
-  if (!token) return <Login />;
-  return <Dashboard />;
-}
+import Overview from "./pages/Overview";
+import Threads from "./pages/Threads";
+import Approvals from "./pages/Approvals";
+import Usage from "./pages/Usage";
+import KnowledgeBase from "./pages/KnowledgeBase";
+import Connectors from "./pages/Connectors";
+import Skills from "./pages/Skills";
+import Orchestration from "./pages/Orchestration";
+import Evals from "./pages/Evals";
+import Audit from "./pages/Audit";
+import Policy from "./pages/Policy";
+
+const NAV: { group: string; items: { key: string; label: string; icon: string }[] }[] = [
+  { group: "运行", items: [
+    { key: "overview", label: "概览", icon: "◎" },
+    { key: "threads", label: "会话", icon: "💬" },
+    { key: "approvals", label: "审批", icon: "✓" },
+    { key: "orchestration", label: "协作编排", icon: "🧩" },
+  ]},
+  { group: "知识与技能", items: [
+    { key: "kb", label: "知识库", icon: "📚" },
+    { key: "skills", label: "技能市场", icon: "⚡" },
+    { key: "connectors", label: "连接器", icon: "🔌" },
+  ]},
+  { group: "治理", items: [
+    { key: "usage", label: "用量计量", icon: "📊" },
+    { key: "policy", label: "策略", icon: "🛡" },
+    { key: "evals", label: "评测", icon: "🎯" },
+    { key: "audit", label: "审计日志", icon: "📜" },
+  ]},
+];
 
 function Login() {
-  const [email, setEmail] = useState("admin@nexus.local");
-  const [pw, setPw] = useState("admin");
-  const [err, setErr] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
+  const [email, setEmail] = React.useState("admin@nexus.local");
+  const [pw, setPw] = React.useState("admin123");
+  const [err, setErr] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState(false);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
-    setErr(null);
+    setBusy(true); setErr(null);
     try {
-      const r = await api.login(email, pw);
+      const r: LoginResp = await api.login(email, pw);
       setToken(r.token);
+      location.hash = "#/overview";
       location.reload();
-    } catch (e: unknown) {
-      setErr(String(e));
-    } finally {
-      setBusy(false);
-    }
+    } catch (e: unknown) { setErr(String(e)); }
+    finally { setBusy(false); }
   }
-
   return (
-    <div style={s.page}>
-      <h1>Nexus M1</h1>
-      <form onSubmit={submit} style={s.card}>
-        <h2>登录</h2>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email" style={s.input} />
-        <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="password" style={s.input} />
-        <button disabled={busy} style={s.btn}>{busy ? "…" : "登录"}</button>
-        {err && <div style={s.err}>{err}</div>}
-      </form>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
+      <div style={{ width: 380 }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: 1,
+            background: "linear-gradient(120deg, var(--acc), var(--gold))", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            Nexus
+          </div>
+          <div style={{ color: "var(--mut)", fontSize: 13, marginTop: 6 }}>企业级 Agent-Native 平台</div>
+        </div>
+        <form onSubmit={submit} className="card" style={{ padding: 22 }}>
+          <div className="field"><label>邮箱</label>
+            <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+          <div className="field"><label>密码</label>
+            <input className="input" type="password" value={pw} onChange={(e) => setPw(e.target.value)} /></div>
+          <Button type="submit" variant="primary" disabled={busy} style={{ width: "100%" as any, justifyContent: "center" }}>{busy ? "登录中…" : "登录"}</Button>
+          {err && <div className="err" style={{ marginTop: 10 }}>{err}</div>}
+        </form>
+      </div>
     </div>
   );
 }
 
-function Dashboard() {
-  const [threads, setThreads] = useState<Thread[]>([]);
-  const [active, setActive] = useState<Thread | null>(null);
-  const [view, setView] = useState<"threads" | "approvals" | "usage">("threads");
-
-  useEffect(() => {
-    api.listThreads().then(setThreads).catch(() => {});
+function Shell() {
+  const [route, setRoute] = React.useState(location.hash.replace(/^#\/?/, "") || "overview");
+  React.useEffect(() => {
+    const onHash = () => setRoute(location.hash.replace(/^#\/?/, "") || "overview");
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
   }, []);
+  const me = useAsync(() => api.me(), []);
+  const cur = NAV.flatMap((g) => g.items).find((i) => i.key === route) || NAV[0].items[0];
 
-  async function create() {
-    const title = prompt("thread title");
-    if (!title) return;
-    const { id } = await api.createThread(title);
-    const list = await api.listThreads();
-    setThreads(list);
-    const t = list.find((x) => x.id === id) ?? null;
-    setActive(t);
-    setView("threads");
+  function page() {
+    switch (route) {
+      case "overview": return <Overview />;
+      case "threads": return <Threads />;
+      case "approvals": return <Approvals />;
+      case "orchestration": return <Orchestration />;
+      case "kb": return <KnowledgeBase />;
+      case "skills": return <Skills />;
+      case "connectors": return <Connectors />;
+      case "usage": return <Usage />;
+      case "policy": return <Policy />;
+      case "evals": return <Evals />;
+      case "audit": return <Audit />;
+      default: return <Overview />;
+    }
   }
+  function logout() { clearToken(); location.reload(); }
 
   return (
-    <div style={s.dash}>
-      <aside style={s.sidebar}>
-        <h2>Nexus M4</h2>
-        <div style={s.nav}>
-          <button onClick={() => setView("threads")} style={view === "threads" ? s.navActive : s.navBtn}>会话</button>
-          <button onClick={() => setView("approvals")} style={view === "approvals" ? s.navActive : s.navBtn}>审批</button>
-          <button onClick={() => setView("usage")} style={view === "usage" ? s.navActive : s.navBtn}>用量</button>
+    <div className="app">
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="logo">Nexus</div>
+          <div className="sub">Agent-Native Platform · M19</div>
         </div>
-        {view === "threads" && (
-          <>
-            <h3>会话 ({threads.length})</h3>
-            <button onClick={create} style={s.btn}>+ 新建</button>
-            {threads.map((t) => (
-              <div
-                key={t.id}
-                onClick={() => { setActive(t); setView("threads"); }}
-                style={active?.id === t.id ? s.activeItem : s.item}
-              >
-                <b>{t.title ?? t.id.slice(0, 8)}</b>
-                <div style={s.muted}>{t.status}</div>
-              </div>
-            ))}
-          </>
-        )}
+        <nav className="nav">
+          {NAV.map((g) => (
+            <React.Fragment key={g.group}>
+              <div className="nav-group">{g.group}</div>
+              {g.items.map((it) => (
+                <a key={it.key} className={route === it.key ? "active" : ""} onClick={() => { location.hash = `#/${it.key}`; }}>
+                  <span className="ic">{it.icon}</span>{it.label}
+                </a>
+              ))}
+            </React.Fragment>
+          ))}
+        </nav>
+        <div className="sidebar-foot">
+          {me.data ? <div>👤 {me.data.email}<br /><Pill tone="info">{me.data.perms?.includes("*:*") ? "管理员" : "用户"}</Pill></div> : <span className="muted">加载中…</span>}
+          <div style={{ marginTop: 8 }}><a onClick={logout} style={{ cursor: "pointer" }}>退出登录</a></div>
+        </div>
       </aside>
-      <main style={s.main}>
-        {view === "approvals" ? <ApprovalsPage /> : (view === "usage" ? <UsagePage /> : (active ? <Timeline thread={active} /> : <Empty />))}
+      <main className="main">
+        <div className="topbar">
+          <div className="crumb">{cur.icon} {cur.label}</div>
+          <div className="right">
+            <button className="btn sm" onClick={() => {
+              const t = document.documentElement.getAttribute("data-theme");
+              const next = t === "light" ? "dark" : "light";
+              document.documentElement.setAttribute("data-theme", next);
+              localStorage.setItem("nexus.theme", next);
+            }}>🌗 主题</button>
+          </div>
+        </div>
+        <div className="content">{page()}</div>
       </main>
     </div>
   );
 }
 
-function ApprovalsPage() {
-  const [approvals, setApprovals] = useState<Approval[]>([]);
-  const [err, setErr] = useState<string | null>(null);
-
-  async function refresh() {
-    try {
-      setApprovals(await api.listApprovals());
-      setErr(null);
-    } catch (e) {
-      setErr(String(e));
-    }
-  }
-  useEffect(() => { refresh(); }, []);
-
-  async function resolve(id: number, decision: "approve" | "deny" | "cancel") {
-    try {
-      await api.resolveApproval(id, decision);
-      await refresh();
-    } catch (e) {
-      setErr(String(e));
-    }
-  }
-
-  return (
-    <div style={s.timeline}>
-      <h2>审批工单 <button onClick={refresh} style={s.btn}>刷新</button></h2>
-      {err && <div style={s.err}>{err}</div>}
-      <div style={s.feed}>
-        {approvals.length === 0 && <div style={s.muted}>暂无待审批工单</div>}
-        {approvals.map((a) => (
-          <div key={a.id} style={s.apprCard}>
-            <div><b>#{a.id}</b> · {a.kind ?? "?"} · <span style={s.pendingTag}>{a.status}</span>
-              {a.policy_decision && <span style={polTag(a.policy_decision)}>策略:{a.policy_decision}</span>}
-              {a.risk_level && <span style={riskTag(a.risk_level)}>风险:{a.risk_level}</span>}
-            </div>
-            <div style={s.cmdLine}><code>{a.command ?? "(no command)"}</code></div>
-            {a.cwd && <div style={s.muted}>cwd: {a.cwd}</div>}
-            {a.reason && <div style={s.muted}>reason: {a.reason}</div>}
-            <div style={s.muted}>thread: {a.thread_id.slice(0, 8)} · turn: {a.turn_id}</div>
-            <div style={s.apprBtns}>
-              <button onClick={() => resolve(a.id, "approve")} style={s.approveBtn}>批准</button>
-              <button onClick={() => resolve(a.id, "deny")} style={s.denyBtn}>拒绝</button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function UsagePage() {
-  const [data, setData] = useState<DailyUsage[]>([]);
-  const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    api.getUsage(7).then(setData).catch((e) => setErr(String(e)));
+export default function App() {
+  React.useEffect(() => {
+    const saved = localStorage.getItem("nexus.theme") || "dark";
+    document.documentElement.setAttribute("data-theme", saved);
   }, []);
-
-  const maxTok = Math.max(1, ...data.map((d) => d.total_input_tokens + d.total_output_tokens));
-  const sumIn = data.reduce((m, d) => m + d.total_input_tokens, 0);
-  const sumOut = data.reduce((m, d) => m + d.total_output_tokens, 0);
-  const sumTurns = data.reduce((m, d) => m + d.total_turns, 0);
-  const sumCost = data.reduce((m, d) => m + d.total_cost_micros, 0);
-
-  return (
-    <div style={s.timeline}>
-      <h2>用量统计 <span style={s.muted}>· 近 7 天</span></h2>
-      {err && <div style={s.err}>{err}</div>}
-      <div style={s.statGrid}>
-        <div style={s.statBox}><div style={s.statN}>{sumIn.toLocaleString()}</div><div style={s.muted}>输入 tokens</div></div>
-        <div style={s.statBox}><div style={s.statN}>{sumOut.toLocaleString()}</div><div style={s.muted}>输出 tokens</div></div>
-        <div style={s.statBox}><div style={s.statN}>{sumTurns}</div><div style={s.muted}>turns</div></div>
-        <div style={s.statBox}><div style={s.statN}>${(sumCost / 1_000_000).toFixed(4)}</div><div style={s.muted}>cost (USD)</div></div>
-      </div>
-      <div style={s.barChart}>
-        {data.length === 0 && <div style={s.muted}>暂无用量数据</div>}
-        {data.map((d) => {
-          const total = d.total_input_tokens + d.total_output_tokens;
-          const inH = (d.total_input_tokens / maxTok) * 100;
-          const outH = (d.total_output_tokens / maxTok) * 100;
-          return (
-            <div key={d.date} style={s.barCol}>
-              <div style={s.barStack}>
-                <div style={{ ...s.barOut, height: `${outH}%` }} title={`out: ${d.total_output_tokens}`} />
-                <div style={{ ...s.barIn, height: `${inH}%` }} title={`in: ${d.total_input_tokens}`} />
-              </div>
-              <div style={s.barLabel}>{d.date.slice(5)}</div>
-              <div style={s.muted}>{total.toLocaleString()}</div>
-            </div>
-          );
-        })}
-      </div>
-      <div style={s.muted}><span style={s.barIn}>■</span> 输入 · <span style={s.barOut}>■</span> 输出</div>
-    </div>
-  );
-}
-
-function Timeline({ thread }: { thread: Thread }) {
-  const [items, setItems] = useState<Item[]>([]);
-  const [text, setText] = useState("hello");
-  const [ws, setWs] = useState<WebSocket | null>(null);
-  const [status, setStatus] = useState("connecting");
-
-  // Initial load + WS live stream.
-  useEffect(() => {
-    let lastSeq = 0;
-    api.listItems(thread.id).then((rows) => {
-      setItems(rows);
-      lastSeq = rows.reduce((m, r) => Math.max(m, r.seq), 0);
-      const sock = openThreadStream(
-        thread.id,
-        (frame) => {
-          setItems((prev) => {
-            if (prev.some((p) => p.seq === frame.seq)) return prev;
-            return [...prev, {
-              id: 0, turn_id: 0, seq: frame.seq, item_type: frame.type,
-              content_ref: frame.content, created_at: new Date().toISOString(),
-            }].sort((a, b) => a.seq - b.seq);
-          });
-          lastSeq = Math.max(lastSeq, frame.seq);
-        },
-        () => setStatus("revoked")
-      );
-      setWs(sock);
-      sock.onopen = () => setStatus("live");
-      sock.onerror = () => setStatus("error");
-      sock.onclose = () => setStatus("closed");
-    });
-    return () => ws?.close();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [thread.id]);
-
-  async function sendTurn(e: React.FormEvent) {
-    e.preventDefault();
-    await api.startTurn(thread.id, text);
-    setText("");
-  }
-
-  return (
-    <div style={s.timeline}>
-      <h2>{thread.title ?? thread.id.slice(0, 8)} <span style={s.muted}>· WS: {status}</span></h2>
-      <div style={s.feed}>
-        {items.map((it) => (
-          <div key={it.seq} style={s.event}>
-            <span style={s.seq}>#{it.seq}</span>
-            <b style={s.kind}>{it.item_type}</b>
-            <span style={s.content}>{it.content_ref ?? ""}</span>
-          </div>
-        ))}
-        {items.length === 0 && <div style={s.muted}>暂无事件</div>}
-      </div>
-      <form onSubmit={sendTurn} style={s.composer}>
-        <input value={text} onChange={(e) => setText(e.target.value)} style={s.input} />
-        <button style={s.btn}>提交 turn</button>
-      </form>
-    </div>
-  );
-}
-
-function Empty() {
-  return <div style={s.empty}>选择左侧会话或新建一个会话</div>;
-}
-
-const s: Record<string, React.CSSProperties> = {
-  page: { fontFamily: "system-ui", maxWidth: 420, margin: "80px auto", padding: 16 },
-  card: { display: "flex", flexDirection: "column", gap: 8, padding: 24, border: "1px solid #ddd", borderRadius: 8 },
-  dash: { display: "flex", height: "100vh", fontFamily: "system-ui" },
-  sidebar: { width: 280, borderRight: "1px solid #eee", padding: 16, overflowY: "auto" },
-  main: { flex: 1, display: "flex", flexDirection: "column" },
-  nav: { display: "flex", gap: 8, marginBottom: 12 },
-  navBtn: { flex: 1, padding: "6px 10px", border: "1px solid #ccc", borderRadius: 6, background: "#fff", cursor: "pointer" },
-  navActive: { flex: 1, padding: "6px 10px", border: "1px solid #336", borderRadius: 6, background: "#336", color: "#fff", cursor: "pointer" },
-  item: { padding: "8px 10px", borderRadius: 6, cursor: "pointer" },
-  activeItem: { padding: "8px 10px", borderRadius: 6, cursor: "pointer", background: "#eef" },
-  timeline: { flex: 1, display: "flex", flexDirection: "column", padding: 16 },
-  feed: { flex: 1, overflowY: "auto", border: "1px solid #eee", borderRadius: 6, padding: 8 },
-  event: { display: "flex", gap: 8, padding: "4px 0", borderBottom: "1px solid #f4f4f4" },
-  seq: { color: "#888", minWidth: 40 },
-  kind: { minWidth: 70, color: "#06c" },
-  content: { flex: 1 },
-  composer: { display: "flex", gap: 8, marginTop: 8 },
-  input: { flex: 1, padding: "8px 10px", border: "1px solid #ccc", borderRadius: 6 },
-  btn: { padding: "8px 14px", border: "none", borderRadius: 6, background: "#336", color: "#fff", cursor: "pointer" },
-  err: { color: "#c33" },
-  muted: { color: "#999", fontSize: 12 },
-  empty: { margin: "auto", color: "#aaa" },
-  apprCard: { padding: 12, border: "1px solid #e0d0d0", borderRadius: 6, marginBottom: 8, background: "#fff8f8" },
-  cmdLine: { fontFamily: "monospace", background: "#f4f0f0", padding: "4px 6px", borderRadius: 4, margin: "6px 0" },
-  pendingTag: { color: "#c80", fontWeight: "bold" },
-  apprBtns: { display: "flex", gap: 8, marginTop: 8 },
-  approveBtn: { padding: "6px 14px", border: "none", borderRadius: 6, background: "#2a7", color: "#fff", cursor: "pointer" },
-  denyBtn: { padding: "6px 14px", border: "none", borderRadius: 6, background: "#c33", color: "#fff", cursor: "pointer" },
-  statGrid: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, margin: "12px 0" },
-  statBox: { padding: 10, border: "1px solid #eee", borderRadius: 6, textAlign: "center" },
-  statN: { fontSize: "1.2rem", fontWeight: 700, color: "#336" },
-  barChart: { display: "flex", gap: 6, alignItems: "flex-end", height: 180, padding: "12px 0", borderBottom: "1px solid #eee" },
-  barCol: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 },
-  barStack: { width: "60%", height: 140, display: "flex", flexDirection: "column-reverse", borderRadius: 4, overflow: "hidden" },
-  barIn: { background: "#5b8cff", width: "100%" },
-  barOut: { background: "#e0a832", width: "100%" },
-  barLabel: { fontSize: 11, color: "#666" },
-};
-
-function polTag(v: string): React.CSSProperties {
-  return { display: "inline-block", marginLeft: 6, padding: "1px 6px", borderRadius: 4, fontSize: 11,
-    background: v === "deny" ? "#fdd" : v === "allow" ? "#dfd" : "#ffd", color: "#333" };
-}
-function riskTag(v: string): React.CSSProperties {
-  return { display: "inline-block", marginLeft: 6, padding: "1px 6px", borderRadius: 4, fontSize: 11,
-    background: v === "high" ? "#fbb" : v === "medium" ? "#fec" : "#eef", color: "#333" };
+  if (!getToken()) return <Login />;
+  return <Shell />;
 }

@@ -55,6 +55,10 @@ pub struct AppState {
     pub broadcast: Arc<Mutex<HashMap<Uuid, broadcast::Sender<Value>>>>,
     /// M18: base URL for the orchestrator to self-call existing turn endpoints.
     pub base_url: String,
+    /// Web 控制台静态文件目录（NEXUS_WEB_DIR，默认 /app/web-dist）。
+    /// ServeDir fallback 服务此目录，index.html 兜底 SPA 路由。
+    /// fallback_service 不受 route_layer(require_auth) 影响，静态资源免认证。
+    pub web_dir: std::path::PathBuf,
 }
 
 /// Lazily create (or reuse) the broadcast channel for a thread.
@@ -121,6 +125,16 @@ pub fn router(state: AppState) -> Router {
         .layer(middleware::from_fn_with_state(state.clone(), ip_rate_limit))
         .layer(axum::Extension(state.jwt.clone()))
         .route_layer(axum::middleware::from_fn(require_auth_stateless))
+        // Web 控制台静态文件 fallback（SPA：index.html 兜底）。
+        // fallback_service 不受上面 route_layer 鉴权影响（route_layer 仅作用于
+        // 显式 .route() 注册的路由），静态资源免认证；/v1/* 与 /health 显式优先匹配。
+        .fallback_service(
+            tower_http::services::ServeDir::new(&state.web_dir)
+                .append_index_html_on_directories(true)
+                .not_found_service(tower_http::services::ServeFile::new(
+                    state.web_dir.join("index.html"),
+                )),
+        )
         .with_state(state)
 }
 
