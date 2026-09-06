@@ -25,6 +25,7 @@ use tokio::sync::{broadcast, Mutex};
 use uuid::Uuid;
 
 use crate::auth::{AuthProvider, AuthUser, JwtIssuer};
+use crate::audit;
 use crate::metering;
 use crate::policy;
 use crate::runtime::{self, DriverCommand};
@@ -77,6 +78,8 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/usage/users/{uid}", get(usage_user))
         .route("/v1/policy/feedback", get(policy_feedback))
         .route("/v1/policy/rules", get(policy_rules))
+        .route("/v1/audit/logs", get(audit_logs))
+        .route("/v1/audit/logs/{id}", get(audit_log_get))
         .route("/v1/ws/threads/{id}/events", get(crate::ws::ws_handler))
         .layer(middleware::from_fn_with_state(state.clone(), idempotency_layer))
         .layer(middleware::from_fn_with_state(state.clone(), user_rate_limit))
@@ -139,6 +142,11 @@ async fn login(State(st): State<AppState>, Json(req): Json<LoginReq>) -> Result<
         .login(&req.email, &req.password)
         .await
         .map_err(|_| (StatusCode::UNAUTHORIZED, "invalid credentials".into()))?;
+    // M10: audit auth.login (best-effort, never blocks).
+    audit::audit_log(
+        &st.pool, claims.tid, Some(claims.uid), "auth.login",
+        Some("user"), Some(&claims.uid.to_string()), None, None,
+    ).await;
     Ok(Json(LoginResp { token, user_id: claims.uid, perms: claims.perms }))
 }
 
@@ -438,6 +446,17 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
         "completed"
     };
 
+    // M10: audit turn completion (best-effort).
+    let detail = serde_json::json!({
+        "thread_id": id, "status": status,
+        "codex_thread_id": resolved_codex_thread_id.clone(),
+    });
+    audit::audit_log(
+        &st.pool, c.tid, Some(c.uid), "turn.complete",
+        Some("turn"), Some(&turn_db_id.to_string()),
+        Some(&detail), None,
+    ).await;
+
     Ok(Json(serde_json::json!({
         "turn_id": turn_db_id, "status": status,
         "codex_thread_id": resolved_codex_thread_id,
@@ -470,6 +489,11 @@ async fn turn_interrupt(
     }
     let _ = sqlx::query("UPDATE turns SET status='interrupted', completed_at=NOW() WHERE id=$1")
         .bind(turn_id).execute(&st.pool).await;
+    // M10: audit interrupt.
+    audit::audit_log(
+        &st.pool, c.tid, Some(c.uid), "turn.interrupt",
+        Some("turn"), Some(&turn_id.to_string()), None, None,
+    ).await;
     Ok(Json(serde_json::json!({ "turn_id": turn_id, "status": "interrupted" })))
 }
 
@@ -558,6 +582,16 @@ async fn approval_resolve(
         }
         tracing::info!(?learned, "policy auto-learned + rules refreshed");
     }
+
+    // M10: audit the approval resolution (decision + command).
+    let detail = serde_json::json!({
+        "decision": new_status, "turn_id": turn_id, "command": command,
+    });
+    audit::audit_log(
+        &st.pool, c.tid, Some(c.uid), "approval.resolve",
+        Some("approval"), Some(&aid.to_string()),
+        Some(&detail), None,
+    ).await;
 
     // M5: dispatch the resolve to the driver slot running this turn. If the
     // turn already completed (no slot mapping), the ticket is already marked
@@ -668,6 +702,45 @@ async fn policy_rules(
     let rows = policy::list_rules(&st.pool, c.tid).await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(rows))
+}
+
+// ---------- M10: Audit log (WORM) query ----------
+#[derive(Deserialize, Default)]
+struct AuditQuery {
+    action: Option<String>,
+    /// RFC-3339 lower bound (defaults to 30 days ago server-side).
+    since: Option<String>,
+    limit: Option<i64>,
+}
+
+async fn audit_logs(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Query(q): Query<AuditQuery>,
+) -> Result<Json<Vec<audit::AuditLogRow>>, (StatusCode, String)> {
+    // Admin (*:*) sees across tenants; everyone else is scoped to own tenant.
+    let is_admin = c.perms.iter().any(|p| p == "*:*");
+    let tenant_filter = if is_admin { None } else { Some(c.tid) };
+    let since = q.since.as_deref().and_then(|s| {
+        chrono::DateTime::parse_from_rfc3339(s).ok().map(|d| d.with_timezone(&Utc))
+    });
+    let limit = q.limit.unwrap_or(100).clamp(1, 1000);
+    let rows = audit::list_audit_logs(&st.pool, tenant_filter, q.action.as_deref(), since, limit)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn audit_log_get(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<audit::AuditLogRow>, (StatusCode, String)> {
+    let is_admin = c.perms.iter().any(|p| p == "*:*");
+    let tenant_filter = if is_admin { None } else { Some(c.tid) };
+    let row = audit::get_audit_log(&st.pool, id, tenant_filter)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    match row {
+        Some(r) => Ok(Json(r)),
+        None => Err((StatusCode::NOT_FOUND, "audit log not found".into())),
+    }
 }
 
 #[derive(Serialize, sqlx::FromRow)]
