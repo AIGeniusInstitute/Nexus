@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus M10 测试报告 — 审计日志 WORM + 查询 API</title>
+<style>
+  :root[data-theme="dark"]{--bg:#0d1117;--panel:#161b22;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--gold:#d29922;--green:#3fb950;--red:#f85149;--border:#30363d;--code:#0d1117}
+  :root[data-theme="light"]{--bg:#f6f8fa;--panel:#ffffff;--text:#1f2328;--muted:#656d76;--accent:#0969da;--gold:#9a6700;--green:#1a7f37;--red:#cf222e;--border:#d0d7de;--code:#f6f8fa}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;transition:background .2s,color .2s}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 80px}
+  header{border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:28px}
+  h1{margin:0 0 6px;font-size:1.7em;color:var(--accent)}
+  h2{color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:36px}
+  h3{color:var(--accent);margin-top:24px}
+  .meta{color:var(--muted);font-size:.92em}
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.78em;font-weight:600;vertical-align:middle}
+  .pass{background:rgba(63,185,80,.15);color:var(--green);border:1px solid var(--green)}
+  .fail{background:rgba(248,81,73,.15);color:var(--red);border:1px solid var(--red)}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 20px;margin-bottom:24px}
+  .toc a{color:var(--accent);text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.92em}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+  th{background:var(--panel);color:var(--gold)}
+  tr:nth-child(even){background:var(--panel)}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-size:.84em;line-height:1.45}
+  code{color:var(--accent)}
+  pre code{color:var(--text)}
+  .ev{margin:10px 0}
+  .ev .lab{color:var(--gold);font-weight:600;font-size:.85em;margin-bottom:4px}
+  .theme-btn{position:fixed;top:14px;right:16px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.85em}
+  .prog{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:99;width:0}
+  .svg-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin:16px 0}
+  details{margin:8px 0}
+  summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0}
+</style>
+</head>
+<body>
+<div class="prog" id="prog"></div>
+<button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+<div class="wrap">
+<header>
+  <h1>Nexus M10 测试报告 — 审计日志 WORM + 查询 API</h1>
+  <div class="meta">里程碑 M10 · 分支 <code>feat/nexus-m10</code> · base M9 merge <code>8299ffd</code> · 2026-09-06 · 守护：DeepThink</div>
+  <p class="meta"><span class="pill pass">cargo check 0 error 0 warning</span> &nbsp; <span class="pill pass">cargo test 26/26</span> &nbsp; <span class="pill pass">e2e 7 AC PASS</span></p>
+</header>
+
+<div class="toc">
+  <strong>目录</strong>
+  <ol>
+    <li><a href="#summary">交付摘要</a></li>
+    <li><a href="#flow">数据流</a></li>
+    <li><a href="#ac">验收矩阵 AC10.1–10.7</a></li>
+    <li><a href="#evidence">证据（curl / DB）</a></li>
+    <li><a href="#regress">零回归</a></li>
+    <li><a href="#decisions">关键决策</a></li>
+  </ol>
+</div>
+
+<h2 id="summary">1. 交付摘要</h2>
+<p>M10 为 Nexus 控制面补齐 <strong>append-only（WORM）审计日志</strong>与通用查询 API。所有安全敏感动作（登录 / turn 生命周期 / 审批决策 / 中断）落 <code>audit_logs</code> 表；PG trigger <code>prevent_audit_modification</code> 在 <code>BEFORE UPDATE OR DELETE</code> 阶段 RAISE EXCEPTION，DB 层强制不可变；应用层只 INSERT。新增 <code>GET /v1/audit/logs</code> 与 <code>GET /v1/audit/logs/{id}</code>，admin 可跨租户、非 admin 仅本租户。</p>
+<ul>
+  <li>新 migration <code>20260906000006_m10_audit.sql</code>：ALTER ADD COLUMN <code>target_type/target_id/trace_id</code> + WORM trigger + 2 索引</li>
+  <li>新模块 <code>src/audit.rs</code>：<code>audit_log()</code> INSERT-only（best-effort 不阻塞业务）+ <code>AuditLogRow</code> + <code>list_audit_logs/get_audit_log</code></li>
+  <li><code>http_server.rs</code>：4 处埋点 + 2 条路由</li>
+  <li><code>main.rs</code>：标题 "Nexus M10: serve"</li>
+</ul>
+<p><strong>不改 codex 内核</strong>（全部在 <code>nexus-control</code> crate）。<strong>不动</strong> M3 专用 <code>approval_audit</code>（双轨并存）。</p>
+
+<h2 id="flow">2. 数据流</h2>
+<div class="svg-wrap">
+<svg viewBox="0 0 920 360" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="monospace" font-size="12">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#d29922"/></marker>
+  </defs>
+  <rect x="10" y="10" width="900" height="340" fill="none" stroke="#30363d"/>
+  <text x="24" y="32" fill="#58a6ff" font-weight="bold">关键操作 → audit_logs(WORM) → 查询 API</text>
+
+  <!-- left: actions -->
+  <rect x="30" y="60" width="190" height="40" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="125" y="85" text-anchor="middle" fill="#c9d1d9">auth.login</text>
+  <rect x="30" y="115" width="190" height="40" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="125" y="140" text-anchor="middle" fill="#c9d1d9">turn.complete</text>
+  <rect x="30" y="170" width="190" height="40" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="125" y="195" text-anchor="middle" fill="#c9d1d9">approval.resolve</text>
+  <rect x="30" y="225" width="190" height="40" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="125" y="250" text-anchor="middle" fill="#c9d1d9">turn.interrupt</text>
+
+  <!-- middle: audit_log INSERT -->
+  <rect x="300" y="110" width="210" height="100" rx="8" fill="#161b22" stroke="#d29922" stroke-width="2"/>
+  <text x="405" y="138" text-anchor="middle" fill="#d29922" font-weight="bold">audit_log()</text>
+  <text x="405" y="158" text-anchor="middle" fill="#8b949e">INSERT only</text>
+  <text x="405" y="178" text-anchor="middle" fill="#8b949e">best-effort</text>
+  <text x="405" y="198" text-anchor="middle" fill="#8b949e">never blocks</text>
+
+  <!-- arrows left -> mid -->
+  <path d="M220,80 L295,135" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <path d="M220,135 L295,150" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <path d="M220,190 L295,165" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <path d="M220,245 L295,180" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+
+  <!-- right: WORM table -->
+  <rect x="590" y="60" width="280" height="220" rx="8" fill="#161b22" stroke="#3fb950" stroke-width="2"/>
+  <text x="730" y="86" text-anchor="middle" fill="#3fb950" font-weight="bold">audit_logs (WORM)</text>
+  <line x1="600" y1="96" x2="860" y2="96" stroke="#3fb950"/>
+  <text x="610" y="116" fill="#c9d1d9">tenant_id, actor_user_id</text>
+  <text x="610" y="134" fill="#c9d1d9">action, target_type, target_id</text>
+  <text x="610" y="152" fill="#c9d1d9">detail_json (NOT NULL '{}')</text>
+  <text x="610" y="170" fill="#c9d1d9">trace_id, created_at</text>
+  <line x1="600" y1="182" x2="860" y2="182" stroke="#f85149" stroke-dasharray="4,3"/>
+  <text x="610" y="202" fill="#f85149" font-weight="bold">⚠ trigger audit_worm</text>
+  <text x="610" y="220" fill="#f85149">BEFORE UPDATE OR DELETE</text>
+  <text x="610" y="238" fill="#f85149">→ RAISE EXCEPTION</text>
+  <text x="610" y="262" fill="#8b949e">idx: tenant+time, action+time</text>
+
+  <path d="M510,160 L585,140" stroke="#3fb950" marker-end="url(#arr)" fill="none"/>
+
+  <!-- query api -->
+  <rect x="300" y="290" width="500" height="46" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="550" y="318" text-anchor="middle" fill="#58a6ff">GET /v1/audit/logs?action=&amp;since=&amp;limit=  ·  GET /v1/audit/logs/{id}</text>
+  <path d="M730,280 L550,290" stroke="#58a6ff" marker-end="url(#arr)" fill="none" stroke-dasharray="3,3"/>
+</svg>
+</div>
+
+<h2 id="ac">3. 验收矩阵 AC10.1–10.7</h2>
+<table>
+  <tr><th>AC</th><th>验收点</th><th>状态</th></tr>
+  <tr><td>AC10.1</td><td>login 成功 → audit_logs 落 auth.login（actor_user_id, target user/{uid}）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC10.2</td><td>SIMULATE turn → approval/requested 触发，pending ticket 可查</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC10.3</td><td>resolve approve → approval approved + turn completed</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC10.4</td><td>audit_logs 含 auth.login / approval.resolve(decision=approved) / turn.complete(status=completed)</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC10.5</td><td>GET /v1/audit/logs/{id} 返回单条（含 created_at）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC10.6</td><td>WORM：UPDATE audit_logs → ERROR "append-only (WORM): modification forbidden"</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC10.7</td><td>WORM：DELETE audit_logs → 同 trigger 拒绝</td><td><span class="pill pass">PASS</span></td></tr>
+</table>
+
+<h2 id="evidence">4. 证据</h2>
+
+<h3>4.1 编译与单测</h3>
+<div class="ev"><div class="lab">cargo check（0 error 0 warning）</div>
+<pre><code>$ cargo check -p nexus-control
+   Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 05s
+
+$ cargo test -p nexus-control
+test audit::tests::audit_row_struct_compiles ... ok
+... (共 26)
+test result: ok. 26 passed; 0 failed</code></pre></div>
+
+<h3>4.2 e2e（PG nexus-pg-m4:5434 / POOL=2 / SIMULATE_APPROVAL=1）</h3>
+<div class="ev"><div class="lab">AC10.1 login → auth.login 落库</div>
+<pre><code>$ curl -s "$BASE/v1/audit/logs?action=auth.login&amp;limit=5" -H "$AUTH"
+ id= 1 action= auth.login actor= 4 target= user 4</code></pre></div>
+
+<div class="ev"><div class="lab">AC10.2/10.3 turn + approval resolve</div>
+<pre><code>$ curl -s -X POST "$BASE/v1/threads/$TID/turns" ... &amp;
+ approval_id=27
+$ curl -s -X POST "$BASE/v1/approvals/27/resolve" -d '{"decision":"approve"}'
+ resolved: {'approval_id': 27, 'status': 'approved'}
+ turn1: {"codex_thread_id":"01a0751d-...","status":"completed","turn_id":33}</code></pre></div>
+
+<div class="ev"><div class="lab">AC10.4 audit_logs 近 8 条</div>
+<pre><code>$ curl -s "$BASE/v1/audit/logs?limit=8" -H "$AUTH"
+ id= 3 action= turn.complete    target= turn 33     extra= completed
+ id= 2 action= approval.resolve target= approval 27 extra= approved
+ id= 1 action= auth.login       target= user 4      extra=</code></pre></div>
+
+<div class="ev"><div class="lab">AC10.5 GET /v1/audit/logs/{id}</div>
+<pre><code>$ curl -s "$BASE/v1/audit/logs/3" -H "$AUTH"
+ id= 3 action= turn.complete created= 2026-09-06T05:07:22.121676Z</code></pre></div>
+
+<div class="ev"><div class="lab">AC10.6/10.7 WORM trigger 拒绝修改</div>
+<pre><code>$ docker exec nexus-pg-m4 psql -U nexus -d nexus -tc \
+    "UPDATE audit_logs SET action='tampered' WHERE id=1;"
+ERROR:  audit_logs is append-only (WORM): modification forbidden
+CONTEXT:  PL/pgSQL function prevent_audit_modification() line 3 at RAISE
+
+$ ... "DELETE FROM audit_logs WHERE id=1;"
+ERROR:  audit_logs is append-only (WORM): modification forbidden
+CONTEXT:  PL/pgSQL function prevent_audit_modification() line 3 at RAISE</code></pre></div>
+
+<h3>4.3 表结构（migration 应用后）</h3>
+<div class="ev"><pre><code>column_name   | actor_user_id, detail_json, target_type, target_id, trace_id
+indexes       | idx_audit_tenant_time, idx_audit_action_time
+triggers       | audit_worm BEFORE DELETE OR UPDATE ... EXECUTE FUNCTION prevent_audit_modification()</code></pre></div>
+
+<h2 id="regress">5. 零回归</h2>
+<ul>
+  <li>cargo test 26/26（M9 的 25 项 + audit 1 项新增，无回退）</li>
+  <li>SIMULATE turn completed（codex_thread_id 返回，driver pool 2 slot 路由正常）</li>
+  <li>approval resolve→approved + turn completed（M3 审批 / M5 pool 路由 / M6 学习 / M4 计量路径不退化）</li>
+  <li>M9 真实模型 / gateway 路径<strong>未触碰</strong>（audit 埋点在 http_server 业务层，不经 model_gateway/runtime）</li>
+</ul>
+
+<h2 id="decisions">6. 关键决策</h2>
+<details><summary>6.1 适配现有 audit_logs 表（ALTER 而非 CREATE）</summary>
+<p>发现 audit_logs 表已存在（早期里程碑建，列 <code>actor_user_id</code>(FK users) / <code>resource</code> / <code>detail_json</code>(NOT NULL default '{}')）。<code>CREATE TABLE IF NOT EXISTS</code> 会跳过→列不存在→INSERT 报 42703。修复：migration 改 <code>ALTER TABLE ADD COLUMN IF NOT EXISTS target_type/target_id/trace_id</code>，audit.rs 列名 <code>actor_user_id</code>/<code>detail_json</code> 适配现有表，保留现有数据与 WORM trigger。Surgical：不重建表、不删旧列。</p>
+</details>
+<details><summary>6.2 WORM 用 PG trigger（DB 层强制）</summary>
+<p><code>BEFORE UPDATE OR DELETE</code> RAISE EXCEPTION，即使应用 bug 或越权也无法改写历史。应用层 <code>audit_log()</code> 只 INSERT，best-effort（失败→<code>tracing::error</code>，不 propagate，审计永不阻塞 login/turn/approval）。</p>
+</details>
+<details><summary>6.3 NULL-or-equal 单查询全组合</summary>
+<p><code>($2::bigint IS NULL OR tenant_id=$2) AND ($3::text IS NULL OR action=$3)</code> 一个 query 覆盖 admin/非 admin × action 过滤 4 组合，避免分支拼接 SQL。admin（<code>*:*</code>）<code>tenant_filter=None</code> 跨租户；非 admin <code>Some(tid)</code> 本租户隔离。</p>
+</details>
+<details><summary>6.4 detail_json NOT NULL 处理</summary>
+<p>schema 约束 <code>detail_json NOT NULL</code>，<code>audit_log()</code> 内 <code>detail.cloned().unwrap_or_else(|| json!({}))</code>，None→'{}' 不违反约束。</p>
+</details>
+
+<footer style="margin-top:40px;border-top:1px solid var(--border);padding-top:12px;color:var(--muted);font-size:.85em">
+  DeepThink · Nexus M10 审计日志 WORM + 查询 API · 2026-09-06 · 所有改动在 codex-rs/nexus-control crate 内
+</footer>
+</div>
+<script>
+function toggleTheme(){var d=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',d==='dark'?'light':'dark')}
+window.addEventListener('scroll',function(){var h=document.documentElement.scrollHeight-window.innerHeight;var p=h>0?(window.scrollY/h*100):0;document.getElementById('prog').style.width=p+'%'});
+</script>
+</body>
+</html>
