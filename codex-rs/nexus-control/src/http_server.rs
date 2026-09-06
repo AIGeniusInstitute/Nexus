@@ -340,6 +340,27 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
                 continue;
             }
 
+            // M7: execpolicy amendment (app-server-proposed, human-accepted) —
+            // merge into policies + refresh tenant .rules.
+            if ev.item_type == "execpolicy/amendment" {
+                if let Some(cmd) = &ev.amendment {
+                    let merged = policy::merge_amendment(&st.pool, c.tid, cmd)
+                        .await.unwrap_or(None);
+                    if merged.is_some() {
+                        if let Ok(content) = policy::generate_rules(&st.pool, c.tid).await {
+                            if !content.is_empty() {
+                                let _ = policy::write_tenant_rules(c.tid, &st.codex_home, &content);
+                            }
+                        }
+                        tracing::info!(?cmd, "execpolicy amendment merged + rules refreshed");
+                    }
+                }
+                let _ = bcast.send(serde_json::json!({
+                    "thread_id": id, "seq": ev.seq, "type": ev.item_type,
+                }));
+                continue;
+            }
+
             // app_server_events: raw event log (idempotent on thread+seq).
             let _ = sqlx::query(
                 "INSERT INTO app_server_events (thread_id, turn_id, seq, event_json)
@@ -449,7 +470,12 @@ async fn turn_interrupt(
 
 // ---------- M3: Approvals ----------
 #[derive(Deserialize)]
-struct ResolveReq { decision: String } // approve | deny | cancel
+struct ResolveReq {
+    decision: String, // approve | deny | cancel | approve_with_amendment
+    /// M7: argv prefix for `approve_with_amendment` (the execpolicy amendment).
+    #[serde(default)]
+    amendment_command: Option<Vec<String>>,
+}
 
 async fn approval_resolve(
     AuthUser(c): AuthUser,
@@ -474,12 +500,22 @@ async fn approval_resolve(
     }
     let decision = match req.decision.as_str() {
         "approve" => runtime::DecisionInput::Approve,
+        // M7: approve + apply proposed execpolicy amendment (allow prefix).
+        "approve_with_amendment" => {
+            let cmd = req.amendment_command.clone().unwrap_or_default();
+            if cmd.is_empty() {
+                return Err((StatusCode::BAD_REQUEST,
+                    "amendment_command required for approve_with_amendment".into()));
+            }
+            runtime::DecisionInput::ApproveWithAmendment { command: cmd }
+        }
         "deny" => runtime::DecisionInput::Deny,
         "cancel" => runtime::DecisionInput::Cancel,
-        _ => return Err((StatusCode::BAD_REQUEST, "decision must be approve|deny|cancel".into())),
+        _ => return Err((StatusCode::BAD_REQUEST, "decision must be approve|deny|cancel|approve_with_amendment".into())),
     };
     let new_status = match &decision {
         runtime::DecisionInput::Approve => "approved",
+        runtime::DecisionInput::ApproveWithAmendment { .. } => "approved_with_amendment",
         runtime::DecisionInput::Deny => "denied",
         runtime::DecisionInput::Cancel => "cancelled",
     };
@@ -497,6 +533,7 @@ async fn approval_resolve(
     // 学习是叠加：不改 resolve 主流程，仅追加 record + learn + 刷 rules。
     let decision_verb = match &decision {
         runtime::DecisionInput::Approve => "approve",
+        runtime::DecisionInput::ApproveWithAmendment { .. } => "approve_amendment",
         runtime::DecisionInput::Deny => "deny",
         runtime::DecisionInput::Cancel => "cancel",
     };

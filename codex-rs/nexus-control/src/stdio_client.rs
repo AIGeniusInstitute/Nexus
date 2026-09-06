@@ -26,6 +26,7 @@ use codex_app_server_protocol::ClientInfo;
 use codex_app_server_protocol::ClientRequest;
 use codex_app_server_protocol::CommandExecutionApprovalDecision;
 use codex_app_server_protocol::CommandExecutionRequestApprovalResponse;
+use codex_app_server_protocol::ExecPolicyAmendment;
 use codex_app_server_protocol::FileChangeApprovalDecision;
 use codex_app_server_protocol::FileChangeRequestApprovalResponse;
 use codex_app_server_protocol::InitializeCapabilities;
@@ -64,6 +65,9 @@ pub enum ApprovalKind {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DecisionInput {
     Approve,
+    /// M7: approve + apply an execpolicy amendment (allow this command prefix
+    /// without prompting in future). `command` is the argv prefix to allow.
+    ApproveWithAmendment { command: Vec<String> },
     Deny,
     Cancel,
 }
@@ -82,6 +86,9 @@ pub struct ApprovalRequest {
     pub command: Option<String>,
     pub cwd: Option<String>,
     pub reason: Option<String>,
+    /// M7: app-server-proposed execpolicy amendment (argv prefix to allow
+    /// without prompting), if the approval request carried one.
+    pub proposed_amendment: Option<Vec<String>>,
     /// Full params JSON (for audit / display, with secrets stripped upstream).
     pub raw_params: Value,
 }
@@ -278,6 +285,11 @@ impl AppServerProcess {
                             // Capture raw_params BEFORE moving fields out of `params`.
                             let raw_params =
                                 serde_json::to_value(&params).unwrap_or(Value::Null);
+                            // M7: extract app-server-proposed execpolicy amendment.
+                            let proposed_amendment = params
+                                .proposed_execpolicy_amendment
+                                .as_ref()
+                                .map(|a| a.command.clone());
                             return Ok(StreamEvent::ApprovalRequest(ApprovalRequest {
                                 jsonrpc_id: request_id,
                                 kind: ApprovalKind::CommandExecution,
@@ -287,6 +299,7 @@ impl AppServerProcess {
                                 command: params.command,
                                 cwd: params.cwd.map(|p| p.to_string()),
                                 reason: params.reason,
+                                proposed_amendment,
                                 raw_params,
                             }));
                         }
@@ -303,6 +316,7 @@ impl AppServerProcess {
                                 cwd: params.grant_root
                                     .map(|p| p.to_string_lossy().into_owned()),
                                 reason: params.reason,
+                                proposed_amendment: None,
                                 raw_params,
                             }));
                         }
@@ -329,14 +343,24 @@ impl AppServerProcess {
             ApprovalKind::CommandExecution => {
                 let d = match decision {
                     DecisionInput::Approve => CommandExecutionApprovalDecision::Accept,
+                    // M7: approve + apply proposed execpolicy amendment.
+                    DecisionInput::ApproveWithAmendment { command } => {
+                        CommandExecutionApprovalDecision::AcceptWithExecpolicyAmendment {
+                            execpolicy_amendment: ExecPolicyAmendment { command },
+                        }
+                    }
                     DecisionInput::Deny => CommandExecutionApprovalDecision::Decline,
                     DecisionInput::Cancel => CommandExecutionApprovalDecision::Cancel,
                 };
                 serde_json::to_value(CommandExecutionRequestApprovalResponse { decision: d })?
             }
             ApprovalKind::FileChange => {
+                // File-change approvals have no execpolicy amendment; an
+                // amendment decision is treated as a plain accept.
                 let d = match decision {
-                    DecisionInput::Approve => FileChangeApprovalDecision::Accept,
+                    DecisionInput::Approve | DecisionInput::ApproveWithAmendment { .. } => {
+                        FileChangeApprovalDecision::Accept
+                    }
                     DecisionInput::Deny => FileChangeApprovalDecision::Decline,
                     DecisionInput::Cancel => FileChangeApprovalDecision::Cancel,
                 };

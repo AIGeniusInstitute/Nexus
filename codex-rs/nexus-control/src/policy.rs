@@ -345,6 +345,55 @@ pub async fn learn(pool: &PgPool, tenant_id: i64) -> anyhow::Result<Vec<LearnedR
     Ok(learned)
 }
 
+/// M7: 合并一条 app-server 协议级 execpolicy amendment（人接受的 proposed
+/// amendment）到 `policies` 表。pattern 取 argv 前 2 token + 末尾 `*`（与
+/// policies glob 风格一致），decision=allow，source=amendment，priority=40
+/// （低于 deny 种子 80~100，deny 永远优先）。
+///
+/// 保守安全：
+/// - `risk_of`="high" 的命令拒绝 amendment（不 allow），与 M6 安全单调一致；
+/// - UPSERT `WHERE policies.source != 'seed'`：seed 行（deny 种子）不被
+///   amendment 降级为 allow；learned/无行可被升级。
+/// 返回 `Some` 表示已合并；`None` 表示被拒（高危）或被跳过（seed 不覆盖）。
+pub async fn merge_amendment(
+    pool: &PgPool,
+    tenant_id: i64,
+    command: &[String],
+) -> anyhow::Result<Option<LearnedRule>> {
+    let joined = command.join(" ");
+    // amendment 总是前缀匹配（allow 此 argv 前缀的所有命令），末尾加 `*`。
+    // `["git","clone"]`→`git clone*`；`["ls"]`→`ls*`。
+    let pattern = format!("{}*", joined);
+    let risk = risk_of(&joined);
+    if risk == "high" {
+        tracing::warn!(%pattern, "amendment rejected (high-risk command)");
+        return Ok(None);
+    }
+    let result = sqlx::query(
+        "INSERT INTO policies (tenant_id, role, action_kind, pattern, risk_level,
+               decision, priority, enabled, source, learned_from)
+         VALUES ($1, '*', 'command_execution', $2, $3, 'allow', 40, TRUE, 'amendment', $2)
+         ON CONFLICT (tenant_id, role, action_kind, pattern) DO UPDATE
+           SET decision='allow', risk_level=EXCLUDED.risk_level,
+               priority=40, enabled=TRUE, source='amendment',
+               learned_from=EXCLUDED.learned_from
+           WHERE policies.source != 'seed'",
+    )
+    .bind(tenant_id)
+    .bind(&pattern)
+    .bind(risk)
+    .execute(pool)
+    .await?;
+    if result.rows_affected() == 0 {
+        tracing::info!(%pattern, "amendment skipped (seed rule not overridden)");
+        return Ok(None);
+    }
+    Ok(Some(LearnedRule {
+        pattern,
+        decision: "allow".into(),
+    }))
+}
+
 /// 最近 N 天的决策反馈列表（可观测）。
 pub async fn list_feedback(pool: &PgPool, tenant_id: i64, days: i32) -> anyhow::Result<Vec<FeedbackRow>> {
     let cutoff = Utc::now() - chrono::Duration::days(days as i64);
