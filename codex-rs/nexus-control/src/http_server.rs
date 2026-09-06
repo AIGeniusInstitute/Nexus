@@ -28,6 +28,7 @@ use crate::auth::{AuthProvider, AuthUser, JwtIssuer};
 use crate::audit;
 use crate::connectors;
 use crate::eval;
+use crate::skills;
 use crate::fork;
 use crate::kb;
 use crate::metering;
@@ -105,6 +106,10 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/connectors/{id}/quality", get(connector_quality))
         .route("/v1/connectors/{id}/invoke", post(connector_invoke))
         .route("/v1/connectors/{id}/calls", get(connector_calls))
+        .route("/v1/skills", post(skill_create).get(skill_list))
+        .route("/v1/skills/{id}", get(skill_get).delete(skill_delete))
+        .route("/v1/skills/{id}/versions", post(skill_publish_version).get(skill_versions_list))
+        .route("/v1/skills/{id}/rollback", post(skill_rollback))
         .route("/v1/ws/threads/{id}/events", get(crate::ws::ws_handler))
         .layer(middleware::from_fn_with_state(state.clone(), idempotency_layer))
         .layer(middleware::from_fn_with_state(state.clone(), user_rate_limit))
@@ -272,6 +277,74 @@ async fn connector_calls(
     let rows = connectors::list_calls(&st.pool, c.tid, id, limit).await
         .map_err(map_conn_err)?;
     Ok(Json(rows))
+}
+
+// ---------- M17 Skills 市场 ----------
+async fn skill_create(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Json(req): Json<skills::CreateSkillReq>,
+) -> Result<Json<skills::SkillRow>, (StatusCode, String)> {
+    let row = skills::create_skill(&st.pool, c.tid, c.uid, req).await
+        .map_err(map_skill_err)?;
+    Ok(Json(row))
+}
+
+async fn skill_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Query(q): Query<ConnectorQuery>,
+) -> Result<Json<Vec<skills::SkillRow>>, (StatusCode, String)> {
+    let rows = skills::list_skills(&st.pool, c.tid, q.status.as_deref()).await
+        .map_err(map_skill_err)?;
+    Ok(Json(rows))
+}
+
+async fn skill_get(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<skills::SkillRow>, (StatusCode, String)> {
+    let row = skills::get_skill(&st.pool, c.tid, id).await.map_err(map_skill_err)?;
+    Ok(Json(row))
+}
+
+async fn skill_delete(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    skills::delete_skill(&st.pool, c.tid, id).await.map_err(map_skill_err)?;
+    Ok(Json(serde_json::json!({ "deleted": id })))
+}
+
+async fn skill_publish_version(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+    Json(req): Json<skills::PublishVersionReq>,
+) -> Result<Json<skills::SkillVersionRow>, (StatusCode, String)> {
+    let row = skills::publish_version(&st.pool, c.tid, id, req).await
+        .map_err(map_skill_err)?;
+    Ok(Json(row))
+}
+
+async fn skill_versions_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<Vec<skills::SkillVersionRow>>, (StatusCode, String)> {
+    let rows = skills::list_versions(&st.pool, c.tid, id).await
+        .map_err(map_skill_err)?;
+    Ok(Json(rows))
+}
+
+async fn skill_rollback(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+    Json(req): Json<skills::RollbackReq>,
+) -> Result<Json<skills::SkillRow>, (StatusCode, String)> {
+    let row = skills::rollback(&st.pool, c.tid, id, req.version_id).await
+        .map_err(map_skill_err)?;
+    Ok(Json(row))
+}
+
+fn map_skill_err(e: anyhow::Error) -> (StatusCode, String) {
+    let s = e.to_string();
+    if s.contains("RowNotFound") || s.contains("not found") {
+        (StatusCode::NOT_FOUND, s)
+    } else if s.contains("in_use") {
+        (StatusCode::CONFLICT, s)
+    } else {
+        (StatusCode::INTERNAL_SERVER_ERROR, s)
+    }
 }
 
 // ---------- Auth ----------
