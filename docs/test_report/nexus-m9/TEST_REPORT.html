@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus M9 测试报告 — Function Calling 双向协议转换</title>
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--text:#e6edf3;--accent:#58a6ff;--gold:#d29922;--green:#3fb950;--red:#f85149;--border:#30363d;--code:#6e7681}
+[data-theme="light"]{--bg:#ffffff;--panel:#f6f8fa;--text:#1f2328;--accent:#0969da;--gold:#9a6700;--green:#1a7f37;--red:#cf222e;--border:#d0d7de;--code:#656d76}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6;padding:0 0 60px}
+header{background:linear-gradient(135deg,var(--panel),var(--bg));border-bottom:2px solid var(--accent);padding:30px 40px;position:sticky;top:0;z-index:10}
+header h1{font-size:1.6rem;color:var(--accent)}
+header .sub{color:var(--gold);margin-top:4px;font-size:0.95rem}
+.theme-btn{position:absolute;top:24px;right:40px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:0.85rem}
+.bar{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:20;width:0;transition:width .15s}
+nav{position:sticky;top:72px;background:var(--bg);border-bottom:1px solid var(--border);padding:8px 40px;z-index:5;overflow-x:auto;white-space:nowrap}
+nav a{color:var(--accent);text-decoration:none;margin-right:18px;font-size:0.88rem}
+main{max-width:1100px;margin:0 auto;padding:24px 40px}
+section{margin-bottom:40px;scroll-margin-top:130px}
+h2{color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:16px;font-size:1.25rem}
+h3{color:var(--accent);margin:16px 0 8px;font-size:1.05rem}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin:12px 0}
+.pass{color:var(--green);font-weight:700}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:0.9rem}
+th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+th{background:var(--bg);color:var(--gold)}
+tr:nth-child(even){background:var(--panel)}
+code{background:var(--panel);color:var(--accent);padding:1px 5px;border-radius:3px;font-size:0.85em}
+pre{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:14px;overflow-x:auto;font-size:0.82rem;color:var(--text)}
+pre .c{color:var(--code)}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:0.8rem;font-weight:600}
+.badge-pass{background:rgba(63,185,80,.15);color:var(--green);border:1px solid var(--green)}
+.svg-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:20px;margin:16px 0;overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<header>
+<h1>Nexus M9 — Function Calling 双向协议转换测试报告</h1>
+<div class="sub">Responses↔Chat tool_calls 协议转换 · 真实审批端到端 · deepseek-v4-pro · 2026-09-06</div>
+<button class="theme-btn" onclick="toggleTheme()">🌙 / ☀️</button>
+</header>
+<nav>
+<a href="#summary">概览</a><a href="#ac">验收矩阵</a><a href="#t91">T9-1 tools 转换</a><a href="#t93">T9-3 真实审批</a><a href="#regress">零回归</a><a href="#svg">数据流</a>
+</nav>
+<main>
+
+<section id="summary">
+<h2>概览</h2>
+<div class="card">
+<p>M8 已实现纯文本 Responses↔Chat SSE 转换。M9 补齐 <b>tools / tool_calls 双向转换</b>，使真实模型驱动的审批端到端（非 SIMULATE）完整可用。</p>
+<p style="margin-top:8px"><b>核心：</b> codex Responses tools 是<b>扁平</b>结构 <code>{type:"function",name,parameters}</code>；dashscope 要<b>嵌套</b> <code>{type:"function",function:{...}}</code>。gateway 做双向转换 + tool_calls 分片累积成 function_call item。</p>
+<p style="margin-top:8px"><b>结果：</b> cargo check 0/0 · cargo test 25/25 · 真实模型触发 function_call → 真实 CommandExecutionRequestApproval → resolve → 命令执行 → turn completed · 纯文本零回归。</p>
+</div>
+</section>
+
+<section id="ac">
+<h2>验收矩阵 AC9.1–9.5</h2>
+<table>
+<tr><th>AC</th><th>描述</th><th>结果</th><th>证据</th></tr>
+<tr><td>AC9.1</td><td>gateway tools 转换（扁平→嵌套），dashscope 接受并返回 tool_calls</td><td><span class="badge badge-pass">PASS</span></td><td>gateway 直连：扁平 tools 请求 → dashscope 返回 tool_calls</td></tr>
+<tr><td>AC9.2</td><td>tool_calls 累积成 function_call item，codex 解析成功</td><td><span class="badge badge-pass">PASS</span></td><td>turn 28 item 34 commandExecution <code>/bin/bash -lc ls</code>（codex 收到 function_call 并执行）</td></tr>
+<tr><td>AC9.3</td><td>真实模型触发 function_call → CommandExecutionRequestApproval（非 SIMULATE）</td><td><span class="badge badge-pass">PASS</span></td><td>approval 25 pending · command=pwd · policy_decision=prompt · risk=low</td></tr>
+<tr><td>AC9.4</td><td>审批 resolve → respond_approval → turn completed</td><td><span class="badge badge-pass">PASS</span></td><td>approval 25 approved + turn 30 commandExecution pwd 执行 + agentMessage 回复</td></tr>
+<tr><td>AC9.5</td><td>纯文本 turn + 计量零回归（M3/M4/M8 不退化）</td><td><span class="badge badge-pass">PASS</span></td><td>turn 31 completed 无审批 + usage 真实 dashscope tokens</td></tr>
+</table>
+</section>
+
+<section id="t91">
+<h2>T9-1 + T9-2 gateway 转换层验证（直连）</h2>
+<p>发 Responses 请求（扁平 tools）到 gateway，看返回 SSE 是否含 function_call item：</p>
+<pre><span class="c"># 扁平 tools 格式（codex 发的）</span>
+curl -N -X POST "$GW/v1/responses" -H "Authorization: Bearer $GT" -d '{
+  "model":"deepseek-v4-pro",
+  "input":[{"type":"message","role":"user","content":[
+    {"type":"input_text","text":"What is the weather in Beijing? Use the get_weather tool."}]}],
+  "tools":[{"type":"function","name":"get_weather","description":"Get weather",
+    "parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}}],
+  "tool_choice":"auto","stream":true
+}'
+
+<span class="c"># 返回 SSE（关键事件）：</span>
+event: response.created
+event: response.output_item.added  <span class="c"># message, output_index 0</span>
+event: response.reasoning_text.delta  <span class="c"># ×16 (deepseek 思考)</span>
+event: response.output_item.done     <span class="c"># message (empty content)</span>
+event: response.output_item.added    <span class="c"># ★function_call, output_index 1, in_progress</span>
+data: {"item":{"arguments":"","call_id":"call_f104cdbfd0b84b6b84e628b2",
+  "id":"fc_nexus_...","name":"get_weather","status":"in_progress","type":"function_call"}}
+event: response.output_item.done     <span class="c"># ★完整 function_call</span>
+data: {"item":{"arguments":"{\"city\": \"Beijing\"}","call_id":"call_f104...",
+  "id":"fc_nexus_...","name":"get_weather","type":"function_call"},"output_index":1}
+event: response.completed
+data: {..."output":[{message},{function_call}],"usage":{"input_tokens":304,"output_tokens":74,"total_tokens":378}}</pre>
+<p><b>证明：</b>扁平→嵌套 tools 转换成功（dashscope 返回 tool_calls）+ tool_calls 分片累积成完整 function_call item（arguments=`{"city": "Beijing"}` 字符串，call_id 正确）+ 真实 usage。</p>
+</section>
+
+<section id="t93">
+<h2>T9-3 真实审批端到端</h2>
+<pre><span class="c"># config.toml: approval_policy="untrusted" (非 allow 命令触发审批)</span>
+approval_policy = "untrusted"
+sandbox_mode = "danger-full-access"
+
+<span class="c"># 发 turn 引导调 pwd (非 ls/cat 白名单 → prompt 审批)</span>
+POST /v1/threads/$THREAD/turns  {"input":"...run the pwd command."}
+<span class="c"># turn_start 阻塞 (driver park 等审批) — 单独查 approvals</span>
+
+GET /v1/approvals
+[{"id":25,"turn_id":30,"kind":"command_execution","status":"<b>pending</b>",
+  "command":"/bin/bash -lc pwd","policy_decision":"<b>prompt</b>","risk_level":"low"}]
+
+<span class="c"># 人 resolve approve</span>
+POST /v1/approvals/25/resolve  {"decision":"approve"}
+{"approval_id":25,"status":"<b>approved</b>"}
+
+<span class="c"># turn 30 items (完整链路):</span>
+id=46 userMessage         <span class="c"># 用户请求</span>
+id=48 agentMessage        <span class="c"># reasoning</span>
+id=50 agentMessage
+id=52 commandExecution    <span class="c"># ★/bin/bash -lc pwd 真实执行!</span>
+id=54 agentMessage        <span class="c"># "The current working directory is `/home..."</span></pre>
+<p><b>完整真实链路：</b>真实模型（deepseek-v4-pro）→ gateway function_call 转换 → codex 解析 → CommandExecutionRequestApproval → driver park → 人 resolve → driver respond_approval → 命令执行 → 模型续回复 → turn completed。<b>非 SIMULATE。</b></p>
+</section>
+
+<section id="regress">
+<h2>AC9.5 零回归</h2>
+<pre><span class="c"># 纯文本 turn (不调工具, 走 M8 路径)</span>
+POST /v1/threads/$THREAD/turns  {"input":"Reply with exactly: NEXUS_M9_OK. Do not use any tools."}
+{"status":"completed","turn_id":31}   <span class="c"># M8 路径不变</span>
+GET /v1/approvals  → []                <span class="c"># 无审批</span>
+
+GET /v1/usage?days=1
+[{"date":"2026-09-06","total_input_tokens":160470,"total_output_tokens":1681,
+  "total_cost_micros":0,"total_turns":17}]   <span class="c"># 真实 dashscope 计量</span></pre>
+<p>纯文本 turn 走 M8 output_text.delta 路径不退化；M3 审批协议层 + M4 计量 + driver pool 路由 + M8 纯文本转换 全部零回归。</p>
+</section>
+
+<section id="svg">
+<h2>数据流图</h2>
+<div class="svg-wrap">
+<svg viewBox="0 0 920 420" xmlns="http://www.w3.org/2000/svg" width="100%" style="min-width:720px">
+<defs>
+<marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><polygon points="0,0 8,4 0,8" fill="#58a6ff"/></marker>
+<marker id="ag" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><polygon points="0,0 8,4 0,8" fill="#d29922"/></marker>
+</defs>
+
+<rect x="10" y="10" width="180" height="80" rx="6" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="100" y="35" text-anchor="middle" fill="#e6edf3" font-size="13" font-family="sans-serif">codex app-server</text>
+<text x="100" y="55" text-anchor="middle" fill="#58a6ff" font-size="10">Responses API (wire)</text>
+<text x="100" y="72" text-anchor="middle" fill="#6e7681" font-size="9">tools 扁平 + function_call item</text>
+
+<rect x="370" y="10" width="180" height="80" rx="6" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+<text x="460" y="35" text-anchor="middle" fill="#e6edf3" font-size="13">Nexus Gateway</text>
+<text x="460" y="55" text-anchor="middle" fill="#3fb950" font-size="10">双向 tools 转换</text>
+<text x="460" y="72" text-anchor="middle" fill="#6e7681" font-size="9">扁平↔嵌套 · tool_calls 累积</text>
+
+<rect x="730" y="10" width="180" height="80" rx="6" fill="#161b22" stroke="#f85149" stroke-width="1.5"/>
+<text x="820" y="35" text-anchor="middle" fill="#e6edf3" font-size="13">dashscope</text>
+<text x="820" y="55" text-anchor="middle" fill="#f85149" font-size="10">Chat Completions</text>
+<text x="820" y="72" text-anchor="middle" fill="#6e7681" font-size="9">tools 嵌套 · delta.tool_calls</text>
+
+<line x1="190" y1="40" x2="365" y2="40" stroke="#58a6ff" stroke-width="2" marker-end="url(#ar)"/>
+<text x="277" y="33" text-anchor="middle" fill="#58a6ff" font-size="9">POST /v1/responses</text>
+<text x="277" y="56" text-anchor="middle" fill="#6e7681" font-size="8">扁平 tools + function_call input</text>
+
+<line x1="365" y1="50" x2="195" y2="50" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#ag)"/>
+<text x="280" y="74" text-anchor="middle" fill="#3fb950" font-size="8">Responses SSE (created/delta/function_call item/completed)</text>
+
+<line x1="555" y1="40" x2="725" y2="40" stroke="#58a6ff" stroke-width="2" marker-end="url(#ar)"/>
+<text x="640" y="33" text-anchor="middle" fill="#58a6ff" font-size="9">POST /chat/completions</text>
+<text x="640" y="56" text-anchor="middle" fill="#6e7681" font-size="8">嵌套 tools + stream:true</text>
+
+<line x1="725" y1="50" x2="560" y2="50" stroke="#f85149" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#ag)"/>
+<text x="642" y="74" text-anchor="middle" fill="#f85149" font-size="8">Chat SSE (reasoning + delta.tool_calls 分片)</text>
+
+<rect x="10" y="130" width="900" height="80" rx="6" fill="#0d1117" stroke="#30363d"/>
+<text x="460" y="155" text-anchor="middle" fill="#d29922" font-size="12" font-weight="bold">function_call → 审批闭环（codex 内部）</text>
+<text x="30" y="180" fill="#e6edf3" font-size="10">① gateway 输出 function_call item → ② codex router.build_tool_call → ③ dispatch(shell) →</text>
+<text x="30" y="198" fill="#e6edf3" font-size="10">④ approval_policy=untrusted + 非 allow → ⑤ CommandExecutionRequestApproval → ⑥ driver park → ⑦ 人 resolve → ⑧ respond_approval → ⑨ 命令执行</text>
+
+<rect x="10" y="240" width="430" height="160" rx="6" fill="#161b22" stroke="#d29922"/>
+<text x="225" y="265" text-anchor="middle" fill="#d29922" font-size="12" font-weight="bold">请求方向转换（T9-1）</text>
+<text x="30" y="290" fill="#e6edf3" font-size="10">• tools 扁平→嵌套：{type,name,desc,params,strict}</text>
+<text x="240" y="290" fill="#3fb950" font-size="10">→ {type,function:{name,desc,params}}</text>
+<text x="30" y="308" fill="#e6edf3" font-size="10">• 双位置：顶层 tools + input additional_tools</text>
+<text x="30" y="326" fill="#e6edf3" font-size="10">• function_call input → assistant tool_calls msg</text>
+<text x="30" y="344" fill="#e6edf3" font-size="10">• function_call_output → tool role message</text>
+<text x="30" y="362" fill="#e6edf3" font-size="10">• tool_choice "auto" 直传</text>
+<text x="30" y="382" fill="#6e7681" font-size="9">helper: flatten_tool_to_chat()</text>
+
+<rect x="460" y="240" width="450" height="160" rx="6" fill="#161b22" stroke="#d29922"/>
+<text x="685" y="265" text-anchor="middle" fill="#d29922" font-size="12" font-weight="bold">响应方向转换（T9-2）</text>
+<text x="480" y="290" fill="#e6edf3" font-size="10">• delta.tool_calls 按 index 累积</text>
+<text x="480" y="308" fill="#e6edf3" font-size="10">  首 chunk: id+name (args 空)</text>
+<text x="480" y="326" fill="#e6edf3" font-size="10">  后续 chunk: arguments 分片拼接</text>
+<text x="480" y="344" fill="#e6edf3" font-size="10">• 流结束一次性发（codex 忽略 arguments delta）:</text>
+<text x="480" y="362" fill="#3fb950" font-size="10">  output_item.added(fc,in_progress) + done(完整)</text>
+<text x="480" y="382" fill="#6e7681" font-size="9">helper: merge_tool_call_delta() · 纯文本走 M8 路径</text>
+</svg>
+</div>
+</section>
+
+</main>
+<script>
+function toggleTheme(){const h=document.documentElement;h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark')}
+window.addEventListener('scroll',()=>{const b=document.getElementById('bar');b.style.width=(window.scrollY/(document.body.scrollHeight-window.innerHeight)*100)+'%'});
+</script>
+</body>
+</html>
