@@ -813,7 +813,7 @@ fn run_serve(
     codex_bin: &std::path::Path,
     codex_home: &std::path::Path,
 ) -> Result<()> {
-    println!("=== Nexus M17: serve ===");
+    println!("=== Nexus M18: serve ===");
     let rt = rt()?;
     rt.block_on(async move {
         let pool = nexus_control::db::connect(database_url).await?;
@@ -897,6 +897,7 @@ fn run_serve(
             )),
             codex_home: codex_home.to_path_buf(),
             broadcast: std::sync::Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
+            base_url: format!("http://{}", addr.replace("0.0.0.0", "127.0.0.1")),
         };
         let app = nexus_control::http_server::router(state);
         let listener = tokio::net::TcpListener::bind(addr)
