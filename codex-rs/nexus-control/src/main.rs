@@ -812,7 +812,7 @@ fn run_serve(
     codex_bin: &std::path::Path,
     codex_home: &std::path::Path,
 ) -> Result<()> {
-    println!("=== Nexus M5: serve ===");
+    println!("=== Nexus M6: serve ===");
     let rt = rt()?;
     rt.block_on(async move {
         let pool = nexus_control::db::connect(database_url).await?;
@@ -888,6 +888,7 @@ fn run_serve(
             turn_slots: std::sync::Arc::new(tokio::sync::Mutex::new(
                 std::collections::HashMap::new(),
             )),
+            codex_home: codex_home.to_path_buf(),
             broadcast: std::sync::Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
         };
         let app = nexus_control::http_server::router(state);

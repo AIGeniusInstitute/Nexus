@@ -40,6 +40,9 @@ pub struct AppState {
     /// M5: routing map turn_db_id → slot idx, so approval resolve / interrupt
     /// handlers can dispatch to the driver actually running that turn.
     pub turn_slots: Arc<Mutex<HashMap<i64, usize>>>,
+    /// M6: CODEX_HOME path — used to hot-rewrite tenant .rules files after a
+    /// policy is auto-learned (app-server reloads rules per-turn).
+    pub codex_home: std::path::PathBuf,
     /// Per-thread broadcast channels for live WS push.
     pub broadcast: Arc<Mutex<HashMap<Uuid, broadcast::Sender<Value>>>>,
 }
@@ -72,6 +75,8 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/approvals/{aid}/resolve", post(approval_resolve))
         .route("/v1/usage", get(usage_summary))
         .route("/v1/usage/users/{uid}", get(usage_user))
+        .route("/v1/policy/feedback", get(policy_feedback))
+        .route("/v1/policy/rules", get(policy_rules))
         .route("/v1/ws/threads/{id}/events", get(crate::ws::ws_handler))
         .layer(middleware::from_fn_with_state(state.clone(), idempotency_layer))
         .layer(middleware::from_fn_with_state(state.clone(), user_rate_limit))
@@ -452,15 +457,16 @@ async fn approval_resolve(
     Path(aid): Path<i64>,
     Json(req): Json<ResolveReq>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    // Load ticket status + turn_id (M5: need turn_id to route the resolve to
-    // the driver actually running that turn). Verify tenant + pending.
-    let row: Option<(String, i64)> = sqlx::query_as(
-        "SELECT status, turn_id FROM approval_tickets WHERE id=$1 AND tenant_id=$2",
+    // Load ticket status + turn_id + command/policy_decision/risk_level (M6:
+    // need these to record learning feedback). Verify tenant + pending.
+    let row: Option<(String, i64, Option<String>, Option<String>, Option<String>)> = sqlx::query_as(
+        "SELECT status, turn_id, command, policy_decision, risk_level
+         FROM approval_tickets WHERE id=$1 AND tenant_id=$2",
     )
     .bind(aid).bind(c.tid).fetch_optional(&st.pool).await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let (status, turn_id) = match row {
-        Some((s, t)) => (s, t),
+    let (status, turn_id, command, policy_decision, risk_level) = match row {
+        Some(s) => s,
         None => return Err((StatusCode::NOT_FOUND, "approval not found".into())),
     };
     if status != "pending" {
@@ -486,6 +492,31 @@ async fn approval_resolve(
          VALUES ($1,$2,'resolved',$3)",
     )
     .bind(aid).bind(c.uid).bind(new_status).execute(&st.pool).await;
+
+    // M6: 记录决策反馈 + 学习（连续 N 次一致且与当前策略矛盾 → 自动提升）。
+    // 学习是叠加：不改 resolve 主流程，仅追加 record + learn + 刷 rules。
+    let decision_verb = match &decision {
+        runtime::DecisionInput::Approve => "approve",
+        runtime::DecisionInput::Deny => "deny",
+        runtime::DecisionInput::Cancel => "cancel",
+    };
+    let pattern = policy::extract_pattern(command.as_deref().unwrap_or(""));
+    let rec = policy_decision.as_deref().unwrap_or("prompt");
+    let _ = policy::record_feedback(
+        &st.pool, c.tid, &pattern, decision_verb, rec,
+        risk_level.as_deref(), Some(turn_id),
+    ).await;
+    let learned = policy::learn(&st.pool, c.tid).await.unwrap_or_default();
+    if !learned.is_empty() {
+        // 热刷新 tenant rules 文件（app-server 下一 turn 自动加载）。
+        if let Ok(content) = policy::generate_rules(&st.pool, c.tid).await {
+            if !content.is_empty() {
+                let _ = policy::write_tenant_rules(c.tid, &st.codex_home, &content);
+            }
+        }
+        tracing::info!(?learned, "policy auto-learned + rules refreshed");
+    }
+
     // M5: dispatch the resolve to the driver slot running this turn. If the
     // turn already completed (no slot mapping), the ticket is already marked
     // resolved above — a late resolve is a benign no-op (matches M4's
@@ -575,6 +606,24 @@ async fn usage_user(
     }
     let days = q.days.unwrap_or(7).clamp(1, 365);
     let rows = metering::daily_usage_user(&st.pool, c.tid, uid, days).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+// ---------- M6: Policy learning observability ----------
+async fn policy_feedback(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Query(q): Query<UsageQuery>,
+) -> Result<Json<Vec<policy::FeedbackRow>>, (StatusCode, String)> {
+    let days = q.days.unwrap_or(7).clamp(1, 365);
+    let rows = policy::list_feedback(&st.pool, c.tid, days).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn policy_rules(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+) -> Result<Json<Vec<policy::PolicyRow>>, (StatusCode, String)> {
+    let rows = policy::list_rules(&st.pool, c.tid).await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(rows))
 }
