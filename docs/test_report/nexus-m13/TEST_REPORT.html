@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus M13 测试报告 — 知识库 RAG (pgvector)</title>
+<style>
+  :root[data-theme="dark"]{--bg:#0d1117;--panel:#161b22;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--gold:#d29922;--green:#3fb950;--red:#f85149;--border:#30363d;--code:#0d1117}
+  :root[data-theme="light"]{--bg:#f6f8fa;--panel:#fff;--text:#1f2328;--muted:#656d76;--accent:#0969da;--gold:#9a6700;--green:#1a7f37;--red:#cf222e;--border:#d0d7de;--code:#f6f8fa}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;transition:background .2s,color .2s}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 80px}
+  header{border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:28px}
+  h1{margin:0 0 6px;font-size:1.7em;color:var(--accent)}
+  h2{color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:36px}
+  h3{color:var(--accent);margin-top:24px}
+  .meta{color:var(--muted);font-size:.92em}
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.78em;font-weight:600}
+  .pass{background:rgba(63,185,80,.15);color:var(--green);border:1px solid var(--green)}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 20px;margin-bottom:24px}
+  .toc a{color:var(--accent);text-decoration:none}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.92em}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+  th{background:var(--panel);color:var(--gold)}
+  tr:nth-child(even){background:var(--panel)}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-size:.84em;line-height:1.45}
+  code{color:var(--accent)}
+  pre code{color:var(--text)}
+  .ev{margin:10px 0}.ev .lab{color:var(--gold);font-weight:600;font-size:.85em;margin-bottom:4px}
+  .theme-btn{position:fixed;top:14px;right:16px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.85em}
+  .prog{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:99;width:0}
+  .svg-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin:16px 0}
+  details{margin:8px 0} summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0}
+</style>
+</head>
+<body>
+<div class="prog" id="prog"></div>
+<button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+<div class="wrap">
+<header>
+  <h1>Nexus M13 测试报告 — 知识库 RAG (pgvector)</h1>
+  <div class="meta">里程碑 M13（roadmap M11 T11-2/T11-3）· 分支 <code>feat/nexus-m13</code> · base M12 merge <code>7b1f174</code> · 2026-09-06 · 守护：DeepThink</div>
+  <p class="meta"><span class="pill pass">cargo check 0e0w</span> &nbsp; <span class="pill pass">cargo test 30/30</span> &nbsp; <span class="pill pass">e2e AC13.1–13.6 PASS</span> &nbsp; <span class="pill pass">真实 embedding</span></p>
+</header>
+
+<div class="toc"><strong>目录</strong>
+  <ol><li><a href="#summary">交付摘要</a></li><li><a href="#flow">数据流</a></li><li><a href="#ac">验收矩阵</a></li><li><a href="#evidence">证据</a></li><li><a href="#regress">零回归</a></li><li><a href="#decisions">关键决策</a></li></ol>
+</div>
+
+<h2 id="summary">1. 交付摘要</h2>
+<p>M13 补齐 roadmap 阶段⑤「规模化与生态」的<strong>知识库 RAG 维度</strong>（M11 T11-2 知识库/RAG + T11-3 向量库 pgvector，均自建）。文档摄入（embedding 索引）→ 混合召回（向量 ANN + 关键词过滤）→ 溯源（source/title/snippet/score）。权限过滤先于召回。</p>
+<ul>
+  <li>新 migration <code>20260906000009_m13_kb_rag.sql</code>：CREATE EXTENSION vector + kb_documents(embedding vector(1024)) + HNSW cosine 索引 + knowledge_bases ALTER 加 tenant_id/description</li>
+  <li>新模块 <code>src/kb.rs</code>：embed()(dashscope text-embedding-v3) + create_kb/list_kbs/ingest_document/list_documents/delete_document/search + vec_literal()</li>
+  <li><code>http_server.rs</code>：5 路由（kbs CRUD + documents CRUD + search）</li>
+  <li><code>main.rs</code>：标题 "Nexus M13: serve"</li>
+</ul>
+<p><strong>不改 codex 内核</strong>（全部 nexus-control crate）。<strong>不动既有表</strong>（knowledge_bases 用 ALTER；新建 kb_documents）。</p>
+
+<h2 id="flow">2. 数据流</h2>
+<div class="svg-wrap">
+<svg viewBox="0 0 940 360" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="monospace" font-size="12">
+  <defs><marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#d29922"/></marker></defs>
+  <rect x="10" y="10" width="920" height="340" fill="none" stroke="#30363d"/>
+  <text x="24" y="32" fill="#58a6ff" font-weight="bold">摄入 (embed→HNSW)  |  召回 (query→ANN+filter→溯源)</text>
+  <rect x="30" y="60" width="200" height="90" rx="6" fill="#161b22" stroke="#3fb950"/>
+  <text x="130" y="85" text-anchor="middle" fill="#3fb950">POST /v1/kbs/{id}/documents</text>
+  <text x="130" y="105" text-anchor="middle" fill="#8b949e">title + content + source_uri</text>
+  <text x="130" y="125" text-anchor="middle" fill="#8b949e">tenant_id 随索引写入</text>
+  <rect x="300" y="55" width="220" height="100" rx="8" fill="#161b22" stroke="#d29922" stroke-width="2"/>
+  <text x="410" y="80" text-anchor="middle" fill="#d29922" font-weight="bold">embed(content)</text>
+  <text x="410" y="100" text-anchor="middle" fill="#8b949e">dashscope /v1/embeddings</text>
+  <text x="410" y="118" text-anchor="middle" fill="#8b949e">text-embedding-v3</text>
+  <text x="410" y="138" text-anchor="middle" fill="#8b949e">1024 维 Vec&lt;f32&gt;</text>
+  <path d="M230,100 L295,95" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <rect x="590" y="60" width="320" height="90" rx="6" fill="#161b22" stroke="#3fb950"/>
+  <text x="750" y="85" text-anchor="middle" fill="#3fb950">INSERT kb_documents</text>
+  <text x="750" y="105" text-anchor="middle" fill="#8b949e">embedding vector(1024) + tenant_id</text>
+  <text x="750" y="125" text-anchor="middle" fill="#8b949e">HNSW vector_cosine_ops 索引</text>
+  <path d="M520,95 L585,95" stroke="#3fb950" marker-end="url(#arr)" fill="none"/>
+  <rect x="30" y="200" width="200" height="60" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="130" y="225" text-anchor="middle" fill="#58a6ff">POST /v1/kbs/{id}/search</text>
+  <text x="130" y="245" text-anchor="middle" fill="#8b949e">query + keyword? + top_k</text>
+  <rect x="300" y="195" width="220" height="70" rx="8" fill="#161b22" stroke="#d29922" stroke-width="2"/>
+  <text x="410" y="220" text-anchor="middle" fill="#d29922" font-weight="bold">embed(query) → vec</text>
+  <text x="410" y="245" text-anchor="middle" fill="#8b949e">WHERE tenant_id 先于</text>
+  <text x="410" y="260" text-anchor="middle" fill="#8b949e">ORDER BY embedding &lt;=&gt; vec</text>
+  <path d="M230,230 L295,225" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <rect x="590" y="200" width="320" height="70" rx="6" fill="#161b22" stroke="#3fb950"/>
+  <text x="750" y="225" text-anchor="middle" fill="#3fb950">top-k + 溯源</text>
+  <text x="750" y="245" text-anchor="middle" fill="#8b949e">title + source_uri + snippet + score(1-cos)</text>
+  <path d="M520,225 L585,225" stroke="#3fb950" marker-end="url(#arr)" fill="none"/>
+  <rect x="30" y="290" width="880" height="40" rx="6" fill="#161b22" stroke="#f85149" stroke-dasharray="4,3"/>
+  <text x="40" y="315" fill="#f85149" font-weight="bold">ACL: tenant_id 硬隔离 — 跨租户文档（即使同 embedding）不可见</text>
+</svg>
+</div>
+
+<h2 id="ac">3. 验收矩阵 AC13.1–13.6</h2>
+<table>
+  <tr><th>AC</th><th>验收点</th><th>状态</th></tr>
+  <tr><td>AC13.1</td><td>pgvector 扩展 + kb_documents 表 + HNSW 索引建立</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC13.2</td><td>POST /v1/kbs 创建 + GET /v1/kbs 列表（tenant_id=1 隔离）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC13.3</td><td>POST /v1/kbs/{id}/documents 摄入 3 篇（真实 embedding 1024 维 + tenant_id 随索引写入 + tokens）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC13.4</td><td>POST /v1/kbs/{id}/search 混合召回：语义（RAG doc2 score=0.6105 最高）+ keyword（title OR content）+ 溯源</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC13.5</td><td>跨租户隔离：tenant-999 机密文档（同 embedding）对 tenant-1 admin 不可见（权限先于召回）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC13.6</td><td>零回归：M10 audit(3+WORM) + M11 timeline(64) + M12 eval 仍工作</td><td><span class="pill pass">PASS</span></td></tr>
+</table>
+
+<h2 id="evidence">4. 证据</h2>
+<div class="ev"><div class="lab">cargo check / test</div>
+<pre><code>$ cargo check -p nexus-control   # 0 error 0 warning
+$ cargo test -p nexus-control     # 30 passed; 0 failed
+test kb::tests::vec_literal_format ... ok
+test kb::tests::embed_dim_constant ... ok</code></pre></div>
+
+<div class="ev"><div class="lab">AC13.1 pgvector 扩展 + 表</div>
+<pre><code>nexus-pg-m4=# SELECT extname, extversion FROM pg_extension WHERE extname='vector';
+ vector | 0.8.6
+\d kb_documents
+ embedding | vector(1024) NOT NULL
+Indexes: idx_kb_docs_embedding USING hnsw (embedding vector_cosine_ops)</code></pre></div>
+
+<div class="ev"><div class="lab">AC13.3 摄入 3 篇（真实 embedding 落库）</div>
+<pre><code> id | tenant_id |       title       | tokens
+----+-----------+-------------------+--------
+  1 |         1 | Nexus 架构概览    |     13
+  2 |         1 | RAG 检索增强生成  |      6
+  3 |         1 | K8s 云部署        |     13</code></pre></div>
+
+<div class="ev"><div class="lab">AC13.4 语义召回（query="向量检索相关文档召回"，应命中 RAG doc2）</div>
+<pre><code>  hit: id=2 title=RAG 检索增强生成   score=0.6105 src=docs/rag.md
+  hit: id=3 title=K8s 云部署         score=0.4394 src=docs/k8s.md
+  hit: id=1 title=Nexus 架构概览     score=0.4043 src=docs/architecture/nexus.md</code></pre></div>
+
+<div class="ev"><div class="lab">AC13.4 keyword 过滤（"K8s" 匹配 title → doc3）</div>
+<pre><code>$ POST search {"query":"部署","keyword":"K8s","top_k":3}
+  hit: id=3 title=K8s 云部署 score=0.5621 src=docs/k8s.md
+$ POST search {"query":"部署","keyword":"Redis","top_k":3}  # content 关键词
+  hit: id=3 title=K8s 云部署 score=0.5621 src=docs/k8s.md   # Redis 仅在 doc3 content
+$ POST search {"query":"部署","top_k":3}  # 无关键词
+  hit: id=3 ... hit: id=1 ... hit: id=2 ...   # 全部 3 篇</code></pre></div>
+
+<div class="ev"><div class="lab">AC13.5 跨租户隔离（tenant-999 机密文档，同 embedding，不可见）</div>
+<pre><code>nexus-pg-m4=# INSERT INTO kb_documents (kb_id, tenant_id, title, content, ...)
+              VALUES (1, 999, 'tenant-999-secret', '跨租户机密文档不应被召回', ..., embedding=(同 doc1));
+$ POST search {"query":"跨租户机密文档","top_k":5}   # as tenant-1 admin
+  hit: id=1 title=Nexus 架构概览   # 仅 tenant_id=1 的文档，无 tenant-999 secret</code></pre></div>
+
+<div class="ev"><div class="lab">AC13.6 零回归</div>
+<pre><code>$ GET /v1/audit/logs?limit=3   # M10
+  audit count=3  actions=['auth.login','auth.login','auth.login']
+$ UPDATE audit_logs SET action='tamper' WHERE id=1;   # WORM
+  ERROR: audit_logs is append-only (WORM): modification forbidden
+$ GET /v1/threads/{id}/timeline   # M11
+  timeline count=64
+$ GET /v1/evals/cases   # M12
+  eval_cases count=1</code></pre></div>
+
+<h2 id="regress">5. 零回归</h2>
+<ul>
+  <li>cargo test 30/30（M12 的 28 + kb 2，无回退）</li>
+  <li>M10 audit WORM + 查询 API 仍工作（3 条 auth.login + UPDATE 被拒）</li>
+  <li>M11 timeline / trace API 仍工作（64 条）</li>
+  <li>M12 eval cases / runs API 仍工作（list 正常）</li>
+  <li>M1-M9 路径未触碰（仅新增 kb 模块 + 路由 + migration）</li>
+</ul>
+
+<h2 id="decisions">6. 关键决策</h2>
+<details><summary>6.1 权限过滤先于召回（roadmap T11-3 验收标准）</summary>
+<p><code>WHERE tenant_id=$X</code> 在 <code>ORDER BY embedding &lt;=&gt; $vec</code> 之前。pgvector 0.8.x HNSW 支持过滤 ANN。跨租户文档即使 embedding 相同也不可见（AC13.5 实证）。</p>
+</details>
+<details><summary>6.2 ACL 随索引写入 + 冗余 tenant_id</summary>
+<p>kb_documents.tenant_id 在摄入时写入（不召回时 JOIN knowledge_bases→workspaces）。冗余避免 ANN 时 JOIN（性能 + 简单）。KB 是 tenant-scoped（即使 admin 也只看本租户，数据隔离不同于 audit 跨租户管理可见性）。</p>
+</details>
+<details><summary>6.3 手动 vec_literal 不引 sqlx-pgvector</summary>
+<p>构造 <code>'[0.1,0.2,...]'::vector</code> 字符串 bind，避免给 workspace 加 sqlx-pgvector feature（Surgical，避免连锁依赖变更）。</p>
+</details>
+<details><summary>6.4 混合召回最小实现（rerank 留扩展）</summary>
+<p>向量 ANN（HNSW 余弦）+ 可选 keyword ILIKE（title OR content）。score = <code>1 - cosine_distance</code>。rerank 模型需额外 API 调用，speculative，M13 用向量距离排序足够 MVP。</p>
+</details>
+<details><summary>6.5 embedding 复用 M8 env（不新增凭证）</summary>
+<p>NEXUS_UPSTREAM_MODEL_URL / NEXUS_MODEL_KEY（M8 已用）+ NEXUS_EMBED_MODEL(default text-embedding-v3)。key 仅从 env，绝不硬编码/日志/记忆。</p>
+</details>
+<details><summary>6.6 坑：keyword 初版只过滤 content</summary>
+<p>doc3 title="K8s 云部署" 但 content 用 "Kubernetes"→搜 "K8s" 空。改进为 <code>title ILIKE OR content ILIKE</code>。</p>
+</details>
+
+<footer style="margin-top:40px;border-top:1px solid var(--border);padding-top:12px;color:var(--muted);font-size:.85em">
+  DeepThink · Nexus M13 知识库 RAG (pgvector)（roadmap M11 T11-2/T11-3）· 2026-09-06 · 所有改动在 codex-rs/nexus-control crate 内
+</footer>
+</div>
+<script>
+function toggleTheme(){var d=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',d==='dark'?'light':'dark')}
+window.addEventListener('scroll',function(){var h=document.documentElement.scrollHeight-window.innerHeight;document.getElementById('prog').style.width=(h>0?window.scrollY/h*100:0)+'%'});
+</script>
+</body>
+</html>

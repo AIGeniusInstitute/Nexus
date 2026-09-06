@@ -1,0 +1,33 @@
+# Nexus auto-generated execpolicy (M4)
+# prefix_rule syntax — auto-loaded by app-server.
+
+prefix_rule(
+    pattern = ["rm", "-rf"],
+    decision = "forbidden",
+    justification = "nexus policy: rm -rf*",
+)
+
+prefix_rule(
+    pattern = ["sudo"],
+    decision = "forbidden",
+    justification = "nexus policy: sudo*",
+)
+
+prefix_rule(
+    pattern = ["rm"],
+    decision = "forbidden",
+    justification = "nexus policy: rm*",
+)
+
+prefix_rule(
+    pattern = ["cat"],
+    decision = "allow",
+    justification = "nexus policy: cat*",
+)
+
+prefix_rule(
+    pattern = ["ls"],
+    decision = "allow",
+    justification = "nexus policy: ls*",
+)
+
