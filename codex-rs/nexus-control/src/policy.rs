@@ -13,6 +13,8 @@
 
 use std::path::Path;
 
+use chrono::{DateTime, Utc};
+use serde::Serialize;
 use sqlx::PgPool;
 
 /// 策略决策。
@@ -184,6 +186,202 @@ pub fn write_tenant_rules(
 
 use anyhow::Context;
 
+// ===========================================================================
+// M6: 策略自学习闭环。记录人的审批决策 → 累计 N 次一致且与当前策略矛盾 →
+// 自动提升（prompt→deny / prompt→allow）→ 写回 policies 表 + 刷 tenant
+// rules 文件 → 下一 turn 自动加载。保守、安全单调（deny 不回退、高危不
+// 自动 allow）。
+// ===========================================================================
+
+/// 提取命令的 argv 前缀 glob 作为学习 pattern。取前 2 token，若命令 token
+/// 数 > 2 则末尾加 `*`（前缀匹配）；与 policies 表 glob 风格一致。
+/// `rm -rf /tmp/x` → `rm -rf*`；`npm install x` → `npm install*`；`ls` → `ls`。
+pub fn extract_pattern(command: &str) -> String {
+    let tokens: Vec<&str> = command.split_whitespace().collect();
+    match tokens.len() {
+        0 => "*".to_string(),
+        1 => tokens[0].to_string(),
+        2 => tokens[..2].join(" "),
+        _ => format!("{} {}*", tokens[0], tokens[1]),
+    }
+}
+
+/// 一条决策反馈（人 resolve 审批时落库）。
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct FeedbackRow {
+    pub id: i64,
+    pub pattern: String,
+    pub decision: String,
+    pub policy_rec: String,
+    pub risk_level: Option<String>,
+    pub turn_id: Option<i64>,
+    pub created_at: DateTime<Utc>,
+}
+
+/// 记录一次审批 resolve 决策到 `policy_feedback`。`decision` 为人决策
+/// 枚举字符串（approve/deny/cancel）；`policy_rec` 为决策时 evaluate 推荐
+/// （allow/prompt/deny，取自 ticket.policy_decision）。
+pub async fn record_feedback(
+    pool: &PgPool,
+    tenant_id: i64,
+    pattern: &str,
+    decision: &str,
+    policy_rec: &str,
+    risk_level: Option<&str>,
+    turn_id: Option<i64>,
+) -> anyhow::Result<i64> {
+    let row: (i64,) = sqlx::query_as(
+        "INSERT INTO policy_feedback (tenant_id, pattern, decision, policy_rec, risk_level, turn_id)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+    )
+    .bind(tenant_id)
+    .bind(pattern)
+    .bind(decision)
+    .bind(policy_rec)
+    .bind(risk_level)
+    .bind(turn_id)
+    .fetch_one(pool)
+    .await?;
+    Ok(row.0)
+}
+
+/// 学习生成的规则（提升后的 pattern + 新决策）。
+#[derive(Debug, Clone)]
+pub struct LearnedRule {
+    pub pattern: String,
+    pub decision: String, // deny | allow
+}
+
+/// 学习阈值（连续一致决策数才提升）。可经 env 配置。
+fn learn_threshold() -> usize {
+    std::env::var("NEXUS_POLICY_LEARN_THRESHOLD")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(3)
+}
+
+/// 分析该租户的 `policy_feedback`，对"连续 N 次一致决策且与当前策略矛盾且
+/// 可提升"的 pattern 自动提升策略（prompt→deny 或 prompt→allow），UPSERT
+/// 到 `policies` 表（source=learned）。返回被提升的 pattern 列表。
+///
+/// 安全单调：deny 永不回退；高危命令（risk=high）即使人反复 approve 也不
+/// 自动 allow。
+pub async fn learn(pool: &PgPool, tenant_id: i64) -> anyhow::Result<Vec<LearnedRule>> {
+    let threshold = learn_threshold();
+    // 取该租户全部反馈（按时间倒序），Rust 侧按 pattern 分组取前 N。
+    let rows: Vec<(String, String, Option<String>)> = sqlx::query_as(
+        "SELECT pattern, decision, risk_level FROM policy_feedback
+         WHERE tenant_id=$1 ORDER BY created_at DESC",
+    )
+    .bind(tenant_id)
+    .fetch_all(pool)
+    .await?;
+
+    // pattern → 最近 N 条 (decision, risk)
+    let mut groups: std::collections::HashMap<String, Vec<(String, Option<String>)>> =
+        std::collections::HashMap::new();
+    for (pattern, decision, risk) in rows {
+        let g = groups.entry(pattern).or_default();
+        if g.len() < threshold {
+            g.push((decision, risk));
+        }
+    }
+
+    let mut learned = Vec::new();
+    for (pattern, recent) in &groups {
+        if recent.len() < threshold {
+            continue;
+        }
+        // 最近 N 次决策是否全一致。
+        let first = &recent[0].0;
+        if !recent.iter().all(|(d, _)| d == first) {
+            continue;
+        }
+        let human_decision = first.as_str();
+        let risk = recent.iter().rev().find_map(|(_, r)| r.clone())
+            .unwrap_or_else(|| "low".to_string());
+
+        // 当前策略（同 pattern 的 enabled 规则；None → prompt 默认）。
+        let cur: Option<(String,)> = sqlx::query_as(
+            "SELECT decision FROM policies
+             WHERE tenant_id=$1 AND pattern=$2 AND enabled
+             ORDER BY priority DESC LIMIT 1",
+        )
+        .bind(tenant_id)
+        .bind(pattern)
+        .fetch_optional(pool)
+        .await?;
+        let cur_dec = cur.map(|(d,)| d).unwrap_or_else(|| "prompt".to_string());
+
+        // 提升规则（保守）。
+        let promote = match (cur_dec.as_str(), human_decision) {
+            ("prompt", "deny") => Some("deny"),
+            ("prompt", "approve") if risk != "high" => Some("allow"),
+            _ => None, // deny 不回退；allow 不变；高危不自动 allow
+        };
+        if let Some(new_dec) = promote {
+            // UPSERT：覆盖同 pattern 的旧 prompt 种子（唯一索引已存在）。
+            sqlx::query(
+                "INSERT INTO policies (tenant_id, role, action_kind, pattern, risk_level,
+                       decision, priority, enabled, source, learned_from)
+                 VALUES ($1, '*', 'command_execution', $2, $3, $4, 50, TRUE, 'learned', $2)
+                 ON CONFLICT (tenant_id, role, action_kind, pattern) DO UPDATE
+                   SET decision=EXCLUDED.decision, risk_level=EXCLUDED.risk_level,
+                       priority=50, enabled=TRUE, source='learned',
+                       learned_from=EXCLUDED.learned_from",
+            )
+            .bind(tenant_id)
+            .bind(pattern)
+            .bind(&risk)
+            .bind(new_dec)
+            .execute(pool)
+            .await?;
+            learned.push(LearnedRule {
+                pattern: pattern.clone(),
+                decision: new_dec.to_string(),
+            });
+        }
+    }
+    Ok(learned)
+}
+
+/// 最近 N 天的决策反馈列表（可观测）。
+pub async fn list_feedback(pool: &PgPool, tenant_id: i64, days: i32) -> anyhow::Result<Vec<FeedbackRow>> {
+    let cutoff = Utc::now() - chrono::Duration::days(days as i64);
+    let rows = sqlx::query_as::<_, FeedbackRow>(
+        "SELECT id, pattern, decision, policy_rec, risk_level, turn_id, created_at
+         FROM policy_feedback WHERE tenant_id=$1 AND created_at >= $2
+         ORDER BY created_at DESC LIMIT 500",
+    )
+    .bind(tenant_id)
+    .bind(cutoff)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
+/// 当前租户的策略规则（种子 + learned）。
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct PolicyRow {
+    pub pattern: String,
+    pub decision: String,
+    pub risk_level: String,
+    pub priority: i32,
+    pub enabled: bool,
+    pub source: String,
+}
+
+pub async fn list_rules(pool: &PgPool, tenant_id: i64) -> anyhow::Result<Vec<PolicyRow>> {
+    let rows = sqlx::query_as::<_, PolicyRow>(
+        "SELECT pattern, decision, risk_level, priority, enabled, source
+         FROM policies WHERE tenant_id=$1 ORDER BY priority DESC",
+    )
+    .bind(tenant_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -215,5 +413,19 @@ mod tests {
         assert!(out.contains("prefix_rule"));
         assert!(out.contains("forbidden"));
         assert!(!out.contains("forbid("));
+    }
+
+    #[test]
+    fn extract_pattern_prefix() {
+        // M6: argv 前 2 token + 末尾 `*`（token 数 > 2）。
+        assert_eq!(extract_pattern("rm -rf /tmp/nexus-sim"), "rm -rf*");
+        assert_eq!(extract_pattern("npm install nexus-sim"), "npm install*");
+        assert_eq!(extract_pattern("sudo apt update"), "sudo apt*");
+        // 2 token → 不加 `*`（精确匹配）。
+        assert_eq!(extract_pattern("ls -la"), "ls -la");
+        // 1 token → 原样。
+        assert_eq!(extract_pattern("ls"), "ls");
+        // 空 → catch-all。
+        assert_eq!(extract_pattern(""), "*");
     }
 }

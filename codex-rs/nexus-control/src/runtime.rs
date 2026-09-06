@@ -379,6 +379,11 @@ fn driver_loop(
                 // the real notification drain (the mock model emits nothing).
                 if simulate_approval {
                     let approval_id = approval_counter.fetch_add(1, Ordering::SeqCst);
+                    // M6: SIMULATE 命令可配（default rm -rf /tmp/nexus-sim）。
+                    // 设为 prompt 类命令（如 npm install nexus-sim）可演示
+                    // 策略自学习（3 次 deny → 学习 deny 规则）。
+                    let sim_command = std::env::var("NEXUS_SIMULATE_COMMAND")
+                        .unwrap_or_else(|_| "rm -rf /tmp/nexus-sim".into());
                     seq += 1;
                     let _ = event_tx.send(TurnEvent {
                         thread_id,
@@ -386,9 +391,9 @@ fn driver_loop(
                         seq,
                         item_type: "approval/requested".into(),
                         codex_item_id: Some(format!("sim-item-{approval_id}")),
-                        content_ref: Some("rm -rf /tmp/nexus-sim".into()),
+                        content_ref: Some(sim_command.clone()),
                         raw_json: serde_json::json!({
-                            "command": "rm -rf /tmp/nexus-sim",
+                            "command": sim_command,
                             "cwd": "/tmp",
                             "kind": "command_execution",
                         }),
@@ -398,11 +403,11 @@ fn driver_loop(
                         approval: Some(ApprovalInfo {
                             approval_id,
                             kind: ApprovalKind::CommandExecution,
-                            command: Some("rm -rf /tmp/nexus-sim".into()),
+                            command: Some(sim_command.clone()),
                             cwd: Some("/tmp".into()),
                             reason: None,
                             raw_params: serde_json::json!({
-                                "command": "rm -rf /tmp/nexus-sim",
+                                "command": sim_command,
                                 "simulated": true,
                             }),
                         }),
