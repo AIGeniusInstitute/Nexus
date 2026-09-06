@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nexus 系统测试报告 — M0-M19 全功能验收</title>
+<style>
+:root{--bg:#0f1117;--pan:#181b24;--pan2:#1f2330;--tx:#e6e6e6;--mut:#8b93a7;--acc:#4f9cf9;--gold:#f0c040;--grn:#3ddc84;--red:#ff5d5d;--bd:#2a2f3d}
+[data-theme="light"]{--bg:#f5f6f8;--pan:#fff;--pan2:#eef1f5;--tx:#1a1d29;--mut:#5c6378;--acc:#2563eb;--gold:#b8860b;--grn:#16a34a;--red:#dc2626;--bd:#d9dde5}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--tx);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.6;min-height:100vh}
+#bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--acc),var(--gold));z-index:999;width:0;transition:width .15s}
+.hd{max-width:1100px;margin:0 auto;padding:40px 24px 20px}
+.hd h1{font-size:28px;background:linear-gradient(90deg,var(--acc),var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hd .sub{color:var(--mut);font-size:14px;margin-top:6px}
+.sum{max-width:1100px;margin:0 auto 24px;padding:0 24px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.sum .b{background:var(--pan);border:1px solid var(--bd);border-radius:12px;padding:18px 16px;text-align:center}
+.sum .b .n{font-size:30px;font-weight:700}
+.sum .b .l{color:var(--mut);font-size:12px;margin-top:4px}
+.sum .b.t .n{color:var(--acc)}
+.sum .b.p .n{color:var(--grn)}
+.sum .b.f .n{color:var(--red)}
+.sum .b.r .n{color:var(--gold)}
+.sec{max-width:1100px;margin:0 auto 24px;padding:0 24px}
+.sec h2{font-size:18px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.sec h2::before{content:"";width:4px;height:18px;background:var(--acc);border-radius:2px}
+table{width:100%;border-collapse:collapse;background:var(--pan);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--bd);font-size:14px}
+th{background:var(--pan2);color:var(--mut);font-weight:600}
+tr.pass td{color:var(--tx)}
+tr.fail td{color:var(--red)}
+.cards{display:grid;grid-template-columns:1fr;gap:8px}
+.card{display:grid;grid-template-columns:30px 200px 1fr 70px;gap:10px;align-items:center;background:var(--pan);border:1px solid var(--bd);border-left:3px solid var(--grn);border-radius:8px;padding:11px 14px;font-size:14px}
+.card.fail{border-left-color:var(--red)}
+.card .ic{font-size:16px}.card .cn{font-weight:600}.card .dt{color:var(--mut);font-size:13px;word-break:break-all}.card .st{font-size:11px;color:var(--mut);text-align:right}
+button.tg{position:fixed;top:14px;right:18px;background:var(--pan);border:1px solid var(--bd);color:var(--tx);border-radius:20px;padding:6px 14px;cursor:pointer;font-size:12px;z-index:998}
+.ft{max-width:1100px;margin:0 auto 60px;padding:0 24px;color:var(--mut);font-size:12px;text-align:center}
+</style></head><body data-theme="dark">
+<div id="bar"></div>
+<button class="tg" onclick="toggleTheme()">🌗 主题</button>
+<div class="hd"><h1>Nexus 系统测试报告</h1><div class="sub">M0-M19 全功能端到端验收 · Docker 部署 (localhost:8765) · 2026-09-06 22:56 · Asia/Shanghai</div></div>
+<div class="sum">
+<div class="b t"><div class="n">25</div><div class="l">总用例数</div></div>
+<div class="b p"><div class="n">25</div><div class="l">通过</div></div>
+<div class="b f"><div class="n">0</div><div class="l">失败</div></div>
+<div class="b r"><div class="n">100.0%</div><div class="l">通过率</div></div>
+</div>
+<div class="sec"><h2>里程碑覆盖</h2><table><thead><tr><th>里程碑</th><th>用例数</th><th>通过</th><th>失败</th><th>状态</th></tr></thead><tbody><tr class="pass"><td>M1</td><td>4</td><td>4</td><td>0</td><td>全部通过</td></tr>
+<tr class="pass"><td>M3</td><td>1</td><td>1</td><td>0</td><td>全部通过</td></tr>
+<tr class="pass"><td>M4</td><td>1</td><td>1</td><td>0</td><td>全部通过</td></tr>
+<tr class="pass"><td>M6</td><td>2</td><td>2</td><td>0</td><td>全部通过</td></tr>
+<tr class="pass"><td>M10</td><td>1</td><td>1</td><td>0</td><td>全部通过</td></tr>
+<tr class="pass"><td>M11</td><td>1</td><td>1</td><td>0</td><td>全部通过</td></tr>
+<tr class="pass"><td>M12</td><td>1</td><td>1</td><td>0</td><td>全部通过</td></tr>
+<tr class="pass"><td>M13</td><td>1</td><td>1</td><td>0</td><td>全部通过</td></tr>
+<tr class="pass"><td>M14</td><td>1</td><td>1</td><td>0</td><td>全部通过</td></tr>
+<tr class="pass"><td>M15</td><td>1</td><td>1</td><td>0</td><td>全部通过</td></tr>
+<tr class="pass"><td>M16</td><td>2</td><td>2</td><td>0</td><td>全部通过</td></tr>
+<tr class="pass"><td>M17</td><td>3</td><td>3</td><td>0</td><td>全部通过</td></tr>
+<tr class="pass"><td>M18</td><td>4</td><td>4</td><td>0</td><td>全部通过</td></tr>
+<tr class="pass"><td>M19</td><td>2</td><td>2</td><td>0</td><td>全部通过</td></tr></tbody></table></div>
+<div class="sec"><h2>用例明细</h2><div class="cards"><div class="card pass"><span class="ic">✅</span><span class="cn">M1-login</span><span class="dt">JWT len=183</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M1-auth-me</span><span class="dt">200 perms=['*:*']</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M1-thread-create</span><span class="dt">thread=c2f112ba-d07a-4980-846f-f85cd9ca88b2</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M1-thread-list</span><span class="dt">200</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M3-approval-loop</span><span class="dt">approval=9 approve→completed</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M4-usage</span><span class="dt">200</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M6-policy-rules</span><span class="dt">200</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M6-policy-feedback</span><span class="dt">200</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M10-audit-logs</span><span class="dt">200</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M11-timeline</span><span class="dt">200</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M12-evals-cases</span><span class="dt">200</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M13-kbs</span><span class="dt">200</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M14-snapshots</span><span class="dt">200</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M15-pool</span><span class="dt">pool=2 warmed=2 free=2</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M16-connector-create</span><span class="dt">conn=3</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M16-connector-list</span><span class="dt">200</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M17-skill-create</span><span class="dt">skill=2</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M17-skill-publish</span><span class="dt">version=2</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M17-skill-rollback</span><span class="dt">ok</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M18-orch-worker</span><span class="dt">orch=4 completed</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M18-orch-peer</span><span class="dt">orch=5 completed</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M18-orch-critic</span><span class="dt">orch=6 completed</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M18-orch-list</span><span class="dt">200</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M19-mcp-echo</span><span class="dt">mcp=true result=echo:verify</span><span class="st">PASS</span></div>
+<div class="card pass"><span class="ic">✅</span><span class="cn">M19-mcp-quality</span><span class="dt">score=1.0</span><span class="st">PASS</span></div></div></div>
+<div class="ft">Nexus 控制面 · M1身份/骨架 → M3审批 → M4计量 → M6策略学习 → M10审计WORM → M11 tracing/timeline → M12评测/CI门禁 → M13 KB RAG → M14 fork/rollback → M15 warm pool → M16连接器 → M17 skills → M18多Agent协作编排 → M19 MCP Gateway真实转发 · 全部交付</div>
+<script>
+function toggleTheme(){var b=document.body;b.setAttribute('data-theme',b.getAttribute('data-theme')==='dark'?'light':'dark')}
+window.addEventListener('scroll',function(){var s=window.scrollY,h=document.body.scrollHeight-window.innerHeight;document.getElementById('bar').style.width=(s/h*100)+'%'})
+</script>
+</body></html>
