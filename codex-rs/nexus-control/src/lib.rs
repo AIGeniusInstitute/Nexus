@@ -16,4 +16,5 @@ pub mod policy;
 pub mod rbac;
 pub mod runtime;
 pub mod stdio_client;
+pub mod timeline;
 pub mod ws;
