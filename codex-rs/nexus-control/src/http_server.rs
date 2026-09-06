@@ -26,6 +26,7 @@ use uuid::Uuid;
 
 use crate::auth::{AuthProvider, AuthUser, JwtIssuer};
 use crate::audit;
+use crate::eval;
 use crate::metering;
 use crate::policy;
 use crate::runtime::{self, DriverCommand};
@@ -83,6 +84,9 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/audit/logs/{id}", get(audit_log_get))
         .route("/v1/threads/{id}/timeline", get(thread_timeline_handler))
         .route("/v1/traces/{trace_id}", get(trace_lookup_handler))
+        .route("/v1/evals/cases", post(eval_case_create).get(eval_cases_list))
+        .route("/v1/evals/runs/{case_id}", post(eval_run))
+        .route("/v1/evals/runs", get(eval_runs_list))
         .route("/v1/ws/threads/{id}/events", get(crate::ws::ws_handler))
         .layer(middleware::from_fn_with_state(state.clone(), idempotency_layer))
         .layer(middleware::from_fn_with_state(state.clone(), user_rate_limit))
@@ -781,6 +785,66 @@ async fn trace_lookup_handler(
     let v = timeline::trace_lookup(&st.pool, trace_id, tenant_filter).await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
+}
+
+// ---------- M12: Evaluation center ----------
+#[derive(Deserialize)]
+struct EvalCaseReq {
+    name: String,
+    category: Option<String>,
+    input: String,
+    #[serde(default = "default_completed_status")]
+    expected_status: String,
+    expected_contains: Option<String>,
+}
+fn default_completed_status() -> String { "completed".into() }
+
+#[derive(Deserialize)]
+struct EvalRunReq { turn_id: i64 }
+
+#[derive(Deserialize, Default)]
+struct EvalQuery { limit: Option<i64> }
+
+async fn eval_case_create(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Json(req): Json<EvalCaseReq>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let is_admin = c.perms.iter().any(|p| p == "*:*");
+    if !is_admin {
+        return Err((StatusCode::FORBIDDEN, "admin only".into()));
+    }
+    let id = eval::create_case(
+        &st.pool, c.tid, &req.name, req.category.as_deref(), &req.input,
+        &req.expected_status, req.expected_contains.as_deref(),
+    )
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "id": id })))
+}
+
+async fn eval_cases_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+) -> Result<Json<Vec<eval::EvalCase>>, (StatusCode, String)> {
+    let rows = eval::list_cases(&st.pool, c.tid).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn eval_run(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+    Path(case_id): Path<i64>, Json(req): Json<EvalRunReq>,
+) -> Result<Json<eval::EvalRun>, (StatusCode, String)> {
+    let run = eval::run_eval(&st.pool, c.tid, case_id, req.turn_id).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(run))
+}
+
+async fn eval_runs_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Query(q): Query<EvalQuery>,
+) -> Result<Json<Vec<eval::EvalRun>>, (StatusCode, String)> {
+    let limit = q.limit.unwrap_or(100).clamp(1, 1000);
+    let rows = eval::list_runs(&st.pool, c.tid, limit).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
 }
 
 #[derive(Serialize, sqlx::FromRow)]

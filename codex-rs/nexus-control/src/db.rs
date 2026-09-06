@@ -23,6 +23,7 @@ const M4_MIGRATION_SQL: &str = include_str!("../migrations/20260906000004_m4_met
 const M6_MIGRATION_SQL: &str = include_str!("../migrations/20260906000005_m6_policy_learning.sql");
 const M10_MIGRATION_SQL: &str = include_str!("../migrations/20260906000006_m10_audit.sql");
 const M11_MIGRATION_SQL: &str = include_str!("../migrations/20260906000007_m11_tracing.sql");
+const M12_MIGRATION_SQL: &str = include_str!("../migrations/20260906000008_m12_eval.sql");
 
 /// Run embedded migrations (idempotent: IF NOT EXISTS / ON CONFLICT). Uses
 /// raw SQL (simple-query protocol) so the multi-statement DDL runs in one call
@@ -56,7 +57,11 @@ pub async fn run_migrations(pool: &PgPool) -> Result<()> {
         .execute(pool)
         .await
         .context("run m11 migrations")?;
-    tracing::info!("migrations applied (incl. m2, m3, m4, m6, m10, m11)");
+    sqlx::raw_sql(M12_MIGRATION_SQL)
+        .execute(pool)
+        .await
+        .context("run m12 migrations")?;
+    tracing::info!("migrations applied (incl. m2, m3, m4, m6, m10, m11, m12)");
     Ok(())
 }
 

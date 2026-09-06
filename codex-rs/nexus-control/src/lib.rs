@@ -7,6 +7,7 @@
 pub mod auth;
 pub mod audit;
 pub mod db;
+pub mod eval;
 pub mod event_store;
 pub mod execpolicy_rules;
 pub mod http_server;
