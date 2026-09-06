@@ -681,6 +681,7 @@ fn run_gateway_poc(
         codex_home,
         &format!("{gateway_url}/v1"),
         &gateway_token,
+        "nexus-gateway-mock",
     )?;
     println!("    config written to: {}", config_path.display());
     println!();
@@ -812,7 +813,7 @@ fn run_serve(
     codex_bin: &std::path::Path,
     codex_home: &std::path::Path,
 ) -> Result<()> {
-    println!("=== Nexus M7: serve ===");
+    println!("=== Nexus M8: serve ===");
     let rt = rt()?;
     rt.block_on(async move {
         let pool = nexus_control::db::connect(database_url).await?;
@@ -830,11 +831,17 @@ fn run_serve(
             if std::env::var("NEXUS_UPSTREAM_MODEL_URL").is_ok() { "on" } else { "off/mock" });
 
         // M2: write config.toml pointing the app-server at the gateway.
+        // M8: model id from env (default deepseek-v4-pro); wire_api stays
+        // "responses" (codex forces it) and the gateway does the
+        // Responses↔Chat translation to the dashscope upstream.
         std::fs::create_dir_all(codex_home).ok();
+        let model_id = std::env::var("NEXUS_MODEL")
+            .unwrap_or_else(|_| "deepseek-v4-pro".into());
         let _config_path = nexus_control::execpolicy_rules::write_config_toml(
             codex_home,
             &format!("{gateway_url}/v1"),
             &gateway_token,
+            &model_id,
         )?;
 
         // M4: 下发 per-tenant execpolicy rules（prefix_rule 语法，M0 验证）。
