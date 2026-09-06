@@ -11,6 +11,6 @@ sandbox_mode = "danger-full-access"
 
 [model_providers.nexus-gateway]
 name = "Nexus Gateway"
-base_url = "http://127.0.0.1:39261/v1"
-experimental_bearer_token = "nexus-gateway-e3a7f5d1541a479883bb728c07d235db"
+base_url = "http://127.0.0.1:44991/v1"
+experimental_bearer_token = "nexus-gateway-66272d1407ba47f29aabd5ff12531fe0"
 wire_api = "responses"
