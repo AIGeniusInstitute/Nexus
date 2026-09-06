@@ -32,6 +32,7 @@ use crate::skills;
 use crate::fork;
 use crate::kb;
 use crate::metering;
+use crate::orchestrator;
 use crate::policy;
 use crate::runtime::{self, DriverCommand};
 use crate::timeline;
@@ -52,6 +53,8 @@ pub struct AppState {
     pub codex_home: std::path::PathBuf,
     /// Per-thread broadcast channels for live WS push.
     pub broadcast: Arc<Mutex<HashMap<Uuid, broadcast::Sender<Value>>>>,
+    /// M18: base URL for the orchestrator to self-call existing turn endpoints.
+    pub base_url: String,
 }
 
 /// Lazily create (or reuse) the broadcast channel for a thread.
@@ -110,6 +113,8 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/skills/{id}", get(skill_get).delete(skill_delete))
         .route("/v1/skills/{id}/versions", post(skill_publish_version).get(skill_versions_list))
         .route("/v1/skills/{id}/rollback", post(skill_rollback))
+        .route("/v1/orchestrations", post(orchestration_start).get(orchestration_list))
+        .route("/v1/orchestrations/{id}", get(orchestration_get))
         .route("/v1/ws/threads/{id}/events", get(crate::ws::ws_handler))
         .layer(middleware::from_fn_with_state(state.clone(), idempotency_layer))
         .layer(middleware::from_fn_with_state(state.clone(), user_rate_limit))
@@ -264,9 +269,11 @@ async fn connector_invoke(
     AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
     Json(req): Json<connectors::InvokeReq>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let call_id = connectors::invoke_stub(&st.pool, c.tid, id, req).await
+    let res = connectors::invoke_mcp(&st.pool, c.tid, id, req).await
         .map_err(map_conn_err)?;
-    Ok(Json(serde_json::json!({ "call_id": call_id, "stub": true })))
+    Ok(Json(serde_json::json!({
+        "call_id": res.call_id, "mcp": res.mcp, "success": res.success, "result": res.result
+    })))
 }
 
 async fn connector_calls(
@@ -345,6 +352,33 @@ fn map_skill_err(e: anyhow::Error) -> (StatusCode, String) {
     } else {
         (StatusCode::INTERNAL_SERVER_ERROR, s)
     }
+}
+
+// ---------- M18 多 Agent 协作编排 ----------
+async fn orchestration_start(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+    Json(req): Json<orchestrator::StartReq>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let id = orchestrator::start_orchestration(
+        &st.pool, &st.base_url, &st.jwt, &c, req,
+    ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "orchestration_id": id })))
+}
+
+async fn orchestration_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+) -> Result<Json<Vec<orchestrator::OrchestrationRow>>, (StatusCode, String)> {
+    let rows = orchestrator::list_orchestrations(&st.pool, c.tid).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn orchestration_get(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let (orch, agents) = orchestrator::get_orchestration(&st.pool, c.tid, id).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "orchestration": orch, "agents": agents })))
 }
 
 // ---------- Auth ----------

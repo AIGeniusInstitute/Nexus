@@ -12,14 +12,19 @@ FROM debian:bookworm-slim
 
 # ca-certificates: reqwest rustls HTTPS；curl: 容器内健康检查；
 # libsqlite3-0: codex 引擎运行时；libssl3: codex 原生 TLS。
+# python3: M19 MCP Gateway 真实转发测试 fixture（stdio MCP echo server）。
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl libsqlite3-0 libssl3 \
+    && apt-get install -y --no-install-recommends ca-certificates curl libsqlite3-0 libssl3 python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # deploy.sh 预先把两个二进制放到 ./bin/ 上下文
 COPY bin/nexus-control /usr/local/bin/nexus-control
 COPY bin/codex /usr/local/bin/codex
 RUN chmod +x /usr/local/bin/nexus-control /usr/local/bin/codex
+
+# M19: 内置 stdio MCP echo server，供连接器真实转发测试。
+COPY bin/mcp_echo_server.py /app/mcp_echo_server.py
+RUN chmod +x /app/mcp_echo_server.py
 
 # codex_home：config.toml + rules/ + 子进程工作目录（volume 持久化）
 RUN mkdir -p /app/.codex

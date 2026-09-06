@@ -11,6 +11,7 @@ use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as Json;
 use sqlx::PgPool;
+use std::collections::HashMap;
 
 #[derive(sqlx::FromRow, Serialize)]
 pub struct ConnectorRow {
@@ -267,6 +268,92 @@ pub async fn invoke_stub(
     .await
     .map_err(|e| anyhow!("invoke_stub: {e:?}"))?;
     Ok(row_id)
+}
+
+/// M19: 真实 MCP 转发。从 connector.config_json 解析 {command,args,env,cwd}，
+/// spawn MCP server 子进程，initialize → call_tool，结果落 tool_call_logs。
+/// config_json 缺 command 字段 → 回退 invoke_stub 语义（便于旧 connector）。
+pub async fn invoke_mcp(
+    pool: &PgPool,
+    tenant_id: i64,
+    id: i64,
+    req: InvokeReq,
+) -> Result<McpInvokeResult> {
+    let conn = get_connector(pool, tenant_id, id).await?;
+    let args = req.args.unwrap_or(Json::Object(serde_json::Map::new()));
+
+    // 解析 config_json：{command, args, env, cwd}
+    let command = conn.config_json.get("command").and_then(|v| v.as_str());
+    if command.is_none() {
+        // 旧 connector 无 command → stub 回退
+        let success = req.success.unwrap_or(true);
+        let result_ref = if success { "stub:ok" } else { "stub:fail" };
+        let (row_id,): (i64,) = sqlx::query_as(
+            "INSERT INTO tool_call_logs (connector_id, tool_name, args_json, result_ref, success)
+             VALUES ($1, $2, $3, $4, $5) RETURNING id",
+        )
+        .bind(id).bind(&req.tool).bind(&args).bind(result_ref).bind(success)
+        .fetch_one(pool).await
+        .map_err(|e| anyhow!("invoke_mcp stub fallback: {e:?}"))?;
+        return Ok(McpInvokeResult { call_id: row_id, success, result: format!("{{stub:{}}}", result_ref), mcp: false });
+    }
+    let command = command.unwrap();
+    let tool_args: Vec<String> = conn.config_json.get("args")
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect())
+        .unwrap_or_default();
+    let env_map: HashMap<String, String> = conn.config_json.get("env")
+        .and_then(|v| v.as_object())
+        .map(|o| o.iter()
+            .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
+            .collect())
+        .unwrap_or_default();
+    let cwd = conn.config_json.get("cwd").and_then(|v| v.as_str());
+
+    // spawn + initialize + call_tool
+    let mut client = crate::mcp::McpClient::spawn(command, &tool_args, &env_map, cwd)?;
+    client.initialize().await
+        .map_err(|e| anyhow!("mcp initialize: {e}"))?;
+    let result = crate::mcp::call_tool_with_timeout(
+        &mut client, &req.tool, Some(args.clone()),
+        std::time::Duration::from_secs(30),
+    ).await;
+    // shutdown（无论成功失败都关进程）
+    client.shutdown().await;
+
+    let (success, result_ref) = match &result {
+        Ok(r) => {
+            let ok = !r.is_error;
+            (ok, serde_json::to_string(&r.content).unwrap_or_else(|_| "mcp:ok".into()))
+        }
+        Err(e) => (false, format!("mcp_error:{e}")),
+    };
+
+    let (row_id,): (i64,) = sqlx::query_as(
+        "INSERT INTO tool_call_logs (connector_id, tool_name, args_json, result_ref, success)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id",
+    )
+    .bind(id).bind(&req.tool).bind(&args).bind(&result_ref).bind(success)
+    .fetch_one(pool).await
+    .map_err(|e| anyhow!("invoke_mcp insert: {e:?}"))?;
+
+    // 重算质量分（best-effort）
+    let _ = compute_quality(pool, tenant_id, id).await;
+
+    Ok(McpInvokeResult {
+        call_id: row_id,
+        success,
+        result: result_ref,
+        mcp: true,
+    })
+}
+
+#[derive(serde::Serialize)]
+pub struct McpInvokeResult {
+    pub call_id: i64,
+    pub success: bool,
+    pub result: String,
+    pub mcp: bool,
 }
 
 pub async fn list_calls(

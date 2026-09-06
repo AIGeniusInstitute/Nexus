@@ -133,6 +133,10 @@ else
   ok "nexus-control 编译完成: $(du -h "$NEEDLE_BIN" | cut -f1)"
 fi
 
+# 3) M19: stdio MCP echo server（测试 fixture）
+cp "$CODEX_RS/nexus-control/tests/mcp_echo_server.py" "$BIN_DIR/mcp_echo_server.py" 2>/dev/null || warn "mcp_echo_server.py 未找到（非致命）"
+chmod +x "$BIN_DIR/mcp_echo_server.py" 2>/dev/null || true
+
 # ---------- Docker 构建 + 启动 ----------
 log "构建 Docker 镜像 nexus-control:latest ..."
 (cd "$SCRIPT_DIR" && docker compose --env-file .env build)
