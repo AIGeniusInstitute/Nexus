@@ -27,6 +27,7 @@ use uuid::Uuid;
 use crate::auth::{AuthProvider, AuthUser, JwtIssuer};
 use crate::audit;
 use crate::eval;
+use crate::fork;
 use crate::kb;
 use crate::metering;
 use crate::policy;
@@ -92,6 +93,9 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/kbs/{id}/documents", post(kb_doc_ingest).get(kb_doc_list))
         .route("/v1/kbs/{id}/documents/{did}", axum::routing::delete(kb_doc_delete))
         .route("/v1/kbs/{id}/search", post(kb_search))
+        .route("/v1/threads/{id}/snapshots", post(snapshot_create).get(snapshot_list))
+        .route("/v1/threads/{id}/snapshots/{sid}/fork", post(snapshot_fork))
+        .route("/v1/threads/{id}/snapshots/{sid}/rollback", post(snapshot_rollback))
         .route("/v1/ws/threads/{id}/events", get(crate::ws::ws_handler))
         .layer(middleware::from_fn_with_state(state.clone(), idempotency_layer))
         .layer(middleware::from_fn_with_state(state.clone(), user_rate_limit))
@@ -1059,4 +1063,48 @@ async fn kb_search(
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(hits))
+}
+
+// ---------- M14: Thread Snapshot + Fork + Rollback ----------
+
+#[derive(Deserialize)]
+struct SnapshotCreateReq {
+    turn_id: Option<i64>,
+}
+
+async fn snapshot_create(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<Uuid>,
+    Json(req): Json<SnapshotCreateReq>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let sid = fork::create_snapshot(&st.pool, c.tid, id, req.turn_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "snapshot_id": sid })))
+}
+
+async fn snapshot_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<Uuid>,
+) -> Result<Json<Vec<fork::SnapshotRow>>, (StatusCode, String)> {
+    let rows = fork::list_snapshots(&st.pool, c.tid, id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn snapshot_fork(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path((id, sid)): Path<(Uuid, i64)>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let new_tid = fork::fork_from_snapshot(&st.pool, c.tid, id, sid)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "forked_thread_id": new_tid })))
+}
+
+async fn snapshot_rollback(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path((id, sid)): Path<(Uuid, i64)>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let (di, dt) = fork::rollback_to_snapshot(&st.pool, c.tid, id, sid)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "deleted_items": di, "deleted_turns": dt })))
 }

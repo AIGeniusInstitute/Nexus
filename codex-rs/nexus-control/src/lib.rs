@@ -10,6 +10,7 @@ pub mod db;
 pub mod eval;
 pub mod event_store;
 pub mod execpolicy_rules;
+pub mod fork;
 pub mod http_server;
 pub mod kb;
 pub mod metering;

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus M14 测试报告 — Thread Snapshot + Fork + Rollback</title>
+<style>
+  :root[data-theme="dark"]{--bg:#0d1117;--panel:#161b22;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--gold:#d29922;--green:#3fb950;--red:#f85149;--border:#30363d;--code:#0d1117}
+  :root[data-theme="light"]{--bg:#f6f8fa;--panel:#fff;--text:#1f2328;--muted:#656d76;--accent:#0969da;--gold:#9a6700;--green:#1a7f37;--red:#cf222e;--border:#d0d7de;--code:#f6f8fa}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;transition:background .2s,color .2s}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 80px}
+  header{border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:28px}
+  h1{margin:0 0 6px;font-size:1.7em;color:var(--accent)}
+  h2{color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:36px}
+  .meta{color:var(--muted);font-size:.92em}
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.78em;font-weight:600}
+  .pass{background:rgba(63,185,80,.15);color:var(--green);border:1px solid var(--green)}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 20px;margin-bottom:24px}
+  .toc a{color:var(--accent);text-decoration:none}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.92em}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+  th{background:var(--panel);color:var(--gold)}
+  tr:nth-child(even){background:var(--panel)}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-size:.84em;line-height:1.45}
+  code{color:var(--accent)} pre code{color:var(--text)}
+  .ev{margin:10px 0}.ev .lab{color:var(--gold);font-weight:600;font-size:.85em;margin-bottom:4px}
+  .theme-btn{position:fixed;top:14px;right:16px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.85em}
+  .prog{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:99;width:0}
+  .svg-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin:16px 0}
+  details{margin:8px 0} summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0}
+</style>
+</head>
+<body>
+<div class="prog" id="prog"></div>
+<button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+<div class="wrap">
+<header>
+  <h1>Nexus M14 测试报告 — Thread Snapshot + Fork + Rollback</h1>
+  <div class="meta">里程碑 M14（roadmap M11 T11-4 fork 基础，M1/M2 Fork-Rollback 遗留项）· 分支 <code>feat/nexus-m14</code> · base M13 merge <code>d0fb04f</code> · 2026-09-06 · 守护：DeepThink</div>
+  <p class="meta"><span class="pill pass">cargo check 0e0w</span> &nbsp; <span class="pill pass">cargo test 31/31</span> &nbsp; <span class="pill pass">e2e AC14.1–14.6 PASS</span></p>
+</header>
+
+<div class="toc"><strong>目录</strong>
+  <ol><li><a href="#summary">交付摘要</a></li><li><a href="#flow">数据流</a></li><li><a href="#ac">验收矩阵</a></li><li><a href="#evidence">证据</a></li><li><a href="#regress">零回归</a></li><li><a href="#decisions">关键决策</a></li></ol>
+</div>
+
+<h2 id="summary">1. 交付摘要</h2>
+<p>M14 补齐 roadmap M11 T11-4 多 Agent 协作的 <strong>fork 基础原语</strong>（"Fork-Rollback" M1/M2 遗留项）。在某 turn 后拍快照 → 从快照分叉出新线程（携带此前全部 item 上下文）做实验 → 或回滚线程到快照点（丢弃之后的 turn/item）。</p>
+<ul>
+  <li>新 migration <code>20260906000010_m14_fork_rollback.sql</code>：workspace_snapshots ALTER ADD tenant_id + forked_to_thread_id + 索引</li>
+  <li>新模块 <code>src/fork.rs</code>：create_snapshot/list_snapshots/fork_from_snapshot/rollback_to_snapshot</li>
+  <li><code>http_server.rs</code>：4 路由（snapshots create/list + fork + rollback）</li>
+  <li><code>main.rs</code>：标题 "Nexus M14: serve"</li>
+</ul>
+<p><strong>不改 codex 内核</strong>（全部 nexus-control crate）。<strong>不动既有表</strong>（workspace_snapshots 用 ALTER）。</p>
+
+<h2 id="flow">2. 数据流</h2>
+<div class="svg-wrap">
+<svg viewBox="0 0 940 320" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="monospace" font-size="12">
+  <defs><marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#d29922"/></marker></defs>
+  <rect x="10" y="10" width="920" height="300" fill="none" stroke="#30363d"/>
+  <text x="24" y="32" fill="#58a6ff" font-weight="bold">snapshot (turn 边界) → fork (复制 item) / rollback (删 turn 后 item)</text>
+  <rect x="40" y="55" width="280" height="70" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="180" y="80" text-anchor="middle" fill="#58a6ff">源 thread: turn1 ✓ turn2 ✓ [snap] turn3 ✓</text>
+  <text x="180" y="100" text-anchor="middle" fill="#8b949e">items: turn≤2 = 4 条, turn3 = 4 条</text>
+  <rect x="400" y="50" width="220" height="80" rx="8" fill="#161b22" stroke="#d29922" stroke-width="2"/>
+  <text x="510" y="78" text-anchor="middle" fill="#d29922" font-weight="bold">POST snapshots</text>
+  <text x="510" y="98" text-anchor="middle" fill="#8b949e">turn_id=2 + content_digest</text>
+  <text x="510" y="116" text-anchor="middle" fill="#8b949e">tenant_id 随快照写入</text>
+  <path d="M320,90 L395,90" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <rect x="700" y="40" width="210" height="50" rx="6" fill="#161b22" stroke="#3fb950"/>
+  <text x="805" y="70" text-anchor="middle" fill="#3fb950">fork → 新 thread (4 items)</text>
+  <path d="M620,75 L695,60" stroke="#3fb950" marker-end="url(#arr)" fill="none"/>
+  <rect x="700" y="100" width="210" height="50" rx="6" fill="#161b22" stroke="#f85149"/>
+  <text x="805" y="130" text-anchor="middle" fill="#f85149">rollback → 删 turn3 (4 items+1 turn)</text>
+  <path d="M620,105 L695,120" stroke="#f85149" marker-end="url(#arr)" fill="none"/>
+  <rect x="40" y="180" width="870" height="100" rx="6" fill="#161b22" stroke="#30363d" stroke-dasharray="4,3"/>
+  <text x="60" y="205" fill="#3fb950" font-weight="bold">fork 结果: 新 thread = [imported turn (4 items content-ref 保留)] → 可在此分支做实验</text>
+  <text x="60" y="235" fill="#f85149" font-weight="bold">rollback 结果: 源 thread 恢复到 turn2 (8 items/2 turns → 4 items/1 turn)</text>
+  <text x="60" y="262" fill="#8b949e">ACL: tenant_id 硬隔离 — 跨租户 thread/snapshot 不可见；fork 复制用 ROW_NUMBER() 重编 seq 避免 UNIQUE 冲突</text>
+</svg>
+</div>
+
+<h2 id="ac">3. 验收矩阵 AC14.1–14.6</h2>
+<table>
+  <tr><th>AC</th><th>验收点</th><th>状态</th></tr>
+  <tr><td>AC14.1</td><td>workspace_snapshots ALTER 加 tenant_id + forked_to_thread_id（migration incl m14）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC14.2</td><td>POST /v1/threads/{id}/snapshots 创建快照（turn_id + content_digest）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC14.3</td><td>GET /v1/threads/{id}/snapshots 列表（tenant 隔离）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC14.4</td><td>POST fork → 新 thread 含源线程 ≤ 快照点的全部 item（4 条，content_ref 保留）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC14.5</td><td>POST rollback → 删 turn_id > 快照点的 item/turn（8/2 → 4/1）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC14.6</td><td>零回归：M13 KB + M12 eval + M11 timeline + M10 audit 仍工作</td><td><span class="pill pass">PASS</span></td></tr>
+</table>
+
+<h2 id="evidence">4. 证据</h2>
+<div class="ev"><div class="lab">cargo check / test</div>
+<pre><code>$ cargo check -p nexus-control   # 0 error 0 warning
+$ cargo test -p nexus-control     # 31 passed; 0 failed</code></pre></div>
+
+<div class="ev"><div class="lab">AC14.2/3 snapshot create + list</div>
+<pre><code>$ POST /v1/threads/{id}/snapshots {"turn_id":2}
+  {"snapshot_id":1}
+$ GET /v1/threads/{id}/snapshots
+  count=1  snap turn_id=2  digest=40d8679be7f3b374</code></pre></div>
+
+<div class="ev"><div class="lab">AC14.4 fork（新 thread 应含 4 items，turn_id ≤ 2）</div>
+<pre><code>$ POST /v1/threads/{id}/snapshots/1/fork
+  {"forked_thread_id":"fd6d18bf-..."}
+nexus-pg-m4=# SELECT count(*) FROM items WHERE thread_id='{fork}';
+   forked_items= 4          # turn_id ≤ 2 的全部 item</code></pre></div>
+
+<div class="ev"><div class="lab">AC14.5 rollback（删 turn3 的 4 items + 1 turn）</div>
+<pre><code>before: items=8  turns=2
+$ POST /v1/threads/{id}/snapshots/1/rollback
+  {"deleted_items":4,"deleted_turns":1}
+after:  items=4  turns=1     # 恢复到 turn2 快照点</code></pre></div>
+
+<div class="ev"><div class="lab">AC14.6 零回归</div>
+<pre><code>$ POST /v1/kbs/1/search {"query":"RAG 检索","top_k":2}   # M13
+  kb hits=2
+$ GET /v1/evals/cases                              # M12
+  eval_cases=1</code></pre></div>
+
+<h2 id="regress">5. 零回归</h2>
+<ul>
+  <li>cargo test 31/31（M13 的 30 + fork 1，无回退）</li>
+  <li>M13 KB RAG（pgvector search）仍工作（2 hits）</li>
+  <li>M12 eval cases API 仍工作</li>
+  <li>M1-M13 路径未触碰（仅新增 fork 模块 + 路由 + migration）</li>
+</ul>
+
+<h2 id="decisions">6. 关键决策</h2>
+<details><summary>6.1 fork 用单一 imported turn（不逐 turn 复制）</summary>
+<p>新 thread 一个 completed turn 携带全部历史 item（content_ref 保留）。避免逐 turn 复制的 turn id 映射复杂度（Simplicity First）。fork 线程获得完整上下文，可直接接续实验。</p>
+</details>
+<details><summary>6.2 fork 用 INSERT...SELECT + ROW_NUMBER() 重编 seq</summary>
+<p>items UNIQUE(thread_id,turn_id,seq)：fork 复制时新 thread+新 turn_id，ROW_NUMBER() OVER (ORDER BY id) 从 1 重编，不冲突。</p>
+</details>
+<details><summary>6.3 rollback 删 items 再删 turns（FK 顺序）</summary>
+<p>items FK turns(turn_id)，必须先删 items（WHERE turn_id > snap）再删 turns（WHERE id > snap）。事务内执行。</p>
+</details>
+<details><summary>6.4 不冻结 snapshot 副本 + app_server_events 不删</summary>
+<p>fork/rollback 时从 live thread 读 ≤ turn_id（MVP 接受快照后线程继续写入的时序）。rollback 只恢复 thread 状态（items/turns），不擦 app_server_events 审计 trail。</p>
+</details>
+
+<footer style="margin-top:40px;border-top:1px solid var(--border);padding-top:12px;color:var(--muted);font-size:.85em">
+  DeepThink · Nexus M14 Thread Snapshot + Fork + Rollback（roadmap M11 T11-4 fork 基础）· 2026-09-06 · 所有改动在 codex-rs/nexus-control crate 内
+</footer>
+</div>
+<script>
+function toggleTheme(){var d=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',d==='dark'?'light':'dark')}
+window.addEventListener('scroll',function(){var h=document.documentElement.scrollHeight-window.innerHeight;document.getElementById('prog').style.width=(h>0?window.scrollY/h*100:0)+'%'});
+</script>
+</body>
+</html>
