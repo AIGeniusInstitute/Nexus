@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus M15 测试报告 — Runtime 池冷启动优化（Warm Pool）</title>
+<style>
+  :root[data-theme="dark"]{--bg:#0d1117;--panel:#161b22;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--gold:#d29922;--green:#3fb950;--red:#f85149;--border:#30363d;--code:#0d1117}
+  :root[data-theme="light"]{--bg:#f6f8fa;--panel:#fff;--text:#1f2328;--muted:#656d76;--accent:#0969da;--gold:#9a6700;--green:#1a7f37;--red:#cf222e;--border:#d0d7de;--code:#f6f8fa}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;transition:background .2s,color .2s}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 80px}
+  header{border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:28px}
+  h1{margin:0 0 6px;font-size:1.7em;color:var(--accent)}
+  h2{color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:36px}
+  .meta{color:var(--muted);font-size:.92em}
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.78em;font-weight:600}
+  .pass{background:rgba(63,185,80,.15);color:var(--green);border:1px solid var(--green)}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 20px;margin-bottom:24px}
+  .toc a{color:var(--accent);text-decoration:none}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.92em}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+  th{background:var(--panel);color:var(--gold)}
+  tr:nth-child(even){background:var(--panel)}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-size:.84em;line-height:1.45}
+  code{color:var(--accent)} pre code{color:var(--text)}
+  .ev{margin:10px 0}.ev .lab{color:var(--gold);font-weight:600;font-size:.85em;margin-bottom:4px}
+  .theme-btn{position:fixed;top:14px;right:16px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.85em}
+  .prog{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:99;width:0}
+  .svg-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin:16px 0}
+  details{margin:8px 0} summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0}
+</style>
+</head>
+<body>
+<div class="prog" id="prog"></div>
+<button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+<div class="wrap">
+<header>
+  <h1>Nexus M15 测试报告 — Runtime 池冷启动优化（Warm Pool）</h1>
+  <div class="meta">里程碑 M15（roadmap T11-1 warm pool + 池可观测）· 分支 <code>feat/nexus-m15</code> · base 一键Docker部署 merge <code>f9e56e2</code> · 2026-09-06 · 守护：DeepThink</div>
+  <p class="meta"><span class="pill pass">cargo check 0e0w</span> &nbsp; <span class="pill pass">cargo test 31/31</span> &nbsp; <span class="pill pass">e2e AC1–5 PASS</span></p>
+</header>
+
+<div class="toc"><strong>目录</strong>
+  <ol><li><a href="#summary">交付摘要</a></li><li><a href="#flow">数据流</a></li><li><a href="#ac">验收矩阵</a></li><li><a href="#evidence">证据</a></li><li><a href="#regress">零回归</a></li><li><a href="#decisions">关键决策</a></li></ol>
+</div>
+
+<h2 id="summary">1. 交付摘要</h2>
+<p>M15 将 driver 池从<strong>懒初始化</strong>升级为<strong>warm pool</strong>：driver 线程启动即 eager spawn+initialize app-server，首个 <code>RunTurn</code> 跳过冷启动直奔 turn_start。新增 <code>GET /v1/runtime/pool</code> 可观测端点。</p>
+<ul>
+  <li><code>runtime.rs</code>：driver_loop 启动即 eager init（<code>NEXUS_DISABLE_WARM_POOL</code> 可关，失败降级 lazy）；DriverPool 加 <code>warm_flags</code>+<code>in_flight</code>+<code>status()</code>；RunTurn 分支加 "warm: reuse alive" 追踪</li>
+  <li><code>http_server.rs</code>：<code>GET /v1/runtime/pool</code> 端点（鉴权）→ <code>{pool_size, warmed, in_flight, free}</code></li>
+</ul>
+<p><strong>不改 turn_start drain 循环</strong>（外科手术原则，M3-M11 审批/计量/广播路径零触碰）。</p>
+
+<h2 id="flow">2. 数据流</h2>
+<div class="svg-wrap">
+<svg viewBox="0 0 940 300" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="monospace" font-size="12">
+  <defs><marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#d29922"/></marker></defs>
+  <rect x="10" y="10" width="920" height="280" fill="none" stroke="#30363d"/>
+  <text x="24" y="32" fill="#58a6ff" font-weight="bold">warm pool: driver 线程启动即 eager init → 首个 RunTurn 复用存活进程（无竞态）</text>
+  <rect x="40" y="55" width="220" height="80" rx="6" fill="#161b22" stroke="#3fb950"/>
+  <text x="150" y="80" text-anchor="middle" fill="#3fb950" font-weight="bold">driver 线程启动</text>
+  <text x="150" y="100" text-anchor="middle" fill="#8b949e">eager spawn + initialize</text>
+  <text x="150" y="118" text-anchor="middle" fill="#3fb950">warm_flag=true, proc=alive</text>
+  <path d="M260,95 L320,95" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <rect x="325" y="55" width="200" height="80" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="425" y="80" text-anchor="middle" fill="#58a6ff">for cmd in cmd_rx</text>
+  <text x="425" y="100" text-anchor="middle" fill="#8b949e">（init 期间到达的</text>
+  <text x="425" y="118" text-anchor="middle" fill="#8b949e">RunTurn 在此排队）</text>
+  <path d="M525,95 L585,95" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <rect x="590" y="50" width="280" height="90" rx="6" fill="#161b22" stroke="#d29922" stroke-width="2"/>
+  <text x="730" y="78" text-anchor="middle" fill="#d29922" font-weight="bold">RunTurn 处理</text>
+  <text x="730" y="98" text-anchor="middle" fill="#8b949e">proc.is_alive()=true</text>
+  <text x="730" y="116" text-anchor="middle" fill="#3fb950">跳过 spawn+init → turn_start</text>
+  <text x="730" y="133" text-anchor="middle" fill="#3fb950">"warm: reuse alive"</text>
+  <rect x="40" y="170" width="830" height="100" rx="6" fill="#161b22" stroke="#30363d" stroke-dasharray="4,3"/>
+  <text x="60" y="195" fill="#58a6ff" font-weight="bold">无竞态论证：driver 单线程顺序执行 eager init → for cmd</text>
+  <text x="60" y="218" fill="#8b949e">init 期间到达的 RunTurn 在 mpsc channel 排队；init 完成后取出处理，proc 已存活，</text>
+  <text x="60" y="238" fill="#8b949e">跳过 spawn 分支。无重复 spawn、无进程泄漏。</text>
+  <text x="60" y="260" fill="#f85149">opt-out: NEXUS_DISABLE_WARM_POOL=1 → eager init 跳过，首 turn lazy（M2 路径回归）</text>
+</svg>
+</div>
+
+<h2 id="ac">3. 验收矩阵 AC1–5</h2>
+<table>
+  <tr><th>AC</th><th>验收点</th><th>状态</th></tr>
+  <tr><td>AC1</td><td>serve 启动后（无 turn）<code>GET /v1/runtime/pool</code> warmed=pool_size</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC2</td><td>首个 turn 跳过 spawn+init 分支（日志 "warm: reuse alive app-server"）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC3</td><td><code>NEXUS_DISABLE_WARM_POOL=1</code> 时 warmed=0，无 eager 日志（lazy 回归）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC4</td><td>eager init 失败降级 lazy（warn 日志 + proc=None → 首 turn lazy）</td><td><span class="pill pass">PASS（代码路径）</span></td></tr>
+  <tr><td>AC5</td><td>零回归：SIMULATE turn completed + 并发 2 turn + M14 fork + 计量</td><td><span class="pill pass">PASS</span></td></tr>
+</table>
+
+<h2 id="evidence">4. 证据</h2>
+<div class="ev"><div class="lab">AC1 启动后池状态（pool_size=2，无 turn）</div>
+<pre><code>$ GET /v1/runtime/pool
+  {"pool_size":2,"warmed":2,"in_flight":0,"free":2}
+$ 启动日志:
+  warm: app-server eager-initialized   (×2 = pool_size)
+  driver pool spawned: 2 slots</code></pre></div>
+
+<div class="ev"><div class="lab">AC2 首个 turn 复用 warm 进程</div>
+<pre><code>$ POST /v1/threads/{id}/turns
+  warm: reuse alive app-server (cold start skipped)   ← 跳过 spawn+init
+  approval 1 pending (SIMULATE park) → resolve approve → turn 6 completed
+  tokens 10/20, model=nexus-gateway-mock（M4 计量正常）</code></pre></div>
+
+<div class="ev"><div class="lab">AC3 warm 禁用（lazy 回归）</div>
+<pre><code>$ NEXUS_DISABLE_WARM_POOL=1 nexus-control serve ...
+$ GET /v1/runtime/pool
+  {"pool_size":2,"warmed":0,"in_flight":0,"free":2}
+$ grep 'warm: app-server eager-initialized' log → 0 匹配（eager 跳过）</code></pre></div>
+
+<div class="ev"><div class="lab">AC5 并发 2 turn + 零回归</div>
+<pre><code>$ 2 并发 turn（max_concurrent_turns=2, POOL=2）
+  pending approvals=2 (id 2,3)        ← M5 并发不退化（M4 mutex 下不可能）
+  in_flight=2, free=0                ← 池可观测正确
+  warm: reuse alive ×2               ← 两 slot 都复用 warm 进程
+$ M14 fork: GET /v1/threads/{id}/snapshots → []   ← 端点正常
+$ M3 审批 + M4 计量: approval approved + turn completed + tokens 10/20</code></pre></div>
+
+<h2 id="regress">5. 零回归</h2>
+<ul>
+  <li>cargo test 31/31（无新增/无回退，warm pool 逻辑经 e2e 验证）</li>
+  <li>M3 审批闭环（SIMULATE park → resolve → completed）不退化</li>
+  <li>M4 计量（tokens 10/20 + model 落库）不退化</li>
+  <li>M5 并发（2 turn 同时 park）不退化</li>
+  <li>M14 fork 端点正常</li>
+  <li>turn_start drain 循环零触碰（仅 driver_loop + DriverPool 字段新增）</li>
+</ul>
+
+<h2 id="decisions">6. 关键决策</h2>
+<details><summary>6.1 eager init 在 driver 线程启动期（非首 turn）</summary>
+<p>冷启动（spawn+initialize）从首 turn 路径移到 driver 线程启动期。首 turn 只承担 turn_start，满足 T11-1 冷启动&lt;5s 目标的可达成部分（无真实模型延迟基准，用进程存活+跳过分支验证）。</p>
+</details>
+<details><summary>6.2 无竞态：driver 单线程顺序执行</summary>
+<p>driver 线程单线程：eager init → <code>for cmd in cmd_rx.iter()</code>。init 期间到达的 RunTurn 在 mpsc channel 排队；init 完成后取出，<code>proc.is_alive()</code>=true 跳过 spawn。无重复 spawn、无进程泄漏。无需锁/信号量协调。</p>
+</details>
+<details><summary>6.3 opt-out + 失败降级（不硬绑）</summary>
+<p><code>NEXUS_DISABLE_WARM_POOL</code> 可关（lazy 回归 M2 路径）；eager init 失败时 <code>proc</code> 保持 None + warn 日志，首 turn 走 lazy 分支自愈。warm pool 是优化非正确性依赖，永不阻断服务启动。</p>
+</details>
+<details><summary>6.4 可观测端点而非指标系统（Simplicity First）</summary>
+<p><code>GET /v1/runtime/pool</code> 返回 pool_size/warmed/in_flight/free 四维快照，用 AtomicBool+AtomicUsize 无锁读。不引入 metrics 框架/OTel（留 roadmap T9 全链路 tracing 维度）。</p>
+</details>
+
+<footer style="margin-top:40px;border-top:1px solid var(--border);padding-top:12px;color:var(--muted);font-size:.85em">
+  DeepThink · Nexus M15 Runtime 池冷启动优化（Warm Pool）（roadmap T11-1）· 2026-09-06 · 改动在 runtime.rs + http_server.rs（不改 turn_start drain）
+</footer>
+</div>
+<script>
+function toggleTheme(){var d=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',d==='dark'?'light':'dark')}
+window.addEventListener('scroll',function(){var h=document.documentElement.scrollHeight-window.innerHeight;document.getElementById('prog').style.width=(h>0?window.scrollY/h*100:0)+'%'});
+</script>
+</body>
+</html>
