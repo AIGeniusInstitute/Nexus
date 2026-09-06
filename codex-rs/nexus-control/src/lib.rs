@@ -19,6 +19,7 @@ pub mod model_gateway;
 pub mod policy;
 pub mod rbac;
 pub mod runtime;
+pub mod skills;
 pub mod stdio_client;
 pub mod timeline;
 pub mod ws;
