@@ -96,6 +96,7 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/threads/{id}/snapshots", post(snapshot_create).get(snapshot_list))
         .route("/v1/threads/{id}/snapshots/{sid}/fork", post(snapshot_fork))
         .route("/v1/threads/{id}/snapshots/{sid}/rollback", post(snapshot_rollback))
+        .route("/v1/runtime/pool", get(runtime_pool_status))
         .route("/v1/ws/threads/{id}/events", get(crate::ws::ws_handler))
         .layer(middleware::from_fn_with_state(state.clone(), idempotency_layer))
         .layer(middleware::from_fn_with_state(state.clone(), user_rate_limit))
@@ -144,6 +145,14 @@ async fn ip_rate_limit(State(st): State<AppState>, req: axum::extract::Request, 
 }
 
 async fn health() -> &'static str { "ok\n" }
+
+/// M15: runtime pool observability — returns warm/in-flight/free slot counts.
+async fn runtime_pool_status(
+    AuthUser(_c): AuthUser,
+    State(st): State<AppState>,
+) -> Json<runtime::PoolStatus> {
+    Json(st.driver_pool.status())
+}
 
 // ---------- Auth ----------
 #[derive(Deserialize)]

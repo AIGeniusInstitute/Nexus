@@ -17,7 +17,7 @@
 //! `event_rx`) — this breaks the deadlock that would otherwise occur.
 
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicI64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicUsize, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::thread;
@@ -123,10 +123,13 @@ pub fn spawn(codex_bin: PathBuf, codex_home: PathBuf, start_approval_id: i64) ->
     let (cmd_tx, cmd_rx) = mpsc::channel::<DriverCommand>();
     let (event_tx, event_rx) = unbounded_channel::<TurnEvent>();
     let approval_counter = Arc::new(AtomicI64::new(start_approval_id.max(1)));
+    // M15: warm-flag placeholder for the single-driver PoC path (not observed
+    // by any pool endpoint, but lets `driver_loop` eager-init if enabled).
+    let warm_flag = Arc::new(AtomicBool::new(false));
     let _thread = thread::Builder::new()
         .name("nexus-runtime-driver".into())
         .spawn(move || {
-            driver_loop(codex_bin, codex_home, cmd_rx, event_tx, approval_counter)
+            driver_loop(codex_bin, codex_home, cmd_rx, event_tx, approval_counter, warm_flag)
         })
         .expect("spawn nexus runtime driver");
     RuntimeHandle { cmd_tx, event_rx }
@@ -157,6 +160,12 @@ pub struct DriverPool {
     /// enqueues it back. Unbounded (bounded by pool_size in practice).
     free_tx: tokio::sync::mpsc::UnboundedSender<usize>,
     free_rx: tokio::sync::Mutex<tokio::sync::mpsc::UnboundedReceiver<usize>>,
+    /// M15: per-slot warm flag — set true by the driver thread after eager
+    /// app-server init succeeds. Read by the `status()` observability helper.
+    warm_flags: Vec<Arc<AtomicBool>>,
+    /// M15: count of slots currently acquired (in-flight turns). Acquire
+    /// increments; `DriverGuard::drop` decrements. `free = pool_size - in_flight`.
+    in_flight: Arc<AtomicUsize>,
 }
 
 /// RAII guard over an acquired pool slot. Drains `event_rx` exclusively;
@@ -190,6 +199,8 @@ impl Drop for DriverGuard {
                 slot.event_rx = Some(rx);
             }
         }
+        // M15: decrement in-flight counter (slot released).
+        self.pool.in_flight.fetch_sub(1, Ordering::SeqCst);
         // Mark this slot free again.
         let _ = self.pool.free_tx.send(self.idx);
     }
@@ -204,6 +215,8 @@ impl DriverPool {
             let mut slot = self.slots[idx].lock().unwrap();
             slot.event_rx.take()
         };
+        // M15: increment in-flight counter (slot acquired).
+        self.in_flight.fetch_add(1, Ordering::SeqCst);
         Some(DriverGuard { idx, event_rx, pool: Arc::clone(self) })
     }
 
@@ -212,6 +225,26 @@ impl DriverPool {
     pub fn cmd_tx(&self, idx: usize) -> Option<Sender<DriverCommand>> {
         self.cmd_txs.get(idx).cloned()
     }
+
+    /// M15: pool observability snapshot. `warmed` counts slots whose eager
+    /// app-server init succeeded; `in_flight` counts currently-acquired slots;
+    /// `free = pool_size - in_flight`.
+    pub fn status(&self) -> PoolStatus {
+        let pool_size = self.slots.len();
+        let warmed = self.warm_flags.iter().filter(|f| f.load(Ordering::SeqCst)).count();
+        let in_flight = self.in_flight.load(Ordering::SeqCst);
+        let free = pool_size.saturating_sub(in_flight);
+        PoolStatus { pool_size, warmed, in_flight, free }
+    }
+}
+
+/// M15: read-only pool status returned by `GET /v1/runtime/pool`.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct PoolStatus {
+    pub pool_size: usize,
+    pub warmed: usize,
+    pub in_flight: usize,
+    pub free: usize,
 }
 
 /// Spawn a pool of `pool_size` independent driver threads and return the
@@ -230,25 +263,30 @@ pub fn spawn_pool(
     let pool_size = pool_size.max(1);
     let (free_tx, free_rx) = tokio::sync::mpsc::unbounded_channel::<usize>();
     let approval_counter = Arc::new(AtomicI64::new(start_approval_id.max(1)));
+    let in_flight = Arc::new(AtomicUsize::new(0));
     let mut slots = Vec::with_capacity(pool_size);
     let mut cmd_txs = Vec::with_capacity(pool_size);
+    let mut warm_flags = Vec::with_capacity(pool_size);
     for i in 0..pool_size {
         let (cmd_tx, cmd_rx) = mpsc::channel::<DriverCommand>();
         let (event_tx, event_rx) = unbounded_channel::<TurnEvent>();
         let counter = Arc::clone(&approval_counter);
+        let warm_flag = Arc::new(AtomicBool::new(false));
         // Clone per-iteration so each closure owns its own copy (the loop
         // body runs pool_size times; a bare `move ||` would capture the
         // outer PathBuf by move on the first iteration).
         let bin = codex_bin.clone();
         let home = codex_home.clone();
+        let wf = Arc::clone(&warm_flag);
         let _thread = thread::Builder::new()
             .name(format!("nexus-driver-{i}"))
             .spawn(move || {
-                driver_loop(bin, home, cmd_rx, event_tx, counter)
+                driver_loop(bin, home, cmd_rx, event_tx, counter, wf)
             })
             .expect("spawn nexus driver");
         slots.push(std::sync::Mutex::new(DriverSlot { event_rx: Some(event_rx) }));
         cmd_txs.push(cmd_tx);
+        warm_flags.push(warm_flag);
         let _ = free_tx.send(i); // initially all slots free
     }
     Arc::new(DriverPool {
@@ -256,6 +294,8 @@ pub fn spawn_pool(
         cmd_txs,
         free_tx,
         free_rx: tokio::sync::Mutex::new(free_rx),
+        warm_flags,
+        in_flight,
     })
 }
 
@@ -266,12 +306,34 @@ fn driver_loop(
     cmd_rx: Receiver<DriverCommand>,
     event_tx: UnboundedSender<TurnEvent>,
     approval_counter: Arc<AtomicI64>,
+    warm_flag: Arc<AtomicBool>,
 ) {
     let mut proc: Option<AppServerProcess> = None;
     // M5: global monotonic approval id shared across all drivers (AtomicI64),
     // seeded from `start_approval_id` (DB max+1) so it never collides with
     // existing rows OR with ids generated by sibling drivers.
     let simulate_approval = std::env::var("NEXUS_SIMULATE_APPROVAL").is_ok();
+
+    // M15: warm pool — eagerly spawn + initialize the app-server BEFORE the
+    // command loop so the first `RunTurn` skips cold start. No race: this
+    // thread is single-threaded; a `RunTurn` arriving during init queues in
+    // `cmd_rx` and is processed only after init completes (proc already alive).
+    // `NEXUS_DISABLE_WARM_POOL` opts out (lazy init on first turn, M2 path).
+    let warm = std::env::var("NEXUS_DISABLE_WARM_POOL").is_err();
+    if warm {
+        match AppServerProcess::spawn(&codex_bin, &codex_home)
+            .and_then(|mut p| {
+                p.initialize().context("warm app-server initialize")?;
+                Ok(p)
+            }) {
+            Ok(p) => {
+                tracing::info!("warm: app-server eager-initialized");
+                warm_flag.store(true, Ordering::SeqCst);
+                proc = Some(p);
+            }
+            Err(e) => tracing::warn!(error = %e, "warm: eager init failed, lazy fallback on first turn"),
+        }
+    }
 
     for cmd in cmd_rx.iter() {
         match cmd {
@@ -297,7 +359,9 @@ fn driver_loop(
                 start_seq,
             } => {
                 // Lazily spawn + initialize on first use, after interrupt, or
-                // when the previous child has died.
+                // when the previous child has died. M15: when the warm pool
+                // eager-init succeeded, the process is already alive and we
+                // skip cold start here.
                 if !proc.as_mut().is_some_and(|p| p.is_alive()) {
                     if let Some(mut dead) = proc.take() {
                         dead.kill();
@@ -314,6 +378,8 @@ fn driver_loop(
                             continue;
                         }
                     }
+                } else {
+                    tracing::info!("warm: reuse alive app-server (cold start skipped)");
                 }
                 let p = proc.as_mut().unwrap();
 
