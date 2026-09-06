@@ -27,6 +27,7 @@ use uuid::Uuid;
 use crate::auth::{AuthProvider, AuthUser, JwtIssuer};
 use crate::audit;
 use crate::eval;
+use crate::kb;
 use crate::metering;
 use crate::policy;
 use crate::runtime::{self, DriverCommand};
@@ -87,6 +88,10 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/evals/cases", post(eval_case_create).get(eval_cases_list))
         .route("/v1/evals/runs/{case_id}", post(eval_run))
         .route("/v1/evals/runs", get(eval_runs_list))
+        .route("/v1/kbs", post(kb_create).get(kb_list))
+        .route("/v1/kbs/{id}/documents", post(kb_doc_ingest).get(kb_doc_list))
+        .route("/v1/kbs/{id}/documents/{did}", axum::routing::delete(kb_doc_delete))
+        .route("/v1/kbs/{id}/search", post(kb_search))
         .route("/v1/ws/threads/{id}/events", get(crate::ws::ws_handler))
         .layer(middleware::from_fn_with_state(state.clone(), idempotency_layer))
         .layer(middleware::from_fn_with_state(state.clone(), user_rate_limit))
@@ -967,3 +972,91 @@ async fn require_auth_stateless(req: axum::extract::Request, next: Next) -> Resp
 // silence unused import warnings for types used in macros only
 #[allow(dead_code)]
 fn _touch(_: HeaderMap, _: Method) {}
+
+// ---------- M13: 知识库 RAG (pgvector) ----------
+
+#[derive(Deserialize)]
+struct KbCreateReq {
+    workspace_id: Option<i64>,
+    name: String,
+    description: Option<String>,
+}
+
+async fn kb_create(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Json(req): Json<KbCreateReq>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let id = kb::create_kb(
+        &st.pool, c.tid, req.workspace_id, &req.name, req.description.as_deref(),
+    )
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "id": id })))
+}
+
+async fn kb_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+) -> Result<Json<Vec<kb::KbRow>>, (StatusCode, String)> {
+    let rows = kb::list_kbs(&st.pool, c.tid)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+#[derive(Deserialize)]
+struct KbDocIngestReq {
+    title: String,
+    content: String,
+    source_uri: Option<String>,
+}
+
+async fn kb_doc_ingest(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+    Json(req): Json<KbDocIngestReq>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let did = kb::ingest_document(
+        &st.pool, c.tid, id, &req.title, &req.content, req.source_uri.as_deref(),
+    )
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "id": did })))
+}
+
+async fn kb_doc_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<Vec<kb::KbDocRow>>, (StatusCode, String)> {
+    let rows = kb::list_documents(&st.pool, c.tid, id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn kb_doc_delete(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+    Path((_id, did)): Path<(i64, i64)>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let ok = kb::delete_document(&st.pool, c.tid, did)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "deleted": ok })))
+}
+
+#[derive(Deserialize)]
+struct KbSearchReq {
+    query: String,
+    keyword: Option<String>,
+    #[serde(default = "default_top_k")]
+    top_k: i64,
+}
+fn default_top_k() -> i64 { 5 }
+
+async fn kb_search(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+    Json(req): Json<KbSearchReq>,
+) -> Result<Json<Vec<kb::SearchHit>>, (StatusCode, String)> {
+    let hits = kb::search(
+        &st.pool, c.tid, id, &req.query, req.keyword.as_deref(), req.top_k,
+    )
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(hits))
+}

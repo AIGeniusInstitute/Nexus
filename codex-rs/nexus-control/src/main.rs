@@ -813,7 +813,7 @@ fn run_serve(
     codex_bin: &std::path::Path,
     codex_home: &std::path::Path,
 ) -> Result<()> {
-    println!("=== Nexus M12: serve ===");
+    println!("=== Nexus M13: serve ===");
     let rt = rt()?;
     rt.block_on(async move {
         let pool = nexus_control::db::connect(database_url).await?;
