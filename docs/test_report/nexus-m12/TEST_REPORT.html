@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus M12 测试报告 — 评测中心 + CI 门禁</title>
+<style>
+  :root[data-theme="dark"]{--bg:#0d1117;--panel:#161b22;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--gold:#d29922;--green:#3fb950;--red:#f85149;--border:#30363d;--code:#0d1117}
+  :root[data-theme="light"]{--bg:#f6f8fa;--panel:#fff;--text:#1f2328;--muted:#656d76;--accent:#0969da;--gold:#9a6700;--green:#1a7f37;--red:#cf222e;--border:#d0d7de;--code:#f6f8fa}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;transition:background .2s,color .2s}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 80px}
+  header{border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:28px}
+  h1{margin:0 0 6px;font-size:1.7em;color:var(--accent)}
+  h2{color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:36px}
+  h3{color:var(--accent);margin-top:24px}
+  .meta{color:var(--muted);font-size:.92em}
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.78em;font-weight:600}
+  .pass{background:rgba(63,185,80,.15);color:var(--green);border:1px solid var(--green)}
+  .fail{background:rgba(248,81,73,.15);color:var(--red);border:1px solid var(--red)}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 20px;margin-bottom:24px}
+  .toc a{color:var(--accent);text-decoration:none}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.92em}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+  th{background:var(--panel);color:var(--gold)}
+  tr:nth-child(even){background:var(--panel)}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-size:.84em;line-height:1.45}
+  code{color:var(--accent)}
+  pre code{color:var(--text)}
+  .ev{margin:10px 0}.ev .lab{color:var(--gold);font-weight:600;font-size:.85em;margin-bottom:4px}
+  .theme-btn{position:fixed;top:14px;right:16px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.85em}
+  .prog{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:99;width:0}
+  .svg-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin:16px 0}
+  details{margin:8px 0} summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0}
+</style>
+</head>
+<body>
+<div class="prog" id="prog"></div>
+<button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+<div class="wrap">
+<header>
+  <h1>Nexus M12 测试报告 — 评测中心 + CI 门禁</h1>
+  <div class="meta">里程碑 M12（roadmap M8 评测体系）· 分支 <code>feat/nexus-m12</code> · base M11 merge <code>251dd92</code> · 2026-09-06 · 守护：DeepThink</div>
+  <p class="meta"><span class="pill pass">cargo check 0e0w</span> &nbsp; <span class="pill pass">cargo test 28/28</span> &nbsp; <span class="pill pass">e2e AC12.1–12.6 PASS</span> &nbsp; <span class="pill pass">CI gate exit 0</span></p>
+</header>
+
+<div class="toc"><strong>目录</strong>
+  <ol><li><a href="#summary">交付摘要</a></li><li><a href="#flow">数据流</a></li><li><a href="#ac">验收矩阵</a></li><li><a href="#evidence">证据</a></li><li><a href="#regress">零回归</a></li><li><a href="#decisions">关键决策</a></li></ol>
+</div>
+
+<h2 id="summary">1. 交付摘要</h2>
+<p>M12 补齐 roadmap 阶段④"可靠性与治理"的<strong>评测维度</strong>（M8 T8-1 评测中心 + T8-3 CI 门禁），为治理阶段收尾。定义 eval case（input + expected_status + expected_contains），对一个已完成的 turn 断言并记录 pass/fail；CI 门禁脚本端到端跑通。</p>
+<ul>
+  <li>新 migration <code>20260906000008_m12_eval.sql</code>：eval_cases + eval_runs + 3 索引</li>
+  <li>新模块 <code>src/eval.rs</code>：EvalCase/EvalRun + create_case/list_cases/run_eval/list_runs</li>
+  <li><code>http_server.rs</code>：4 路由（cases CRUD + run 断言 + runs 列表）</li>
+  <li><code>scripts/eval-gate.sh</code>：CI 门禁（login→case→turn→eval→exit 0/1）</li>
+  <li><code>main.rs</code>：标题 "Nexus M12: serve"</li>
+</ul>
+<p><strong>不改 codex 内核</strong>（全部 nexus-control crate）。<strong>不动</strong>既有表（仅加 eval_cases/eval_runs）。</p>
+
+<h2 id="flow">2. 数据流</h2>
+<div class="svg-wrap">
+<svg viewBox="0 0 920 340" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="monospace" font-size="12">
+  <defs><marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#d29922"/></marker></defs>
+  <rect x="10" y="10" width="900" height="320" fill="none" stroke="#30363d"/>
+  <text x="24" y="32" fill="#58a6ff" font-weight="bold">eval case → turn → 断言 → eval_runs</text>
+  <rect x="30" y="60" width="190" height="70" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="125" y="85" text-anchor="middle" fill="#c9d1d9">POST /v1/evals/cases</text>
+  <text x="125" y="105" text-anchor="middle" fill="#8b949e">input + expected</text>
+  <text x="125" y="120" text-anchor="middle" fill="#8b949e">(admin)</text>
+  <rect x="30" y="160" width="190" height="60" rx="6" fill="#161b22" stroke="#3fb950"/>
+  <text x="125" y="185" text-anchor="middle" fill="#3fb950">POST /threads/{id}/turns</text>
+  <text x="125" y="205" text-anchor="middle" fill="#8b949e">(M2 起 turn)</text>
+  <rect x="320" y="110" width="220" height="80" rx="8" fill="#161b22" stroke="#d29922" stroke-width="2"/>
+  <text x="430" y="138" text-anchor="middle" fill="#d29922" font-weight="bold">POST /v1/evals/runs/{case_id}</text>
+  <text x="430" y="158" text-anchor="middle" fill="#8b949e">body: {turn_id}</text>
+  <text x="430" y="178" text-anchor="middle" fill="#8b949e">查 turn.status + items</text>
+  <path d="M220,190 L315,150" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <path d="M220,95 L315,135" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <rect x="610" y="60" width="270" height="60" rx="6" fill="#161b22" stroke="#3fb950"/>
+  <text x="745" y="85" text-anchor="middle" fill="#3fb950">断言 expected_status==status</text>
+  <text x="745" y="105" text-anchor="middle" fill="#3fb950">&amp;&amp; expected_contains ∈ items</text>
+  <rect x="610" y="150" width="270" height="50" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="745" y="180" text-anchor="middle" fill="#58a6ff">INSERT eval_runs (passed, detail)</text>
+  <path d="M540,150 L605,90" stroke="#3fb950" marker-end="url(#arr)" fill="none"/>
+  <path d="M540,170 L605,170" stroke="#58a6ff" marker-end="url(#arr)" fill="none"/>
+  <rect x="320" y="230" width="540" height="60" rx="6" fill="#161b22" stroke="#d29922" stroke-dasharray="4,3"/>
+  <text x="330" y="255" fill="#d29922" font-weight="bold">CI 门禁 scripts/eval-gate.sh</text>
+  <text x="330" y="275" fill="#8b949e">login → create case → start turn → run eval → passed? exit 0 : exit 1</text>
+</svg>
+</div>
+
+<h2 id="ac">3. 验收矩阵 AC12.1–12.6</h2>
+<table>
+  <tr><th>AC</th><th>验收点</th><th>状态</th></tr>
+  <tr><td>AC12.1</td><td>eval_cases/eval_runs 表建立（migration incl m12）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC12.2</td><td>POST /v1/evals/cases 创建用例（admin only，id=2/3）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC12.3</td><td>POST /v1/evals/runs/{case_id} 断言 turn：passed=True（completed==completed）+ failed 路径 passed=False</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC12.4</td><td>GET /v1/evals/runs 返回 run 列表（run1 True / run2 False）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC12.5</td><td>scripts/eval-gate.sh exit=0（CI 门禁 PASS）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC12.6</td><td>零回归：M11 timeline + M10 audit 仍工作</td><td><span class="pill pass">PASS</span></td></tr>
+</table>
+
+<h2 id="evidence">4. 证据</h2>
+<div class="ev"><div class="lab">cargo check / test</div>
+<pre><code>$ cargo check -p nexus-control   # 0 error 0 warning
+$ cargo test -p nexus-control     # 28 passed; 0 failed
+test eval::tests::eval_predicate_logic ... ok</code></pre></div>
+
+<div class="ev"><div class="lab">AC12.5 CI 门禁脚本端到端</div>
+<pre><code>$ bash scripts/eval-gate.sh
+[eval-gate] logging in as admin@test.com ...
+[eval-gate] case_id=2
+[eval-gate] turn_id=37
+[eval-gate] passed=True
+[eval-gate] PASS
+exit=0</code></pre></div>
+
+<div class="ev"><div class="lab">AC12.3 failed 路径（expected=interrupted vs actual=completed）</div>
+<pre><code>$ curl -s -X POST "$BASE/v1/evals/runs/$FCASE" -d '{"turn_id":37}'
+ passed= False actual= completed expected= interrupted</code></pre></div>
+
+<div class="ev"><div class="lab">AC12.4 GET /v1/evals/runs</div>
+<pre><code>$ curl -s "$BASE/v1/evals/runs?limit=10"
+ run= 2 case= 3 passed= False
+ run= 1 case= 2 passed= True</code></pre></div>
+
+<div class="ev"><div class="lab">AC12.6 零回归</div>
+<pre><code>$ curl -s "$BASE/v1/threads/$TID/timeline"
+ timeline count= 2
+$ curl -s "$BASE/v1/audit/logs?limit=2"
+ audit count= 2</code></pre></div>
+
+<h2 id="regress">5. 零回归</h2>
+<ul>
+  <li>cargo test 28/28（M11 的 27 + eval 1，无回退）</li>
+  <li>M11 timeline / trace API 仍工作（count=2）</li>
+  <li>M10 audit WORM + 查询 API 仍工作（count=2）</li>
+  <li>M2 turn 生命周期 + M5 pool + M4 计量路径不退化（turn 37 completed via mock）</li>
+</ul>
+
+<h2 id="decisions">6. 关键决策</h2>
+<details><summary>6.1 eval 不自动起 turn（接收 turn_id 断言）</summary>
+<p>起 turn 用既有 <code>/v1/threads/{id}/turns</code>（M2），eval 只接收已完成的 <code>turn_id</code> 断言。职责分离，避免复刻 turn_start 的 driver drain/park 逻辑（Simplicity First）。CI 脚本串联两者。</p>
+</details>
+<details><summary>6.2 断言 status + contains（骨架可扩展）</summary>
+<p>核心断言：<code>turn.status == expected_status</code> + 可选 <code>expected_contains ∈ items.content_ref</code>。五评测平面（roadmap T8-1 全集）留扩展：<code>case.category</code> 字段供分类，detail JSONB 供附加指标。</p>
+</details>
+<details><summary>6.3 run_eval tenant 隔离</summary>
+<p>查 turn 时 <code>JOIN threads th ON th.id=t.thread_id WHERE th.tenant_id=$2</code>，跨租户 turn 不可断言（actual_status="not_found" → passed=false）。</p>
+</details>
+<details><summary>6.4 坑：SIMULATE_APPROVAL=1 下 turn park 阻塞</summary>
+<p>CI gate 初版用 SIMULATE_APPROVAL=1 → turn_start 审批 park 不完成（curl hang）。修复：CI gate 跑 SIMULATE_APPROVAL=0（mock 纯文本 turn 无命令→approval_policy=untrusted 不触发审批→直接 completed）。</p>
+</details>
+
+<footer style="margin-top:40px;border-top:1px solid var(--border);padding-top:12px;color:var(--muted);font-size:.85em">
+  DeepThink · Nexus M12 评测中心 + CI 门禁（roadmap M8 评测体系）· 2026-09-06 · 所有改动在 codex-rs/nexus-control crate 内
+</footer>
+</div>
+<script>
+function toggleTheme(){var d=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',d==='dark'?'light':'dark')}
+window.addEventListener('scroll',function(){var h=document.documentElement.scrollHeight-window.innerHeight;document.getElementById('prog').style.width=(h>0?window.scrollY/h*100:0)+'%'});
+</script>
+</body>
+</html>
