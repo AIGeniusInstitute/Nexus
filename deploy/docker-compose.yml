@@ -1,0 +1,70 @@
+# Nexus 一键部署 — Docker Compose
+#
+# 服务：postgres (pgvector) + nexus (控制面)
+# 凭据/密钥从 .env 读取（绝不硬编码）。.env 由 deploy.sh 从 .env.example 复制。
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: nexus-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nexus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
+      POSTGRES_DB: ${POSTGRES_DB:-nexus}
+    volumes:
+      - nexus-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexus} -d ${POSTGRES_DB:-nexus}"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    ports:
+      - "${PG_PORT:-5435}:5432"
+
+  nexus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nexus-control:latest
+    container_name: nexus-control
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-nexus}:${POSTGRES_PASSWORD:-nexus}@postgres:5432/${POSTGRES_DB:-nexus}
+      NEXUS_JWT_SECRET: ${NEXUS_JWT_SECRET:?NEXUS_JWT_SECRET is required, see .env}
+      NEXUS_POOL_SIZE: ${NEXUS_POOL_SIZE:-4}
+      NEXUS_MODEL: ${NEXUS_MODEL:-deepseek-v4-pro}
+      NEXUS_UPSTREAM_MODEL_URL: ${NEXUS_UPSTREAM_MODEL_URL:-}
+      NEXUS_MODEL_KEY: ${NEXUS_MODEL_KEY:-}
+      NEXUS_EMBED_MODEL: ${NEXUS_EMBED_MODEL:-text-embedding-v3}
+      NEXUS_SIMULATE_APPROVAL: ${NEXUS_SIMULATE_APPROVAL:-0}
+      RUST_LOG: ${RUST_LOG:-nexus_control=info}
+    # serve: 迁移自动执行 + seed admin + 拉起 driver pool + 绑定 addr。
+    # admin_email/admin_password 仅 flag（无 env），必须经 command 注入。
+    command:
+      - serve
+      - --addr
+      - "0.0.0.0:8765"
+      - --jwt-secret
+      - "${NEXUS_JWT_SECRET}"
+      - --admin-email
+      - "${NEXUS_ADMIN_EMAIL:-admin@nexus.local}"
+      - --admin-password
+      - "${NEXUS_ADMIN_PASSWORD:-admin123}"
+    ports:
+      - "${NEXUS_PORT:-8765}:8765"
+    volumes:
+      - nexus-codex-home:/app/.codex
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8765/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 15s
+
+volumes:
+  nexus-pg-data:
+  nexus-codex-home:

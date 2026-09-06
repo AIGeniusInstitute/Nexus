@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus 一键 Docker 部署 — 测试报告</title>
+<style>
+  :root[data-theme="dark"]{--bg:#0d1117;--panel:#161b22;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--gold:#d29922;--green:#3fb950;--red:#f85149;--border:#30363d;--code:#0d1117}
+  :root[data-theme="light"]{--bg:#f6f8fa;--panel:#fff;--text:#1f2328;--muted:#656d76;--accent:#0969da;--gold:#9a6700;--green:#1a7f37;--red:#cf222e;--border:#d0d7de;--code:#f6f8fa}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;transition:background .2s,color .2s}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 80px}
+  header{border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:28px}
+  h1{margin:0 0 6px;font-size:1.7em;color:var(--accent)}
+  h2{color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:36px}
+  .meta{color:var(--muted);font-size:.92em}
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.78em;font-weight:600}
+  .pass{background:rgba(63,185,80,.15);color:var(--green);border:1px solid var(--green)}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 20px;margin-bottom:24px}
+  .toc a{color:var(--accent);text-decoration:none}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.92em}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+  th{background:var(--panel);color:var(--gold)}
+  tr:nth-child(even){background:var(--panel)}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-size:.84em;line-height:1.45}
+  code{color:var(--accent)} pre code{color:var(--text)}
+  .ev{margin:10px 0}.ev .lab{color:var(--gold);font-weight:600;font-size:.85em;margin-bottom:4px}
+  .theme-btn{position:fixed;top:14px;right:16px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.85em}
+  .prog{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:99;width:0}
+  .svg-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin:16px 0}
+  details{margin:8px 0} summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0}
+</style>
+</head>
+<body>
+<div class="prog" id="prog"></div>
+<button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+<div class="wrap">
+<header>
+  <h1>Nexus 一键 Docker 部署 — 测试报告</h1>
+  <div class="meta">一键编译构建 + 本机 Docker 部署 + deploy.sh · 分支 <code>feat/nexus-docker-deploy</code> · base M14 merge <code>25103cf</code> · 2026-09-06 · 守护：DeepThink</div>
+  <p class="meta"><span class="pill pass">deploy.sh 单命令</span> &nbsp; <span class="pill pass">/health ok</span> &nbsp; <span class="pill pass">login JWT</span> &nbsp; <span class="pill pass">AC1–6 PASS</span></p>
+</header>
+
+<div class="toc"><strong>目录</strong>
+  <ol><li><a href="#summary">交付摘要</a></li><li><a href="#flow">部署流程</a></li><li><a href="#ac">验收矩阵</a></li><li><a href="#evidence">证据</a></li><li><a href="#decisions">关键决策</a></li></ol>
+</div>
+
+<h2 id="summary">1. 交付摘要</h2>
+<p>将 Nexus 控制面（M0–M14 全部 15 里程碑产物）标准化为可一键拉起的 Docker 部署包。</p>
+<ul>
+  <li><code>deploy/Dockerfile</code>：瘦运行时镜像（debian:bookworm-slim + nexus-control + codex 两二进制 + ca-certificates/curl/libsqlite3-0/libssl3）</li>
+  <li><code>deploy/docker-compose.yml</code>：postgres(pgvector/pgvector:pg16) + nexus 两服务，volume 持久化，健康检查</li>
+  <li><code>deploy/deploy.sh</code>：一键脚本（编译→打包→启动→健康检查→汇报），含 <code>--down/--purge/--no-build</code></li>
+  <li><code>deploy/.env.example</code> + <code>deploy/README.md</code>：环境变量模板与文档</li>
+</ul>
+<p><strong>不改 codex 内核</strong>（全部在 <code>deploy/</code> 目录）。镜像 <strong>759MB</strong>（codex 引擎 strip 后占主体）。</p>
+
+<h2 id="flow">2. 部署流程</h2>
+<div class="svg-wrap">
+<svg viewBox="0 0 940 300" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="monospace" font-size="12">
+  <defs><marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#d29922"/></marker></defs>
+  <rect x="10" y="10" width="920" height="280" fill="none" stroke="#30363d"/>
+  <text x="24" y="32" fill="#58a6ff" font-weight="bold">deploy.sh: 宿主机编译 → 瘦镜像打包 → compose up → 健康检查</text>
+  <rect x="30" y="55" width="180" height="70" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="120" y="80" text-anchor="middle" fill="#58a6ff">cargo build --release</text>
+  <text x="120" y="98" text-anchor="middle" fill="#8b949e">-p nexus-control</text>
+  <text x="120" y="115" text-anchor="middle" fill="#3fb950">107MB → strip</text>
+  <rect x="30" y="135" width="180" height="60" rx="6" fill="#161b22" stroke="#58a6ff"/>
+  <text x="120" y="160" text-anchor="middle" fill="#58a6ff">cp codex + strip</text>
+  <text x="120" y="178" text-anchor="middle" fill="#3fb950">1.3G → 297MB</text>
+  <path d="M210,90 L255,90" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <rect x="260" y="50" width="200" height="100" rx="8" fill="#161b22" stroke="#d29922" stroke-width="2"/>
+  <text x="360" y="80" text-anchor="middle" fill="#d29922" font-weight="bold">docker compose build</text>
+  <text x="360" y="100" text-anchor="middle" fill="#8b949e">Dockerfile (debian-slim)</text>
+  <text x="360" y="118" text-anchor="middle" fill="#8b949e">COPY bin/* → /usr/local/bin</text>
+  <text x="360" y="138" text-anchor="middle" fill="#3fb950">image 759MB</text>
+  <path d="M460,100 L505,100" stroke="#d29922" marker-end="url(#arr)" fill="none"/>
+  <rect x="510" y="40" width="180" height="60" rx="6" fill="#161b22" stroke="#3fb950"/>
+  <text x="600" y="65" text-anchor="middle" fill="#3fb950">nexus-postgres</text>
+  <text x="600" y="82" text-anchor="middle" fill="#8b949e">pgvector:pg16 :5435</text>
+  <rect x="510" y="110" width="180" height="60" rx="6" fill="#161b22" stroke="#3fb950"/>
+  <text x="600" y="135" text-anchor="middle" fill="#3fb950">nexus-control</text>
+  <text x="600" y="152" text-anchor="middle" fill="#8b949e">serve :8765 (healthy)</text>
+  <path d="M690,70 L740,70" stroke="#3fb950" marker-end="url(#arr)" fill="none"/>
+  <rect x="745" y="45" width="165" height="130" rx="6" fill="#161b22" stroke="#3fb950" stroke-dasharray="4,3"/>
+  <text x="827" y="72" text-anchor="middle" fill="#3fb950" font-weight="bold">验证</text>
+  <text x="760" y="95" fill="#8b949e">/health → ok</text>
+  <text x="760" y="115" fill="#8b949e">login → JWT 183</text>
+  <text x="760" y="135" fill="#8b949e">/v1/auth/me</text>
+  <text x="760" y="155" fill="#8b949e">→ *:* tenant=1</text>
+  <rect x="30" y="215" width="880" height="60" rx="6" fill="#161b22" stroke="#30363d" stroke-dasharray="4,3"/>
+  <text x="50" y="240" fill="#d29922" font-weight="bold">持久化: nexus-pg-data (DB) + nexus-codex-home (config.toml/rules) 跨重启保留</text>
+  <text x="50" y="262" fill="#8b949e">密钥隔离: NEXUS_MODEL_KEY 仅经 .env 注入 compose env，不入镜像/脚本/记忆</text>
+</svg>
+</div>
+
+<h2 id="ac">3. 验收矩阵 AC1–6</h2>
+<table>
+  <tr><th>AC</th><th>验收点</th><th>状态</th></tr>
+  <tr><td>AC1</td><td><code>./deploy/deploy.sh</code> 单命令完成编译+构建+启动+健康检查</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC2</td><td><code>curl http://localhost:8765/health</code> 返回 ok</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC3</td><td>POST /v1/auth/login 用 .env 管理员凭据返回 JWT（183 字符）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC4</td><td>PG 数据卷跨 <code>--down</code>+重跑持久（thread id 保留）</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC5</td><td><code>--down</code> 停止保留卷；<code>--purge</code> 删卷</td><td><span class="pill pass">PASS</span></td></tr>
+  <tr><td>AC6</td><td>密钥仅从 .env 注入，不入镜像/脚本/记忆</td><td><span class="pill pass">PASS</span></td></tr>
+</table>
+
+<h2 id="evidence">4. 证据</h2>
+<div class="ev"><div class="lab">AC1 部署脚本输出</div>
+<pre><code>$ ./deploy/deploy.sh
+[deploy] 编译 nexus-control release（宿主机，24 核可用，首次较慢）...
+    Finished `release` profile [optimized + debuginfo] target(s) in 2m 54s
+[deploy] codex 引擎就位: 297M
+[deploy] 构建 Docker 镜像 nexus-control:latest ...
+[deploy] 启动服务（postgres + nexus）...
+[ok] postgres healthy
+[ok] nexus-control /health ok
+[ok] ================ Nexus 部署完成 ================</code></pre></div>
+
+<div class="ev"><div class="lab">AC2 / AC3 health + login + authed</div>
+<pre><code>$ curl -fsS http://localhost:8765/health
+ok
+$ POST /v1/auth/login {"email":"admin@nexus.local","password":"admin123"}
+  token(len)=183
+$ GET /v1/auth/me  → {"email":"admin@nexus.local","perms":["*:*"],"tenant_id":1,"user_id":1}
+$ GET /v1/policy/rules → seed: rm -rf* deny/ sudo* deny / ls* allow ...（迁移+seed 自动执行）</code></pre></div>
+
+<div class="ev"><div class="lab">AC4 持久化（建 thread → down → rerun → thread 仍在）</div>
+<pre><code>$ POST /v1/threads {"title":"persistence-test"} → {"id":"2f15839e-f352-42cf-b005-37967a6ca0d0"}
+$ ./deploy/deploy.sh --down    → 已停止（数据卷保留）
+$ ./deploy/deploy.sh           → 重新启动
+$ GET /v1/threads → threads=1  ids=['2f15839e-f352-42cf-b005-37967a6ca0d0']  ✓ 跨重启保留</code></pre></div>
+
+<div class="ev"><div class="lab">AC5 purge + 容器/镜像状态</div>
+<pre><code>$ ./deploy/deploy.sh --purge → Volume deploy_nexus-pg-data Removed / deploy_nexus-codex-home Removed
+$ docker ps
+  nexus-control    Up (healthy)   0.0.0.0:8765->8765/tcp
+  nexus-postgres   Up (healthy)   0.0.0.0:5435->5432/tcp
+$ docker images nexus-control → nexus-control:latest 759MB</code></pre></div>
+
+<h2 id="decisions">5. 关键决策</h2>
+<details><summary>5.1 宿主机编译 + 瘦镜像（非容器内全量 cargo build）</summary>
+<p>codex 工作区 100+ crate，容器内从零 release 编译 30+ min 且需下载 git 依赖；nexus-control 是小 crate，宿主机 24 核 2m54s 完成；codex 引擎复用驱动 M0–M14 的同一二进制（strip 297MB）。瘦镜像构建秒级，image 759MB。</p>
+</details>
+<details><summary>5.2 pgvector/pgvector:pg16（非 postgres:16-alpine）</summary>
+<p>M13 知识库 RAG 需 pgvector 扩展（vector 类型 + HNSW 索引）。postgres:16-alpine 无 pgvector，必须用 pgvector/pgvector:pg16 镜像。</p>
+</details>
+<details><summary>5.3 迁移自动执行（serve 启动即 run_migrations）</summary>
+<p><code>nexus-control serve</code> 启动时调 <code>db::run_migrations</code>（幂等，M1–M14 全部 migration）+ <code>seed_admin</code>。无需独立 migrate 步骤，compose depends_on postgres healthy 即保证顺序。</p>
+</details>
+<details><summary>5.4 PG 主机端口 5435（非 5434）</summary>
+<p>开发期 nexus-pg-m4 容器已占 5434。compose 内部网络 nexus→postgres:5432 不经主机端口；主机 5435 映射仅供外部 inspect，避冲突且不动开发容器。</p>
+</details>
+<details><summary>5.5 密钥隔离（红线）</summary>
+<p>NEXUS_MODEL_KEY 仅经 <code>.env</code> → compose <code>environment</code> 注入容器 env，不在镜像层（Dockerfile 无 COPY .env）、不在脚本硬编码、不入记忆。NEXUS_JWT_SECRET 空或默认值时脚本 <code>openssl rand -hex 32</code> 自动生成写入 .env。</p>
+</details>
+
+<footer style="margin-top:40px;border-top:1px solid var(--border);padding-top:12px;color:var(--muted);font-size:.85em">
+  DeepThink · Nexus 一键 Docker 部署 · 2026-09-06 · 全部改动在 deploy/ 目录（不改 codex 内核）
+</footer>
+</div>
+<script>
+function toggleTheme(){var d=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',d==='dark'?'light':'dark')}
+window.addEventListener('scroll',function(){var h=document.documentElement.scrollHeight-window.innerHeight;document.getElementById('prog').style.width=(h>0?window.scrollY/h*100:0)+'%'});
+</script>
+</body>
+</html>
