@@ -1,17 +1,26 @@
-//! Minimal HTTP model gateway proxy for T0-7.
+//! Model gateway: local HTTP proxy between the Codex app-server and a real
+//! OpenAI-compatible Chat Completions endpoint (M8).
 //!
-//! Proves that model traffic from the app-server can be routed through a
-//! control-plane proxy that validates tokens and records metering. The
-//! gateway is a single-threaded `std::net::TcpListener` server that:
+//! M0/T0-7: a mock gateway that returns a synthetic Responses-API payload so
+//! the app-server turn can complete without a real model. M2: optional
+//! upstream passthrough over raw TCP (broken for HTTPS + hostnames).
 //!
-//! 1. Accepts `POST /v1/responses` requests.
-//! 2. Validates `Authorization: Bearer <expected_token>`.
-//! 3. Returns a minimal OpenAI-compatible Responses API payload so the
-//!    app-server turn can complete.
-//! 4. Records per-token request count for metering.
+//! **M8**: codex forces `wire_api = "responses"` (Responses API SSE,
+//! `CHAT_WIRE_API_REMOVED_ERROR` in `model-provider-info`), but dashscope only
+//! speaks Chat Completions SSE. The gateway now performs a **streaming
+//! Responses↔Chat-Completions protocol translation**: it parses the Responses
+//! API request body, extracts input messages, issues a streaming Chat
+//! Completions request to dashscope via reqwest (rustls TLS), and translates
+//! each Chat SSE chunk into the corresponding Responses SSE event on the fly
+//! so the app-server's `stream_responses_api` SSE parser
+//! (`codex-api/src/sse/responses.rs`) accepts it.
 //!
-//! This is PoC-grade — no real model call is made. For production, this
-//! would forward to a real provider with per-tenant auth.
+//! The minimum Responses SSE event set required by the parser:
+//! `response.created` + `response.output_item.added` +
+//! `response.output_text.delta`(×N) + `response.output_item.done` +
+//! `response.completed`(with `usage`, else "stream closed before
+//! response.completed"). `content_part.*` / `output_text.done` are
+//! `trace`-level unhandled and may be omitted.
 
 use std::io::BufRead;
 use std::io::BufReader;
@@ -51,11 +60,17 @@ impl ModelGateway {
         let token = token.to_string();
         let token_for_closure = token.clone();
         let rc = Arc::clone(&request_count);
-        // M2: optional upstream passthrough (real model). When
-        // NEXUS_UPSTREAM_MODEL_URL + NEXUS_UPSTREAM_MODEL_KEY are set, the
-        // gateway forwards requests to a real OpenAI-compatible endpoint and
-        // relays the response. Otherwise it falls back to the mock payload.
+        // M8: upstream passthrough now does Responses↔Chat SSE translation
+        // over reqwest (rustls TLS). `None` => mock fallback.
         let upstream = Upstream::from_env();
+        let runtime = Arc::new(
+            tokio::runtime::Builder::new_multi_thread()
+                .worker_threads(2)
+                .enable_all()
+                .build()
+                .context("build model-gateway runtime")?,
+        );
+        let runtime_for_closure = Arc::clone(&runtime);
 
         let handle = thread::Builder::new()
             .name("model-gateway".into())
@@ -69,8 +84,9 @@ impl ModelGateway {
                             let token = token_for_closure.clone();
                             let rc = Arc::clone(&rc);
                             let upstream = upstream.clone();
+                            let runtime = Arc::clone(&runtime_for_closure);
                             // Handle on the same thread — PoC, one request at a time.
-                            handle_request(s, &token, &rc, &upstream);
+                            handle_request(s, &token, &rc, &upstream, &runtime);
                         }
                         Err(e) => {
                             eprintln!("[model-gateway] accept error: {e}");
@@ -110,7 +126,13 @@ impl Drop for ModelGateway {
 }
 
 /// Handle a single HTTP request.
-fn handle_request(stream: TcpStream, expected_token: &str, request_count: &AtomicU64, upstream: &Option<Upstream>) {
+fn handle_request(
+    stream: TcpStream,
+    expected_token: &str,
+    request_count: &AtomicU64,
+    upstream: &Option<Upstream>,
+    runtime: &tokio::runtime::Runtime,
+) {
     let stream_clone = match stream.try_clone() {
         Ok(s) => s,
         Err(e) => {
@@ -174,17 +196,34 @@ fn handle_request(stream: TcpStream, expected_token: &str, request_count: &Atomi
         return;
     }
 
-    eprintln!("[model-gateway] request #{} accepted", request_count.load(Ordering::Relaxed));
+    eprintln!(
+        "[model-gateway] request #{} accepted (upstream={})",
+        request_count.load(Ordering::Relaxed),
+        upstream.is_some()
+    );
 
-    // M2: if an upstream is configured, forward + relay (real model).
-    if let Some(resp) = upstream.as_ref().and_then(|u| u.forward(&body_bytes)) {
-        write_http_response(&mut writer, resp.status, &resp.content_type, &resp.body);
+    // M8: if an upstream is configured, stream-translate Chat SSE → Responses
+    // SSE. Returns `true` on a successful streamed response; falls back to
+    // mock on any upstream failure.
+    if let Some(u) = upstream {
+        let ok = runtime.handle().block_on(async {
+            u.forward_stream(&body_bytes, &mut writer).await
+        });
+        if ok {
+            return;
+        }
+        // Upstream failed mid-stream: best-effort error note. The SSE header
+        // may already be written, so we cannot switch to a clean JSON 502.
+        let _ = writer.write_all(
+            b"event: response.failed\ndata: {\"type\":\"response.failed\",\"response\":{\"error\":{\"message\":\"upstream connect failed\"}}}\n\n",
+        );
+        let _ = writer.flush();
         return;
     }
 
-    // Otherwise return the mock payload (M0 behavior).
-    // The app-server expects a `response` with at least an `id`, `model`,
-    // and `output` containing message items.
+    // Otherwise return the mock payload (M0 behavior). SIMULATE mode never
+    // reads this (driver emits synthetic events), but the mock keeps the
+    // non-SIMULATE + no-upstream path from hard-failing at the transport.
     let body = serde_json::json!({
         "id": "resp_nexus_gateway",
         "object": "response",
@@ -199,7 +238,7 @@ fn handle_request(stream: TcpStream, expected_token: &str, request_count: &Atomi
                 "content": [
                     {
                         "type": "output_text",
-                        "text": "Gateway proxy active. Model call intercepted by Nexus T0-7."
+                        "text": "Gateway proxy active. Model call intercepted by Nexus (mock)."
                     }
                 ]
             }
@@ -233,98 +272,293 @@ fn write_http_response(writer: &mut impl Write, status: u16, content_type: &str,
     let _ = writer.flush();
 }
 
-// ---------------------------------------------------------------------------
-// M2: optional upstream passthrough (real model proxy).
-// ---------------------------------------------------------------------------
-
-/// Configuration for forwarding model requests to a real upstream endpoint.
-/// Populated from env when both `NEXUS_UPSTREAM_MODEL_URL` and
-/// `NEXUS_UPSTREAM_MODEL_KEY` are set; `None` otherwise (mock fallback).
-#[derive(Clone)]
-pub struct Upstream {
-    host: String,
-    port: u16,
-    path: String,
-    key: String,
+/// Write one SSE frame (`event: <type>\ndata: <json>\n\n`) to the writer.
+fn write_sse(writer: &mut impl Write, event: &str, data: &serde_json::Value) -> bool {
+    let data_str = serde_json::to_string(data).unwrap_or_else(|_| "{}".into());
+    let frame = format!("event: {event}\ndata: {data_str}\n\n");
+    writer.write_all(frame.as_bytes()).is_ok() && writer.flush().is_ok()
 }
 
-/// A relayed upstream response.
-struct UpstreamResponse {
-    status: u16,
-    content_type: String,
-    body: String,
+// ---------------------------------------------------------------------------
+// M8: upstream passthrough — streaming Responses↔Chat-Completions translation.
+// ---------------------------------------------------------------------------
+
+/// Configuration for forwarding model requests to a real Chat Completions
+/// endpoint (e.g. dashscope OpenAI-compatible mode). Populated from env when
+/// `NEXUS_UPSTREAM_MODEL_URL` + `NEXUS_MODEL_KEY` are set; `None` otherwise
+/// (mock fallback). `NEXUS_MODEL` picks the model id (default
+/// `deepseek-v4-pro`).
+#[derive(Clone)]
+pub struct Upstream {
+    /// Base URL, e.g. `https://dashscope.aliyuncs.com/compatible-mode/v1`.
+    base_url: String,
+    key: String,
+    model: String,
 }
 
 impl Upstream {
-    /// Build from env, or return a sentinel that always falls back to mock.
+    /// Build from env, or return `None` (mock fallback).
     fn from_env() -> Option<Self> {
-        let url = std::env::var("NEXUS_UPSTREAM_MODEL_URL").ok()?;
-        let key = std::env::var("NEXUS_UPSTREAM_MODEL_KEY").ok()?;
-        Self::parse_url(&url, key)
+        let base_url = std::env::var("NEXUS_UPSTREAM_MODEL_URL").ok()?;
+        let key = std::env::var("NEXUS_MODEL_KEY").ok()?;
+        let model = std::env::var("NEXUS_MODEL")
+            .unwrap_or_else(|_| "deepseek-v4-pro".into());
+        Some(Self { base_url, key, model })
     }
 
-    /// Parse `http://host[:port][/path]` into an `Upstream`.
-    fn parse_url(url: &str, key: String) -> Option<Self> {
-        let rest = url.strip_prefix("http://").or_else(|| url.strip_prefix("https://"))?;
-        let (hostport, path) = match rest.split_once('/') {
-            Some((h, p)) => (h, format!("/{p}")),
-            None => (rest, "/".into()),
+    /// Forward a Responses API request body as a streaming Chat Completions
+    /// request, translating each Chat SSE chunk into Responses SSE events
+    /// written back to `writer`. Returns `false` if the upstream request
+    /// could not even be initiated (caller can emit a failure event).
+    async fn forward_stream(&self, body: &[u8], writer: &mut impl Write) -> bool {
+        // 1. Parse the Responses API request body.
+        let req: serde_json::Value = match serde_json::from_slice(body) {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("[model-gateway] failed to parse Responses body: {e}");
+                return false;
+            }
         };
-        let (host, port) = match hostport.rsplit_once(':') {
-            Some((h, p)) => (h.to_string(), p.parse().unwrap_or(80)),
-            None => (hostport.to_string(), 80),
+
+        // 2. Build chat messages from Responses input items.
+        let model = req
+            .get("model")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&self.model);
+        let mut messages: Vec<serde_json::Value> = Vec::new();
+        if let Some(inst) = req.get("instructions").and_then(|v| v.as_str()) {
+            if !inst.is_empty() {
+                messages.push(serde_json::json!({"role":"system","content":inst}));
+            }
+        }
+        if let Some(input) = req.get("input").and_then(|v| v.as_array()) {
+            for item in input {
+                if item.get("type").and_then(|v| v.as_str()) != Some("message") {
+                    continue;
+                }
+                let role = item.get("role").and_then(|v| v.as_str()).unwrap_or("user");
+                let content = item
+                    .get("content")
+                    .and_then(|v| v.as_array())
+                    .map(|parts| {
+                        let texts: Vec<String> = parts
+                            .iter()
+                            .filter_map(|p| {
+                                let ttype = p.get("type").and_then(|t| t.as_str())?;
+                                if ttype.contains("text") {
+                                    p.get("text").and_then(|t| t.as_str()).map(String::from)
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect();
+                        texts.join("")
+                    })
+                    .unwrap_or_default();
+                if !content.is_empty() {
+                    let role = if role == "assistant" { "assistant" } else { "user" };
+                    messages.push(serde_json::json!({"role":role,"content":content}));
+                }
+            }
+        }
+        if messages.is_empty() {
+            eprintln!("[model-gateway] Responses body had no usable messages");
+            return false;
+        }
+
+        // 3. Construct the Chat Completions streaming request.
+        let mut chat_req = serde_json::json!({
+            "model": model,
+            "messages": messages,
+            "stream": true,
+            "stream_options": {"include_usage": true},
+        });
+        if let Some(mt) = req
+            .get("max_output_tokens")
+            .and_then(|v| v.as_u64())
+            .or_else(|| req.get("max_tokens").and_then(|v| v.as_u64()))
+        {
+            chat_req["max_tokens"] = serde_json::Value::from(mt);
+        }
+
+        let client = match reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(180))
+            .connect_timeout(std::time::Duration::from_secs(15))
+            .build()
+        {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("[model-gateway] reqwest client build failed: {e}");
+                return false;
+            }
         };
-        Some(Self { host, port, path, key })
-    }
-
-    /// Forward the request body to the upstream and relay the response.
-    /// Returns `None` on connection failure (caller falls back to mock).
-    fn forward(&self, body: &[u8]) -> Option<UpstreamResponse> {
-        use std::io::{Read, Write};
-        use std::net::TcpStream;
-        use std::time::Duration;
-
-        let ip: std::net::IpAddr = self.host.parse().ok()?;
-        let mut stream = TcpStream::connect_timeout(
-            &std::net::SocketAddr::new(ip, self.port),
-            Duration::from_secs(10),
-        )
-        .ok()?;
-        stream.set_read_timeout(Some(Duration::from_secs(60))).ok();
-        let request = format!(
-            "POST {path} HTTP/1.1\r\n\
-             Host: {host}:{port}\r\n\
-             Authorization: Bearer {key}\r\n\
-             Content-Type: application/json\r\n\
-             Content-Length: {clen}\r\n\
-             Connection: close\r\n\
-             \r\n",
-            path = self.path, host = self.host, port = self.port,
-            key = self.key, clen = body.len()
+        let url = format!(
+            "{}/chat/completions",
+            self.base_url.trim_end_matches('/')
         );
-        stream.write_all(request.as_bytes()).ok()?;
-        stream.write_all(body).ok()?;
-        stream.flush().ok()?;
-        let mut resp = String::new();
-        stream.read_to_string(&mut resp).ok()?;
-        let status: u16 = resp
-            .lines()
-            .next()
-            .and_then(|l| l.split_whitespace().nth(1))
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(502);
-        let content_type = resp
-            .lines()
-            .find(|l| l.to_ascii_lowercase().starts_with("content-type:"))
-            .and_then(|l| l.split(':').nth(1))
-            .map(|s| s.trim().to_string())
-            .unwrap_or_else(|| "application/json".into());
-        let body_start = resp.find("\r\n\r\n").map(|i| i + 4).unwrap_or(0);
-        Some(UpstreamResponse {
-            status,
-            content_type,
-            body: resp[body_start..].to_string(),
-        })
+        let resp = match client
+            .post(&url)
+            .header("Authorization", format!("Bearer {}", self.key))
+            .json(&chat_req)
+            .send()
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("[model-gateway] upstream request failed: {e}");
+                return false;
+            }
+        };
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            eprintln!("[model-gateway] upstream non-2xx {status}: {text}");
+            return false;
+        }
+
+        // 4. Write the SSE response header so the app-server's eventsource
+        //    parser begins consuming events.
+        let header = "HTTP/1.1 200 OK\r\n\
+            Content-Type: text/event-stream\r\n\
+            Cache-Control: no-cache\r\n\
+            Connection: close\r\n\
+            \r\n";
+        if writer.write_all(header.as_bytes()).is_err() {
+            return false;
+        }
+        let _ = writer.flush();
+
+        // 5. Stream-translate Chat SSE → Responses SSE.
+        let resp_id = format!("resp_nexus_{}", uuid::Uuid::new_v4().simple());
+        let msg_id = format!("msg_nexus_{}", uuid::Uuid::new_v4().simple());
+        let mut full_text = String::new();
+        let mut created_sent = false;
+        let mut usage_val: Option<serde_json::Value> = None;
+
+        use futures_util::StreamExt;
+        let mut stream = resp.bytes_stream();
+        let mut buf = String::new();
+        while let Some(chunk) = stream.next().await {
+            let chunk = match chunk {
+                Ok(c) => c,
+                Err(e) => {
+                    eprintln!("[model-gateway] stream chunk error: {e}");
+                    break;
+                }
+            };
+            buf.push_str(&String::from_utf8_lossy(&chunk));
+            // Process complete lines.
+            loop {
+                let Some(nl) = buf.find('\n') else { break };
+                let line = buf[..nl].trim_end_matches('\r').to_string();
+                buf = buf[nl + 1..].to_string();
+                if line.is_empty() {
+                    continue;
+                }
+                let Some(data) = line.strip_prefix("data: ") else {
+                    continue;
+                };
+                let data = data.trim();
+                if data == "[DONE]" {
+                    break;
+                }
+                let Ok(chunk_val) = serde_json::from_str::<serde_json::Value>(data) else {
+                    continue;
+                };
+
+                // First chunk → response.created + output_item.added.
+                if !created_sent {
+                    created_sent = true;
+                    let created = serde_json::json!({
+                        "type":"response.created",
+                        "response":{"id":&resp_id,"object":"response","model":model,"status":"in_progress"}
+                    });
+                    if !write_sse(writer, "response.created", &created) {
+                        return true;
+                    }
+                    let item_added = serde_json::json!({
+                        "type":"response.output_item.added",
+                        "output_index":0,
+                        "item":{"type":"message","id":&msg_id,"role":"assistant","status":"in_progress","content":[]}
+                    });
+                    if !write_sse(writer, "response.output_item.added", &item_added) {
+                        return true;
+                    }
+                }
+
+                // Capture usage (final chunk has choices=[] + usage).
+                if let Some(u) = chunk_val.get("usage").filter(|u| !u.is_null()) {
+                    usage_val = Some(u.clone());
+                }
+
+                if let Some(choices) = chunk_val.get("choices").and_then(|v| v.as_array()) {
+                    for choice in choices {
+                        let delta = choice.get("delta");
+                        // Text deltas → output_text.delta.
+                        if let Some(content) = delta
+                            .and_then(|d| d.get("content"))
+                            .and_then(|c| c.as_str())
+                        {
+                            if !content.is_empty() {
+                                full_text.push_str(content);
+                                let ev = serde_json::json!({
+                                    "type":"response.output_text.delta",
+                                    "output_index":0,
+                                    "content_index":0,
+                                    "delta":content
+                                });
+                                if !write_sse(writer, "response.output_text.delta", &ev) {
+                                    return true;
+                                }
+                            }
+                        }
+                        // Reasoning deltas → reasoning_text.delta (optional,
+                        // codex supports it; harmless if present).
+                        if let Some(rc) = delta
+                            .and_then(|d| d.get("reasoning_content"))
+                            .and_then(|c| c.as_str())
+                        {
+                            if !rc.is_empty() {
+                                let ev = serde_json::json!({
+                                    "type":"response.reasoning_text.delta",
+                                    "output_index":0,
+                                    "content_index":0,
+                                    "delta":rc
+                                });
+                                let _ = write_sse(writer, "response.reasoning_text.delta", &ev);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 6. Finalize: output_item.done + response.completed (with usage).
+        let item_done = serde_json::json!({
+            "type":"response.output_item.done",
+            "output_index":0,
+            "item":{"type":"message","id":&msg_id,"role":"assistant","status":"completed",
+                    "content":[{"type":"output_text","text":&full_text}]}
+        });
+        let _ = write_sse(writer, "response.output_item.done", &item_done);
+
+        let (in_tok, out_tok) = match &usage_val {
+            Some(u) => (
+                u.get("prompt_tokens").and_then(|v| v.as_u64()).unwrap_or(0),
+                u.get("completion_tokens").and_then(|v| v.as_u64()).unwrap_or(0),
+            ),
+            None => (0, 0),
+        };
+        let completed = serde_json::json!({
+            "type":"response.completed",
+            "response":{"id":&resp_id,"object":"response","model":model,"status":"completed",
+                "output":[{"type":"message","id":&msg_id,"role":"assistant","status":"completed",
+                    "content":[{"type":"output_text","text":&full_text}]}],
+                "usage":{"input_tokens":in_tok,"output_tokens":out_tok,"total_tokens":in_tok+out_tok}}
+        });
+        let _ = write_sse(writer, "response.completed", &completed);
+        let _ = writer.flush();
+        true
     }
 }
 
@@ -408,5 +642,70 @@ mod tests {
             gw.base_url().starts_with("http://127.0.0.1:"),
             "base_url should be http://127.0.0.1:<port>"
         );
+    }
+
+    /// M8: Responses→Chat message extraction is the protocol-translation core.
+    /// Verify it without a network (pure parsing).
+    fn extract_messages(req: &serde_json::Value) -> Vec<(String, String)> {
+        let mut out = Vec::new();
+        if let Some(inst) = req.get("instructions").and_then(|v| v.as_str()) {
+            if !inst.is_empty() {
+                out.push(("system".into(), inst.to_string()));
+            }
+        }
+        if let Some(input) = req.get("input").and_then(|v| v.as_array()) {
+            for item in input {
+                if item.get("type").and_then(|v| v.as_str()) != Some("message") {
+                    continue;
+                }
+                let role = item.get("role").and_then(|v| v.as_str()).unwrap_or("user");
+                let content = item
+                    .get("content")
+                    .and_then(|v| v.as_array())
+                    .map(|parts| {
+                        let texts: Vec<String> = parts
+                            .iter()
+                            .filter_map(|p| {
+                                let ttype = p.get("type").and_then(|t| t.as_str())?;
+                                if ttype.contains("text") {
+                                    p.get("text").and_then(|t| t.as_str()).map(String::from)
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect();
+                        texts.join("")
+                    })
+                    .unwrap_or_default();
+                if !content.is_empty() {
+                    out.push((role.to_string(), content));
+                }
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn extract_messages_from_responses_input() {
+        let req = serde_json::json!({
+            "model":"deepseek-v4-pro",
+            "instructions":"You are helpful.",
+            "input":[
+                {"type":"message","role":"user","content":[
+                    {"type":"input_text","text":"run ls"}
+                ]},
+                {"type":"message","role":"assistant","content":[
+                    {"type":"output_text","text":"sure"}
+                ]}
+            ]
+        });
+        let msgs = extract_messages(&req);
+        assert_eq!(msgs.len(), 3);
+        assert_eq!(msgs[0].0, "system");
+        assert_eq!(msgs[0].1, "You are helpful.");
+        assert_eq!(msgs[1].0, "user");
+        assert_eq!(msgs[1].1, "run ls");
+        assert_eq!(msgs[2].0, "assistant");
+        assert_eq!(msgs[2].1, "sure");
     }
 }

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus M8 测试报告 — 真实模型联调</title>
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--text:#e6edf3;--accent:#58a6ff;--gold:#d29922;--green:#3fb950;--red:#f85149;--border:#30363d;--code:#6e7681}
+[data-theme="light"]{--bg:#ffffff;--panel:#f6f8fa;--text:#1f2328;--accent:#0969da;--gold:#9a6700;--green:#1a7f37;--red:#cf222e;--border:#d0d7de;--code:#656d76}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6;padding:0 0 60px}
+header{background:linear-gradient(135deg,var(--panel),var(--bg));border-bottom:2px solid var(--accent);padding:30px 40px;position:sticky;top:0;z-index:10}
+header h1{font-size:1.6rem;color:var(--accent)}
+header .sub{color:var(--gold);margin-top:4px;font-size:0.95rem}
+.theme-btn{position:absolute;top:24px;right:40px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:0.85rem}
+.theme-btn:hover{border-color:var(--accent)}
+.bar{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:20;width:0;transition:width .15s}
+nav{position:sticky;top:72px;background:var(--bg);border-bottom:1px solid var(--border);padding:8px 40px;z-index:5;overflow-x:auto;white-space:nowrap}
+nav a{color:var(--accent);text-decoration:none;margin-right:18px;font-size:0.88rem}
+nav a:hover{text-decoration:underline}
+main{max-width:1100px;margin:0 auto;padding:24px 40px}
+section{margin-bottom:40px;scroll-margin-top:130px}
+h2{color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:16px;font-size:1.25rem}
+h3{color:var(--accent);margin:16px 0 8px;font-size:1.05rem}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin:12px 0}
+.pass{color:var(--green);font-weight:700}
+.fail{color:var(--red);font-weight:700}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:0.9rem}
+th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+th{background:var(--bg);color:var(--gold)}
+tr:nth-child(even){background:var(--panel)}
+code{background:var(--panel);color:var(--accent);padding:1px 5px;border-radius:3px;font-size:0.85em}
+pre{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:14px;overflow-x:auto;font-size:0.82rem;color:var(--text)}
+pre .c{color:var(--code)}
+.matrix td:first-child{font-family:monospace}
+details{margin:8px 0}
+summary{cursor:pointer;color:var(--accent);font-size:0.9rem;padding:6px}
+summary:hover{text-decoration:underline}
+.svg-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:20px;margin:16px 0;overflow-x:auto}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:0.8rem;font-weight:600}
+.badge-pass{background:rgba(63,185,80,.15);color:var(--green);border:1px solid var(--green)}
+.badge-na{background:rgba(208,153,34,.15);color:var(--gold);border:1px solid var(--gold)}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<header>
+<h1>Nexus M8 — 真实模型联调测试报告</h1>
+<div class="sub">Responses↔Chat SSE 协议转换 Gateway · deepseek-v4-pro via dashscope · 2026-09-06</div>
+<button class="theme-btn" onclick="toggleTheme()">🌙 / ☀️</button>
+</header>
+<nav>
+<a href="#summary">概览</a><a href="#ac">验收矩阵</a><a href="#t81">T8-1 协议转换</a><a href="#t83">T8-3 真实 e2e</a><a href="#regress">零回归</a><a href="#svg">数据流</a><a href="#dec">决策</a>
+</nav>
+<main>
+
+<section id="summary">
+<h2>概览</h2>
+<div class="card">
+<p>M8 将 Nexus 从全程 SIMULATE（mock gateway + 合成 usage）跨越到 <b>真实模型联调</b>。核心挑战：codex 强制 <code>wire_api="responses"</code>（Responses API SSE，<code>CHAT_WIRE_API_REMOVED_ERROR</code>），而 dashscope 仅支持 Chat Completions SSE → gateway 必须做 <b>双向流式协议转换</b>。</p>
+<p style="margin-top:8px"><b>结果：</b> cargo check 0/0 · cargo test 21/21 · 真实 e2e turn completed · 真实 token usage 落库 · SIMULATE 零回归。</p>
+</div>
+<table>
+<tr><th>维度</th><th>值</th></tr>
+<tr><td>模型</td><td>deepseek-v4-pro（glm-5.2 当前 insufficient_quota 留备选）</td></tr>
+<tr><td>gateway</td><td>127.0.0.1:&lt;port&gt; · reqwest+rustls · multi_thread runtime</td></tr>
+<tr><td>验证环境</td><td>PG nexus-pg-m4:5434 · codex /home/me/.local/bin/codex · pool_size=2</td></tr>
+</table>
+</section>
+
+<section id="ac">
+<h2>验收矩阵 AC8.1–8.5</h2>
+<table class="matrix">
+<tr><th>AC</th><th>描述</th><th>结果</th><th>证据</th></tr>
+<tr><td>AC8.1</td><td>gateway 转发真实模型请求（非 mock）</td><td><span class="badge badge-pass">PASS</span></td><td>gateway log "request #2 accepted (upstream=true)" + items agentMessage 真实 text</td></tr>
+<tr><td>AC8.2</td><td>真实 token usage 落库</td><td><span class="badge badge-pass">PASS</span></td><td>turn 25: input=12625 output=29（非 mock 10/20）· usage_records 21</td></tr>
+<tr><td>AC8.3</td><td>cost 推导 + 真实 model 名</td><td><span class="badge badge-pass">PASS</span></td><td>turn 26 model=deepseek-v4-pro cost=0（dashscope cost=0）· /v1/usage 聚合</td></tr>
+<tr><td>AC8.4</td><td>真实模型 turn completed</td><td><span class="badge badge-pass">PASS</span></td><td>turn 25/26 status=completed · codex_thread_id 返回</td></tr>
+<tr><td>AC8.5</td><td>SIMULATE 零回归</td><td><span class="badge badge-pass">PASS</span></td><td>turn 27 mock 10/20 + approval 24 approved（M3/M4 不退化）</td></tr>
+</table>
+</section>
+
+<section id="t81">
+<h2>T8-1 Responses↔Chat SSE 协议转换</h2>
+<h3>事件映射</h3>
+<table>
+<tr><th>dashscope SSE chunk</th><th>Responses SSE 事件（写回 app-server）</th></tr>
+<tr><td>首个 chunk（role=assistant）</td><td><code>response.created</code> + <code>response.output_item.added</code></td></tr>
+<tr><td><code>delta.content</code> 非空</td><td><code>response.output_text.delta</code></td></tr>
+<tr><td><code>delta.reasoning_content</code> 非空</td><td><code>response.reasoning_text.delta</code></td></tr>
+<tr><td>usage chunk（choices=[]）</td><td><code>response.output_item.done</code> + <code>response.completed</code>(usage)</td></tr>
+<tr><td><code>data: [DONE]</code></td><td>流结束</td></tr>
+</table>
+<h3>直接 gateway 测试证据</h3>
+<pre><span class="c"># 发 Responses body 到 gateway，验证流式 SSE 转换</span>
+curl -s -N -X POST "$GW_URL/responses" -H "Authorization: Bearer $GW_TOKEN" \
+  -d '{"model":"deepseek-v4-pro","input":[{"type":"message","role":"user",
+       "content":[{"type":"input_text","text":"Reply with exactly: TEST"}]}],"max_output_tokens":80}'
+
+<span class="c"># 输出（截取）：</span>
+event: response.created
+data: {"response":{"id":"resp_nexus_6d507ef4...","model":"deepseek-v4-pro","status":"in_progress"},"type":"response.created"}
+
+event: response.output_item.added
+data: {"item":{"content":[],"id":"msg_nexus_86fad614...","role":"assistant","status":"in_progress","type":"message"},...}
+
+event: response.reasoning_text.delta
+data: {"delta":"We","output_index":0,"content_index":0,"type":"response.reasoning_text.delta"}
+...</pre>
+</section>
+
+<section id="t83">
+<h2>T8-3 真实 e2e turn</h2>
+<pre><span class="c"># 不设 NEXUS_SIMULATE_APPROVAL → 真实模型 drain</span>
+export NEXUS_UPSTREAM_MODEL_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+export NEXUS_MODEL_KEY=sk-...  <span class="c"># 不入日志</span>
+export NEXUS_MODEL=deepseek-v4-pro
+
+curl -s -X POST $B/v1/threads/$THREAD/turns -H "Authorization: Bearer $TOKEN" \
+  -d '{"input":"Reply with exactly: NEXUS_REAL_OK"}'
+<span class="c"># → {"status":"completed","turn_id":25,"codex_thread_id":"01a074e7-..."}</span></pre>
+<h3>DB 证据</h3>
+<pre>turn 25:  completed | model=nexus-gateway          | in=12625 out=29  cost=0
+turn 26:  completed | model=deepseek-v4-pro          | in=12616 out=17  cost=0
+usage 21: nexus-gateway      | in=12625 out=29  <span class="c"># 真实 dashscope usage chunk</span>
+items:   item/completed agentMessage {"type":"agentMessage","text":"...真实回复..."}</pre>
+<p><b>关键：</b> input/output tokens 来自 dashscope usage chunk（prompt_tokens/completion_tokens），<b>非</b> SIMULATE 的 mock 10/20。证明真实模型流量经 gateway 转发并落库。</p>
+</section>
+
+<section id="regress">
+<h2>SIMULATE 零回归（AC8.5）</h2>
+<pre><span class="c"># NEXUS_SIMULATE_APPROVAL=1（无 upstream）</span>
+turn 27:      completed | model=nexus-gateway-mock | in=10 out=20  <span class="c"># SIMULATE mock 不变</span>
+approval 24:  approved  | command_execution | "rm -rf /tmp/nexus-sim"
+runtime log:  "simulated approval resolved decision=Approve"</pre>
+<p>M3 审批闭环（park→resolve→respond）+ M4 计量（mock usage 落库）+ driver pool 路由 全部不退化。</p>
+</section>
+
+<section id="svg">
+<h2 id="svg">数据流图</h2>
+<div class="svg-wrap">
+<svg viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg" width="100%" style="min-width:700px">
+<defs>
+<marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><polygon points="0,0 8,4 0,8" fill="#58a6ff"/></marker>
+</defs>
+<rect x="10" y="10" width="200" height="70" rx="6" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="110" y="38" text-anchor="middle" fill="#e6edf3" font-size="13" font-family="sans-serif">app-server (codex)</text>
+<text x="110" y="58" text-anchor="middle" fill="#d29922" font-size="10">wire_api=responses · SSE</text>
+
+<rect x="350" y="10" width="200" height="70" rx="6" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+<text x="450" y="35" text-anchor="middle" fill="#e6edf3" font-size="13">Nexus Gateway</text>
+<text x="450" y="52" text-anchor="middle" fill="#3fb950" font-size="10">Responses↔Chat SSE 转换</text>
+<text x="450" y="68" text-anchor="middle" fill="#6e7681" font-size="9">reqwest+rustls · multi_thread rt</text>
+
+<rect x="690" y="10" width="200" height="70" rx="6" fill="#161b22" stroke="#f85149" stroke-width="1.5"/>
+<text x="790" y="38" text-anchor="middle" fill="#e6edf3" font-size="13">dashscope</text>
+<text x="790" y="58" text-anchor="middle" fill="#f85149" font-size="10">/chat/completions · SSE</text>
+
+<line x1="210" y1="45" x2="345" y2="45" stroke="#58a6ff" stroke-width="2" marker-end="url(#ar)"/>
+<text x="277" y="38" text-anchor="middle" fill="#58a6ff" font-size="10">POST /v1/responses</text>
+<text x="277" y="60" text-anchor="middle" fill="#6e7681" font-size="9">input items + instructions</text>
+
+<line x1="345" y1="55" x2="215" y2="55" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#ar)"/>
+<text x="280" y="78" text-anchor="middle" fill="#3fb950" font-size="9">Responses SSE (created/delta/completed)</text>
+
+<line x1="555" y1="45" x2="685" y2="45" stroke="#58a6ff" stroke-width="2" marker-end="url(#ar)"/>
+<text x="620" y="38" text-anchor="middle" fill="#58a6ff" font-size="10">POST /chat/completions</text>
+<text x="620" y="60" text-anchor="middle" fill="#6e7681" font-size="9">stream=true · include_usage</text>
+
+<line x1="685" y1="55" x2="560" y2="55" stroke="#f85149" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#ar)"/>
+<text x="622" y="78" text-anchor="middle" fill="#f85149" font-size="9">Chat SSE (delta.content/usage)</text>
+
+<rect x="10" y="140" width="200" height="60" rx="6" fill="#161b22" stroke="#d29922"/>
+<text x="110" y="165" text-anchor="middle" fill="#e6edf3" font-size="12">driver pool</text>
+<text x="110" y="183" text-anchor="middle" fill="#d29922" font-size="10">next_event() drain</text>
+
+<rect x="350" y="140" width="200" height="60" rx="6" fill="#161b22" stroke="#d29922"/>
+<text x="450" y="165" text-anchor="middle" fill="#e6edf3" font-size="12">http_server turn_start</text>
+<text x="450" y="183" text-anchor="middle" fill="#d29922" font-size="10">items + usage 落库</text>
+
+<rect x="690" y="140" width="200" height="60" rx="6" fill="#161b22" stroke="#d29922"/>
+<text x="790" y="165" text-anchor="middle" fill="#e6edf3" font-size="12">Postgres</text>
+<text x="790" y="183" text-anchor="middle" fill="#d29922" font-size="10">usage_records + turns</text>
+
+<line x1="210" y1="170" x2="345" y2="170" stroke="#d29922" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="277" y="162" text-anchor="middle" fill="#d29922" font-size="9">TurnEvent</text>
+<line x1="555" y1="170" x2="685" y2="170" stroke="#d29922" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="620" y="162" text-anchor="middle" fill="#d29922" font-size="9">record_usage + turns</text>
+
+<rect x="200" y="260" width="500" height="90" rx="6" fill="#0d1117" stroke="#30363d" stroke-dasharray="3"/>
+<text x="450" y="285" text-anchor="middle" fill="#d29922" font-size="12" font-weight="bold">关键 bug 修复</text>
+<text x="220" y="307" fill="#e6edf3" font-size="10">① current_thread runtime handle().block_on() 在 std thread hang → new_multi_thread(worker_threads=2)</text>
+<text x="220" y="325" fill="#e6edf3" font-size="10">② Upstream forward() host.parse&lt;IpAddr&gt; 不解析域名+无TLS → reqwest+rustls streaming</text>
+<text x="220" y="343" fill="#e6edf3" font-size="10">③ Usage.model=None fallback "nexus-gateway" → NEXUS_MODEL env (deepseek-v4-pro)</text>
+</svg>
+</div>
+</section>
+
+<section id="dec">
+<h2>关键决策与非目标</h2>
+<div class="card">
+<h3>非目标（留 M9，speculative 风险）</h3>
+<table>
+<tr><th>方向</th><th>原因</th><th>状态</th></tr>
+<tr><td>IM Bot 推送审批卡片</td><td>无飞书/钉钉 bot token + sender→userId 解析器</td><td><span class="badge badge-na">M9</span></td></tr>
+<tr><td>per-tenant 独占 slot 隔离</td><td>单租户无验证价值（M4 max_concurrent_turns 门控已覆盖）</td><td><span class="badge badge-na">M9</span></td></tr>
+<tr><td>多 Pod 分布式 driver 池</td><td>需真实多 Pod K8s + Redis turn 分发，单 Pod 无法验证分布式</td><td><span class="badge badge-na">M9</span></td></tr>
+<tr><td>function calling 转换</td><td>tools→chat tools 格式转换，真实审批端到端（M3 SIMULATE 已验证协议层）</td><td><span class="badge badge-na">M9</span></td></tr>
+</table>
+<p style="margin-top:10px;color:var(--code);font-size:0.88rem">按 Simplicity First：speculative 代码不空写，待真实多租户/多 Pod/bot 凭证环境就绪后场景驱动开工。</p>
+</div>
+</section>
+
+</main>
+<script>
+function toggleTheme(){const h=document.documentElement;h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark')}
+window.addEventListener('scroll',()=>{const b=document.getElementById('bar');b.style.width=(window.scrollY/(document.body.scrollHeight-window.innerHeight)*100)+'%'});
+</script>
+</body>
+</html>

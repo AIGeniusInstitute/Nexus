@@ -412,7 +412,12 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
         "interrupted"
     } else if let Some(u) = &last_usage {
         // M4: 推导 cost + 写 usage_records（per-tenant 计量）+ 写 turns.model。
-        let model = u.model.clone().unwrap_or_else(|| "nexus-gateway".into());
+        // M8: 真实模式下 `Usage.model` 为 None（codex 的
+        // ThreadTokenUsageUpdated 不带 model），fallback 到 NEXUS_MODEL env
+        // (deepseek-v4-pro) 而非泛化的 "nexus-gateway"，使真实 model 名落库。
+        let model = u.model.clone().unwrap_or_else(|| {
+            std::env::var("NEXUS_MODEL").unwrap_or_else(|_| "nexus-gateway".into())
+        });
         let cost = metering::record_usage(
             &st.pool, c.tid, c.uid, id, turn_db_id,
             &model, u.input_tokens, u.output_tokens,
