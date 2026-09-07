@@ -109,6 +109,11 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/evals/batch-runs", post(eval_batch_start).get(eval_batch_list))
         .route("/v1/evals/batch-runs/{id}", get(eval_batch_get))
         .route("/v1/evals/batch-runs/{id}/compare", post(eval_batch_compare))
+        // M21: Judge LLM + 失败样本回流
+        .route("/v1/judge-configs", post(jc_create).get(jc_list))
+        .route("/v1/judge-configs/{id}/dimensions", post(jc_add_dimension))
+        .route("/v1/judge-configs/{id}/publish", post(jc_publish))
+        .route("/v1/golden-sets/{id}/cases/from-turn", post(gs_case_from_turn))
         .route("/v1/kbs", post(kb_create).get(kb_list))
         .route("/v1/kbs/{id}/documents", post(kb_doc_ingest).get(kb_doc_list))
         .route("/v1/kbs/{id}/documents/{did}", axum::routing::delete(kb_doc_delete))
@@ -1240,6 +1245,62 @@ async fn eval_batch_compare(
     let res = eval_center::compare_runs(&st.pool, c.tid, id, req.baseline_run_id).await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(res))
+}
+
+// ─────────── M21: Judge LLM + 失败样本回流 ───────────
+
+async fn jc_create(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Json(req): Json<eval_center::CreateJudgeConfigReq>,
+) -> Result<Json<eval_center::JudgeConfigRow>, (StatusCode, String)> {
+    let row = eval_center::create_judge_config(&st.pool, c.tid, req).await
+        .map_err(map_eval_err)?;
+    Ok(Json(row))
+}
+
+async fn jc_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+) -> Result<Json<Vec<eval_center::JudgeConfigRow>>, (StatusCode, String)> {
+    let rows = eval_center::list_judge_configs(&st.pool, c.tid).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn jc_add_dimension(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+    Path(id): Path<i64>, Json(req): Json<serde_json::Value>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    eval_center::add_judge_dimension(&st.pool, c.tid, id, req).await
+        .map_err(map_eval_err)?;
+    Ok(Json(serde_json::json!({"ok": true})))
+}
+
+async fn jc_publish(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+    Path(id): Path<i64>, Json(req): Json<eval_center::PublishJudgeConfigReq>,
+) -> Result<Json<eval_center::EntityVersionRow>, (StatusCode, String)> {
+    let row = eval_center::publish_judge_config_version(&st.pool, c.tid, id, c.uid, req).await
+        .map_err(map_eval_err)?;
+    Ok(Json(row))
+}
+
+async fn gs_case_from_turn(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+    Path(id): Path<i64>, Json(req): Json<eval_center::CaseFromTurnReq>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let case_id = eval_center::case_from_turn(&st.pool, &st.base_url, &st.jwt, &c, id, req).await
+        .map_err(map_eval_err)?;
+    Ok(Json(serde_json::json!({"case_id": case_id})))
+}
+
+fn map_eval_err(e: anyhow::Error) -> (StatusCode, String) {
+    let msg = e.to_string();
+    if msg.contains("not found") {
+        (StatusCode::NOT_FOUND, msg)
+    } else if msg.contains("not draft") || msg.contains("not locked") {
+        (StatusCode::BAD_REQUEST, msg)
+    } else {
+        (StatusCode::INTERNAL_SERVER_ERROR, msg)
+    }
 }
 
 #[derive(Serialize, sqlx::FromRow)]

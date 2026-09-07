@@ -84,6 +84,7 @@ pub struct EvalBatchRunRow {
     pub golden_set_id: i64,
     pub golden_set_version_id: i64,
     pub rubric_version_id: Option<i64>,
+    pub judge_version_id: Option<i64>,
     pub thread_id: Option<Uuid>,
     pub snapshot_manifest: Value,
     pub snapshot_hash: String,
@@ -148,6 +149,7 @@ pub struct StartRunReq {
     pub rubric_id: Option<i64>,
     pub thread_id: Uuid,
     pub trigger_type: Option<String>,
+    pub judge_config_id: Option<i64>,
 }
 
 // ───────────────────────── 辅助函数 ─────────────────────────
@@ -608,10 +610,38 @@ pub async fn start_run(
             None => (None, None, None),
         };
 
+    // 2b. 加载 judge_config 的 locked 版本（可选，M21）
+    let (jc_vid, jc_semver, jc_hash, jc_content): (Option<i64>, Option<String>, Option<String>, Option<String>) =
+        match req.judge_config_id {
+            Some(jid) => {
+                let jc: Option<(Option<i64>,)> = sqlx::query_as(
+                    "SELECT active_version_id FROM judge_configs WHERE id=$1 AND tenant_id=$2",
+                )
+                .bind(jid)
+                .bind(claims.tid)
+                .fetch_optional(pool)
+                .await?;
+                match jc {
+                    Some((Some(vid),)) => {
+                        let j: (String, String, String) = sqlx::query_as(
+                            "SELECT semver, manifest_hash, content_ref FROM entity_version WHERE id=$1 AND status='locked'",
+                        )
+                        .bind(vid)
+                        .fetch_one(pool)
+                        .await?;
+                        (Some(vid), Some(j.0), Some(j.1), Some(j.2))
+                    }
+                    _ => (None, None, None, None),
+                }
+            }
+            None => (None, None, None, None),
+        };
+
     // 3. 构造 Manifest → snapshot_hash
     let manifest = json!({
         "golden_set": {"id": req.golden_set_id, "version_id": gs_vid, "semver": gs_semver, "manifest_hash": gs_hash},
         "rubric": {"version_id": rb_vid, "semver": rb_semver, "manifest_hash": rb_hash},
+        "judge": {"version_id": jc_vid, "semver": jc_semver, "manifest_hash": jc_hash},
         "agent": {"thread_id": req.thread_id.to_string()},
     });
     let snapshot_hash = sha256_hex(&manifest.to_string());
@@ -619,13 +649,14 @@ pub async fn start_run(
     // 4. INSERT eval_batch_runs(running)
     let run_row: (i64,) = sqlx::query_as(
         "INSERT INTO eval_batch_runs (tenant_id, golden_set_id, golden_set_version_id,
-         rubric_version_id, thread_id, snapshot_manifest, snapshot_hash, trigger_type, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'running') RETURNING id",
+         rubric_version_id, judge_version_id, thread_id, snapshot_manifest, snapshot_hash, trigger_type, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'running') RETURNING id",
     )
     .bind(claims.tid)
     .bind(req.golden_set_id)
     .bind(gs_vid)
     .bind(rb_vid)
+    .bind(jc_vid)
     .bind(req.thread_id)
     .bind(&manifest)
     .bind(&snapshot_hash)
@@ -656,6 +687,7 @@ pub async fn start_run(
     let mut passed_count = 0u32;
     let mut hit_rate_sum = 0.0f64;
     let mut violation_count = 0u32;
+    let mut judge_score_sum = 0.0f64;
     let total = cases_arr.len() as u32;
 
     for case in &cases_arr {
@@ -685,15 +717,49 @@ pub async fn start_run(
             }
         };
         let out_str = output.unwrap_or_default();
-        let scores = score_case(expected, &out_str);
-        if scores["passed"].as_bool() == Some(true) {
-            passed_count += 1;
-        }
-        hit_rate_sum += scores["must_hit_rate"].as_f64().unwrap_or(0.0);
-        violation_count += scores["must_not_violations"]
+        let det_scores = score_case(expected, &out_str);
+        let det_hit_rate = det_scores["must_hit_rate"].as_f64().unwrap_or(0.0);
+        let det_violations = det_scores["must_not_violations"]
             .as_array()
             .map(|a| a.len() as u32)
             .unwrap_or(0);
+        let det_passed = det_scores["passed"].as_bool() == Some(true);
+
+        // M21: 叠加 Judge LLM 评分（若 run 关联 judge_config）
+        let judge_scores = if let Some(ref jc) = jc_content {
+            match judge_score(jc, None, input, &out_str).await {
+                Ok(v) => v,
+                Err(e) => {
+                    tracing::warn!(case_key = %case_key, error = %e, "judge: failed, skipping judge layer");
+                    json!({"error": e.to_string(), "overall_score": 0.0, "passed": false})
+                }
+            }
+        } else {
+            json!(null)
+        };
+
+        let judge_passed = judge_scores["passed"].as_bool() == Some(true);
+        let combined_passed = if jc_content.is_some() { det_passed && judge_passed } else { det_passed };
+        let judge_overall = judge_scores["overall_score"].as_f64().unwrap_or(0.0);
+
+        let scores = if jc_content.is_some() {
+            json!({
+                "deterministic": det_scores,
+                "judge": judge_scores,
+                "passed": combined_passed,
+            })
+        } else {
+            det_scores
+        };
+
+        if combined_passed {
+            passed_count += 1;
+        }
+        hit_rate_sum += det_hit_rate;
+        violation_count += det_violations;
+        if jc_content.is_some() {
+            judge_score_sum += judge_overall;
+        }
 
         sqlx::query(
             "INSERT INTO eval_case_results (run_id, case_id, case_key, turn_id, agent_output, scores)
@@ -714,12 +780,15 @@ pub async fn start_run(
     // 6. 聚合 → UPDATE eval_batch_runs(completed)
     let accuracy = if total > 0 { passed_count as f64 / total as f64 } else { 0.0 };
     let avg_hit_rate = if total > 0 { hit_rate_sum / total as f64 } else { 0.0 };
+    let avg_judge_score = if total > 0 && jc_content.is_some() { judge_score_sum / total as f64 } else { 0.0 };
     let aggregate = json!({
         "total_cases": total,
         "passed": passed_count,
         "accuracy": accuracy,
         "avg_must_hit_rate": avg_hit_rate,
         "must_not_violation_count": violation_count,
+        "avg_judge_score": avg_judge_score,
+        "judge_enabled": jc_content.is_some(),
     });
     sqlx::query(
         "UPDATE eval_batch_runs SET status='completed', aggregate=$3, finished_at=NOW()
@@ -832,7 +901,7 @@ async fn resolve_pending(
 pub async fn list_runs(pool: &PgPool, tenant_id: i64, limit: i64) -> Result<Vec<EvalBatchRunRow>> {
     sqlx::query_as::<_, EvalBatchRunRow>(
         "SELECT id, tenant_id, golden_set_id, golden_set_version_id, rubric_version_id,
-                thread_id, snapshot_manifest, snapshot_hash, trigger_type, status,
+                judge_version_id, thread_id, snapshot_manifest, snapshot_hash, trigger_type, status,
                 baseline_run_id, gate_result, aggregate, started_at, finished_at
          FROM eval_batch_runs WHERE tenant_id=$1 ORDER BY started_at DESC LIMIT $2",
     )
@@ -846,7 +915,7 @@ pub async fn list_runs(pool: &PgPool, tenant_id: i64, limit: i64) -> Result<Vec<
 pub async fn get_run(pool: &PgPool, tenant_id: i64, run_id: i64) -> Result<(EvalBatchRunRow, Vec<EvalCaseResultRow>)> {
     let run = sqlx::query_as::<_, EvalBatchRunRow>(
         "SELECT id, tenant_id, golden_set_id, golden_set_version_id, rubric_version_id,
-                thread_id, snapshot_manifest, snapshot_hash, trigger_type, status,
+                judge_version_id, thread_id, snapshot_manifest, snapshot_hash, trigger_type, status,
                 baseline_run_id, gate_result, aggregate, started_at, finished_at
          FROM eval_batch_runs WHERE id=$1 AND tenant_id=$2",
     )
@@ -941,6 +1010,392 @@ pub async fn compare_runs(
     })
 }
 
+// ───────────────────────── Judge LLM 评分层（M21） ─────────────────────────
+
+#[derive(Serialize, sqlx::FromRow)]
+pub struct JudgeConfigRow {
+    pub id: i64,
+    pub tenant_id: i64,
+    pub name: String,
+    pub description: Option<String>,
+    pub status: String,
+    pub active_version_id: Option<i64>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Deserialize)]
+pub struct CreateJudgeConfigReq {
+    pub name: String,
+    pub description: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct PublishJudgeConfigReq {
+    pub bump_type: Option<String>,
+    /// {prompt_template, dimensions:[{name,weight,description}], judge_model, temperature}
+    pub config: Value,
+}
+
+pub async fn create_judge_config(
+    pool: &PgPool,
+    tenant_id: i64,
+    req: CreateJudgeConfigReq,
+) -> Result<JudgeConfigRow> {
+    sqlx::query_as::<_, JudgeConfigRow>(
+        "INSERT INTO judge_configs (tenant_id, name, description, status)
+         VALUES ($1, $2, $3, 'draft')
+         RETURNING id, tenant_id, name, description, status, active_version_id, created_at, updated_at",
+    )
+    .bind(tenant_id)
+    .bind(&req.name)
+    .bind(req.description)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| anyhow!("create judge_config: {e:?}"))
+}
+
+pub async fn list_judge_configs(pool: &PgPool, tenant_id: i64) -> Result<Vec<JudgeConfigRow>> {
+    sqlx::query_as::<_, JudgeConfigRow>(
+        "SELECT id, tenant_id, name, description, status, active_version_id, created_at, updated_at
+         FROM judge_configs WHERE tenant_id=$1 ORDER BY id",
+    )
+    .bind(tenant_id)
+    .fetch_all(pool)
+    .await
+    .map_err(|e| anyhow!("list judge_configs: {e:?}"))
+}
+
+/// 添加评分维度（仅 draft 状态）。
+pub async fn add_judge_dimension(
+    pool: &PgPool,
+    tenant_id: i64,
+    jc_id: i64,
+    dimension: Value, // {name, weight, description}
+) -> Result<()> {
+    let jc: (String,) = sqlx::query_as(
+        "SELECT status FROM judge_configs WHERE id=$1 AND tenant_id=$2",
+    )
+    .bind(jc_id)
+    .bind(tenant_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| anyhow!("add dimension: load: {e:?}"))?;
+    if jc.0 != "draft" {
+        return Err(anyhow!("judge_config is not draft, cannot add dimension"));
+    }
+    // 维度存到 description 字段的 JSON 数组（MVP，不建独立表）
+    let mut dims: Vec<Value> = sqlx::query_as::<_, (Option<String>,)>(
+        "SELECT description FROM judge_configs WHERE id=$1",
+    )
+    .bind(jc_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| anyhow!("add dimension: load desc: {e:?}"))?
+    .0
+    .and_then(|s| serde_json::from_str(&s).ok())
+    .unwrap_or_default();
+    dims.push(dimension);
+    let serialized = serde_json::to_string(&dims).unwrap_or_else(|_| "[]".to_string());
+    sqlx::query("UPDATE judge_configs SET description=$3, updated_at=NOW() WHERE id=$1 AND tenant_id=$2")
+        .bind(jc_id)
+        .bind(tenant_id)
+        .bind(&serialized)
+        .execute(pool)
+        .await
+        .map_err(|e| anyhow!("add dimension: update: {e:?}"))?;
+    Ok(())
+}
+
+pub async fn publish_judge_config_version(
+    pool: &PgPool,
+    tenant_id: i64,
+    jc_id: i64,
+    user_id: i64,
+    req: PublishJudgeConfigReq,
+) -> Result<EntityVersionRow> {
+    let bump = req.bump_type.as_deref().unwrap_or("patch");
+    let mut tx = pool.begin().await.map_err(|e| anyhow!("tx: {e:?}"))?;
+
+    let jc: Option<(Option<i64>,)> = sqlx::query_as(
+        "SELECT active_version_id FROM judge_configs WHERE id=$1 AND tenant_id=$2",
+    )
+    .bind(jc_id)
+    .bind(tenant_id)
+    .fetch_optional(&mut *tx)
+    .await
+    .map_err(|e| anyhow!("publish judge: load: {e:?}"))?;
+    let (active_vid,) = jc.ok_or_else(|| anyhow!("judge_config not found"))?;
+
+    let (prev_semver, prev_vno): (Option<String>, Option<i32>) = match active_vid {
+        Some(vid) => {
+            let r: Option<(String, i32)> = sqlx::query_as(
+                "SELECT semver, version_no FROM entity_version WHERE id=$1",
+            )
+            .bind(vid)
+            .fetch_optional(&mut *tx)
+            .await
+            .map_err(|e| anyhow!("publish judge: load prev: {e:?}"))?;
+            match r {
+                Some((s, v)) => (Some(s), Some(v)),
+                None => (None, None),
+            }
+        }
+        None => (None, None),
+    };
+    let new_semver = bump_semver(prev_semver.as_deref(), bump);
+    let new_vno = prev_vno.unwrap_or(0) + 1;
+
+    let content = req.config.to_string();
+    let manifest_hash = sha256_hex(&content);
+
+    let row = sqlx::query_as::<_, EntityVersionRow>(
+        "INSERT INTO entity_version (tenant_id, entity_type, entity_id, version_no, semver,
+         manifest_hash, content_ref, status, created_by, parent_id)
+         VALUES ($1, 'judge_config', $2, $3, $4, $5, $6, 'locked', $7, $8)
+         RETURNING id, tenant_id, entity_type, entity_id, version_no, semver, manifest_hash,
+                   status, created_by, created_at, parent_id",
+    )
+    .bind(tenant_id)
+    .bind(jc_id)
+    .bind(new_vno)
+    .bind(&new_semver)
+    .bind(&manifest_hash)
+    .bind(&content)
+    .bind(user_id)
+    .bind(active_vid)
+    .fetch_one(&mut *tx)
+    .await
+    .map_err(|e| anyhow!("publish judge: insert: {e:?}"))?;
+
+    sqlx::query(
+        "UPDATE judge_configs SET active_version_id=$3, status='locked', updated_at=NOW()
+         WHERE id=$1 AND tenant_id=$2",
+    )
+    .bind(jc_id)
+    .bind(tenant_id)
+    .bind(row.id)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| anyhow!("publish judge: update: {e:?}"))?;
+
+    tx.commit().await.map_err(|e| anyhow!("commit: {e:?}"))?;
+    Ok(row)
+}
+
+/// Judge LLM 评分：给定 judge_config content + rubric + case input + agent_output，
+/// 调用 dashscope chat API 逐维度评分。SIMULATE_JUDGE=1 返回合成评分。
+pub async fn judge_score(
+    judge_content: &str,
+    _rubric_content: Option<&str>,
+    case_input: &str,
+    agent_output: &str,
+) -> Result<Value> {
+    let cfg: Value = serde_json::from_str(judge_content)
+        .map_err(|e| anyhow!("judge: parse config: {e:?}"))?;
+    let prompt_template = cfg["prompt_template"].as_str().unwrap_or(
+        "你是临床研究评测专家。根据评分维度对 Agent 回复逐项打分（0.0-1.0），并给出理由。返回纯 JSON。"
+    );
+    let dimensions = cfg["dimensions"].as_array().cloned().unwrap_or_default();
+    let env_model = std::env::var("NEXUS_MODEL").ok();
+    let judge_model = cfg["judge_model"].as_str()
+        .or_else(|| env_model.as_deref())
+        .unwrap_or("deepseek-v4-pro");
+    let temperature = cfg["temperature"].as_f64().unwrap_or(0.0);
+
+    // SIMULATE 模式：返回合成评分
+    if std::env::var("NEXUS_SIMULATE_JUDGE").ok().as_deref() == Some("1") {
+        let dims_out: Vec<Value> = dimensions.iter().map(|d| {
+            let name = d["name"].as_str().unwrap_or("dimension");
+            json!({"name": name, "score": 0.75, "rationale": "simulated score"})
+        }).collect();
+        let overall = if dims_out.is_empty() { 0.75 } else { 0.75 };
+        return Ok(json!({
+            "dimensions": dims_out,
+            "overall_score": overall,
+            "passed": overall >= 0.6,
+            "judge_model": judge_model,
+            "simulated": true,
+        }));
+    }
+
+    // 真实模式：调 dashscope chat completions
+    let upstream = std::env::var("NEXUS_UPSTREAM_MODEL_URL")
+        .map_err(|_| anyhow!("NEXUS_UPSTREAM_MODEL_URL not set"))?;
+    let key = std::env::var("NEXUS_MODEL_KEY")
+        .map_err(|_| anyhow!("NEXUS_MODEL_KEY not set"))?;
+    let url = format!("{}/v1/chat/completions", upstream.trim_end_matches('/'));
+
+    let dims_desc = if dimensions.is_empty() {
+        "overall_quality".to_string()
+    } else {
+        dimensions.iter().filter_map(|d| d["name"].as_str()).collect::<Vec<_>>().join(", ")
+    };
+    let user_msg = format!(
+        "## 评分维度\n{dims_desc}\n\n## Case 输入\n{case_input}\n\n## Agent 回复\n{agent_output}\n\n\
+         请对每个维度返回 JSON：{{\"dimensions\":[{{\"name\":\"...\",\"score\":0.0,\"rationale\":\"...\"}}],\"overall_score\":0.0,\"passed\":true/false}}"
+    );
+
+    let body = json!({
+        "model": judge_model,
+        "messages": [
+            {"role": "system", "content": prompt_template},
+            {"role": "user", "content": user_msg},
+        ],
+        "temperature": temperature,
+        "stream": false,
+    });
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(120))
+        .build()?;
+    let resp = client.post(&url)
+        .header("Authorization", format!("Bearer {key}"))
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| anyhow!("judge: http: {e:?}"))?;
+    let resp_json: Value = resp.json().await
+        .map_err(|e| anyhow!("judge: parse resp: {e:?}"))?;
+    let content = resp_json["choices"][0]["message"]["content"]
+        .as_str()
+        .unwrap_or("{}")
+        .to_string();
+
+    // 容错解析：提取首个 JSON 对象
+    let parsed = extract_json_object(&content).unwrap_or_else(|| json!({}));
+    let overall = parsed["overall_score"].as_f64().unwrap_or(0.0);
+    let passed = parsed["passed"].as_bool().unwrap_or(overall >= 0.6);
+    Ok(json!({
+        "dimensions": parsed["dimensions"].clone(),
+        "overall_score": overall,
+        "passed": passed,
+        "judge_model": judge_model,
+        "raw": content,
+    }))
+}
+
+/// 从文本中提取首个 JSON 对象（容错 LLM 输出可能含 markdown 代码块）。
+fn extract_json_object(text: &str) -> Option<Value> {
+    // 去 markdown 代码块
+    let cleaned = text.replace("```json", "").replace("```", "");
+    let trimmed = cleaned.trim();
+    if let Ok(v) = serde_json::from_str::<Value>(trimmed) {
+        return Some(v);
+    }
+    // 找首个 { 到匹配 }
+    let start = trimmed.find('{')?;
+    let mut depth = 0i32;
+    let mut end = 0usize;
+    for (i, c) in trimmed[start..].char_indices() {
+        match c {
+            '{' => depth += 1,
+            '}' => { depth -= 1; if depth == 0 { end = start + i + 1; break; } }
+            _ => {}
+        }
+    }
+    if depth == 0 && end > start {
+        serde_json::from_str(&trimmed[start..end]).ok()
+    } else {
+        None
+    }
+}
+
+// ───────────────────────── 失败样本回流（M21） ─────────────────────────
+
+#[derive(Deserialize)]
+pub struct CaseFromTurnReq {
+    pub turn_id: i64,
+    pub case_key: String,
+    pub expected_json: Value,
+    pub user_query: Option<String>,
+}
+
+/// 从生产 turn 的 agent_output 创建新 golden case（仅 draft golden set）。
+/// 形成防退化闭环：失败样本 → 新 case → 未来 run 防退化。
+pub async fn case_from_turn(
+    pool: &PgPool,
+    base_url: &str,
+    jwt: &JwtIssuer,
+    claims: &Claims,
+    gs_id: i64,
+    req: CaseFromTurnReq,
+) -> Result<i64> {
+    // 校验 golden_set draft
+    let gs: (String,) = sqlx::query_as(
+        "SELECT status FROM golden_sets WHERE id=$1 AND tenant_id=$2",
+    )
+    .bind(gs_id)
+    .bind(claims.tid)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| anyhow!("case_from_turn: load gs: {e:?}"))?;
+    if gs.0 != "draft" {
+        return Err(anyhow!("golden_set is not draft, cannot add cases"));
+    }
+
+    // 查 thread_id + 经 HTTP self-call 取 items（turn 的 agent_output）
+    let turn: (String,) = sqlx::query_as(
+        "SELECT thread_id::text FROM turns WHERE id=$1",
+    )
+    .bind(req.turn_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| anyhow!("case_from_turn: load turn: {e:?}"))?;
+    let thread_id: Uuid = turn.0.parse().map_err(|_| anyhow!("invalid thread_id"))?;
+
+    let token = jwt.issue(claims.clone())
+        .map_err(|e| anyhow!("case_from_turn: mint jwt: {e:?}"))?;
+    let auth_hdr = format!("Bearer {token}");
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()?;
+    let url = format!("{base_url}/v1/threads/{thread_id}/items");
+    let resp = client.get(&url)
+        .header("Authorization", &auth_hdr)
+        .send()
+        .await
+        .map_err(|e| anyhow!("case_from_turn: http: {e:?}"))?;
+    let items: Vec<Value> = resp.json().await
+        .map_err(|e| anyhow!("case_from_turn: parse items: {e:?}"))?;
+
+    // 提取 agent_output（最后一条 agentMessage，回退 item/completed）
+    let agent_output = items.iter().rev().find_map(|it| {
+        if it["item_type"].as_str() == Some("agentMessage") {
+            it["content_ref"].as_str().map(|s| s.to_string())
+        } else { None }
+    }).or_else(|| {
+        items.iter().rev().find_map(|it| {
+            if it["item_type"].as_str() == Some("item/completed") {
+                it["content_ref"].as_str().map(|s| s.to_string())
+            } else { None }
+        })
+    }).unwrap_or_default();
+
+    let input_json = json!({
+        "user_query": req.user_query.as_deref().unwrap_or(""),
+        "trace_turn_id": req.turn_id,
+    });
+    let source = format!("trace:{}", req.turn_id);
+
+    let row: (i64,) = sqlx::query_as(
+        "INSERT INTO golden_set_cases (golden_set_id, tenant_id, case_key, source, input_json, expected_json)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+    )
+    .bind(gs_id)
+    .bind(claims.tid)
+    .bind(&req.case_key)
+    .bind(&source)
+    .bind(&input_json)
+    .bind(&req.expected_json)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| anyhow!("case_from_turn: insert: {e:?}"))?;
+
+    tracing::info!(case_id = row.0, turn_id = req.turn_id, agent_output_len = agent_output.len(), "case_from_turn: imported");
+    Ok(row.0)
+}
+
 // ───────────────────────── 单测 ─────────────────────────
 
 #[cfg(test)]
@@ -993,5 +1448,36 @@ mod tests {
         assert_eq!(a, b);
         assert_eq!(a.len(), 64);
         assert_ne!(sha256_hex("hello"), sha256_hex("world"));
+    }
+
+    #[test]
+    fn extract_json_object_plain() {
+        let v = extract_json_object(r#"{"overall_score": 0.8, "passed": true}"#).unwrap();
+        assert_eq!(v["overall_score"], 0.8);
+    }
+
+    #[test]
+    fn extract_json_object_markdown_wrapped() {
+        let v = extract_json_object("```json\n{\"dimensions\":[],\"overall_score\":0.5,\"passed\":false}\n```").unwrap();
+        assert_eq!(v["passed"], false);
+    }
+
+    #[test]
+    fn extract_json_object_embedded() {
+        let v = extract_json_object("here is my eval: {\"overall_score\": 0.9} done").unwrap();
+        assert_eq!(v["overall_score"], 0.9);
+    }
+
+    #[tokio::test]
+    async fn judge_score_simulate() {
+        unsafe { std::env::set_var("NEXUS_SIMULATE_JUDGE", "1"); }
+        let cfg = r#"{"prompt_template":"test","dimensions":[{"name":"accuracy","weight":0.5},{"name":"safety","weight":0.5}]}"#;
+        let v = judge_score(cfg, None, "query", "response").await.unwrap();
+        assert_eq!(v["simulated"], true);
+        assert_eq!(v["overall_score"], 0.75);
+        assert_eq!(v["passed"], true);
+        let dims = v["dimensions"].as_array().unwrap();
+        assert_eq!(dims.len(), 2);
+        unsafe { std::env::remove_var("NEXUS_SIMULATE_JUDGE"); }
     }
 }
