@@ -113,15 +113,21 @@ pub async fn update_agent(
 }
 
 pub async fn delete_agent(pool: &PgPool, tenant_id: i64, id: i64) -> Result<()> {
+    // 解绑引用此 Agent 的 threads（FK 为 ON DELETE NO ACTION，直接删会 500）。
+    // SET NULL 后 thread 继续用默认 prompt，不破坏会话。
+    let mut tx = pool.begin().await?;
+    sqlx::query("UPDATE threads SET agent_def_id=NULL WHERE agent_def_id=$1")
+        .bind(id).execute(&mut *tx).await?;
     let res = sqlx::query("DELETE FROM agent_definitions WHERE id=$1 AND tenant_id=$2")
         .bind(id)
         .bind(tenant_id)
-        .execute(pool)
+        .execute(&mut *tx)
         .await
         .map_err(|e| anyhow!("delete agent: {e}"))?;
     if res.rows_affected() == 0 {
         return Err(anyhow!("agent not found"));
     }
+    tx.commit().await?;
     Ok(())
 }
 

@@ -510,11 +510,12 @@ struct ThreadRow {
     title: Option<String>,
     status: String,
     created_at: DateTime<Utc>,
+    agent_def_id: Option<i64>,
 }
 
 async fn threads_list(AuthUser(c): AuthUser, State(st): State<AppState>) -> Result<Json<Vec<ThreadRow>>, (StatusCode, String)> {
     let rows = sqlx::query_as::<_, ThreadRow>(
-        "SELECT id, title, status, created_at FROM threads WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 100",
+        "SELECT id, title, status, created_at, agent_def_id FROM threads WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 100",
     )
     .bind(c.tid)
     .fetch_all(&st.pool)

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nexus Agent Studio — UI 自动化功能测试报告</title>
+<style>
+:root[data-theme=dark]{--bg:#0d1117;--panel:#161b22;--text:#e6edf3;--mut:#8b949e;--bd:#30363d;--acc:#58a6ff;--gold:#d29922;--ok:#3fb950;--warn:#d29922;--danger:#f85149}
+:root[data-theme=light]{--bg:#f6f8fa;--panel:#fff;--text:#1f2328;--mut:#57606a;--bd:#d0d7de;--acc:#0969da;--gold:#bf8700;--ok:#1a7f37;--warn:#9a6700;--danger:#cf222e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.6}
+.topbar{position:sticky;top:0;z-index:10;background:var(--panel);border-bottom:1px solid var(--bd);padding:10px 24px;display:flex;align-items:center;gap:16px}
+.topbar h1{font-size:16px;margin:0;font-weight:700}
+.topbar .meta{color:var(--mut);font-size:13px}
+.topbar button{margin-left:auto;background:var(--bg);color:var(--text);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px}
+.wrap{max-width:1160px;margin:0 auto;padding:24px}
+h2{font-size:22px;border-bottom:2px solid var(--acc);padding-bottom:6px;margin-top:44px}
+h3{font-size:17px;color:var(--acc);margin-top:28px}
+.toc{background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:14px 20px;margin-bottom:24px}
+.toc a{color:var(--acc);text-decoration:none;font-size:14px;display:inline-block;margin-right:18px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:20px 0}
+.kpi{background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:16px;text-align:center}
+.kpi .n{font-size:30px;font-weight:800;color:var(--acc)}
+.kpi.ok .n{color:var(--ok)}
+.kpi .l{color:var(--mut);font-size:12px;margin-top:4px}
+table{width:100%;border-collapse:collapse;margin:14px 0;background:var(--panel);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+th,td{border:1px solid var(--bd);padding:8px 10px;font-size:13px;text-align:left;vertical-align:top}
+th{background:var(--bg);color:var(--mut);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.pill.ok{background:color-mix(in srgb,var(--ok) 22%,transparent);color:var(--ok)}
+.pill.fail{background:color-mix(in srgb,var(--danger) 22%,transparent);color:var(--danger)}
+.pill.info{background:color-mix(in srgb,var(--acc) 22%,transparent);color:var(--acc)}
+.pill.warn{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn)}
+pre{background:var(--panel);border:1px solid var(--bd);border-radius:6px;padding:12px;overflow:auto;font-size:12px;font-family:Consolas,monospace}
+code{background:var(--bg);padding:1px 5px;border-radius:4px;font-family:Consolas,monospace;font-size:12px}
+.gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:14px 0}
+.fig{border:1px solid var(--bd);border-radius:8px;overflow:hidden;background:var(--panel)}
+.fig img{width:100%;display:block}
+.fig .cap{padding:8px 12px;font-size:12px;color:var(--mut);border-top:1px solid var(--bd)}
+.fig .cap b{color:var(--text)}
+details{background:var(--panel);border:1px solid var(--bd);border-radius:6px;margin:10px 0;padding:8px 12px}
+summary{cursor:pointer;font-weight:600;color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>🤖 Nexus Agent Studio — UI 自动化功能测试报告</h1>
+  <span class="meta">2026-09-07 · 16/16 PASS · playwright-core + Chrome</span>
+  <button onclick="const t=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'light':'dark')">🌗 主题</button>
+</div>
+<div class="wrap">
+
+<div class="toc">
+  <a href="#summary">1. 概览</a>
+  <a href="#matrix">2. 测试矩阵</a>
+  <a href="#bugs">3. 发现的 Bug + 修复</a>
+  <a href="#gallery">4. 测试通过截图</a>
+  <a href="#evidence">5. 证据</a>
+  <a href="#conclusion">6. 结论</a>
+</div>
+
+<h2 id="summary">1. 概览</h2>
+<div class="kpis">
+  <div class="kpi ok"><div class="n">16/16</div><div class="l">测试用例全过</div></div>
+  <div class="kpi ok"><div class="n">2</div><div class="l">发现并修复的 Bug</div></div>
+  <div class="kpi ok"><div class="n">46/46</div><div class="l">cargo test 零回归</div></div>
+  <div class="kpi ok"><div class="n">17</div><div class="l">测试截图</div></div>
+  <div class="kpi ok"><div class="n">5</div><div class="l">Loop 迭代轮次</div></div>
+</div>
+<p>对 Nexus Agent Studio 模块执行 UI 自动化功能测试，使用 <b>playwright-core + 系统 Chrome</b>（headless）驱动真实浏览器，覆盖从登录到 CUI 流式对话到工具调用到历史回放到 Agent 删除的完整用户旅程。每个关键步骤截图，每步断言通过/失败。</p>
+<p>测试遵循 <b>Loop Engineering</b>：首轮 13/17 → 修复 → 第二轮 14/16 → 修复 → ... → 第五轮 <b>16/16 全过</b>。测试中发现 2 个真实应用 bug（ThreadRow 缺 agent_def_id + delete_agent FK 违约），走 issue 修复流程修复并复测。</p>
+
+<h2 id="matrix">2. 测试矩阵（16 用例 / 14 步骤）</h2>
+<table>
+<tr><th>#</th><th>测试用例</th><th>验证点</th><th>结果</th><th>证据</th></tr>
+<tr><td>TC1</td><td>登录页加载 + 登录跳转</td><td>email 预填 admin@nexus.local / 登录后跳 #/overview / sidebar 出现</td><td><span class="pill ok">PASS</span></td><td>截图 01/01b</td></tr>
+<tr><td>TC2</td><td>Studio 会话列表加载</td><td>card 渲染 / +新建会话 按钮 / Agent 定义 按钮存在</td><td><span class="pill ok">PASS</span></td><td>截图 02</td></tr>
+<tr><td>TC3</td><td>Agent 定义 Modal 打开</td><td>modal-bg 出现 / +新建 Agent 按钮存在</td><td><span class="pill ok">PASS</span></td><td>截图 03</td></tr>
+<tr><td>TC4</td><td>Agent 表单填写 + 创建保存</td><td>名称/描述/model/system_prompt 填入 / 保存后列表含「UI测试助手」</td><td><span class="pill ok">PASS</span></td><td>截图 04/04b</td></tr>
+<tr><td>TC5</td><td>Agent 编辑保存</td><td>编辑描述为「已编辑」/ 保存后列表含新值</td><td><span class="pill ok">PASS</span></td><td>截图 05</td></tr>
+<tr><td>TC6</td><td>创建会话绑定 Agent</td><td>POST threads{agent_def_id} / list API 回查 agent_def_id 持久化 == 期望</td><td><span class="pill ok">PASS</span></td><td>截图 06 / agent_def_id=10 expected=10</td></tr>
+<tr><td>TC7</td><td>进入空 CUI 对话框</td><td>textarea 输入框 / 发送按钮 / 就绪 Pill 存在</td><td><span class="pill ok">PASS</span></td><td>截图 07</td></tr>
+<tr><td>TC8</td><td>输入框填入消息</td><td>textarea 接收文本</td><td><span class="pill ok">PASS</span></td><td>截图 08</td></tr>
+<tr><td>TC9</td><td>流式输出增量增长</td><td>.studio-stream innerText 长度随时间单调增长（delta 实时渲染）</td><td><span class="pill ok">PASS</span></td><td>截图 09 / finalLen=1438</td></tr>
+<tr><td>TC10</td><td>用户气泡 + 助手 Markdown 渲染</td><td>user-bubble ≥1 / assistant-msg ≥1 / .md-p ≥1 / 0 个 📦 fallback</td><td><span class="pill ok">PASS</span></td><td>截图 10 / userBubble=2 assistantMsg=3 md-p=2 fallbackBox=0</td></tr>
+<tr><td>TC11</td><td>工具调用卡片渲染</td><td>tool-card ≥1 / 卡片标题「命令执行」/ 命令 /bin/bash -lc ls</td><td><span class="pill ok">PASS</span></td><td>截图 11</td></tr>
+<tr><td>TC12</td><td>历史回放（重新进入还原）</td><td>重新进入 thread 后 user-bubble ≥1 / assistant-msg ≥1（从 items 表回放）</td><td><span class="pill ok">PASS</span></td><td>截图 12 / userBubble=1 assistantMsg=2</td></tr>
+<tr><td>TC13</td><td>主题切换（深→浅）</td><td>data-theme 属性 dark→light</td><td><span class="pill ok">PASS</span></td><td>截图 13</td></tr>
+<tr><td>TC14</td><td>Agent 删除</td><td>删除后同名 Agent 计数减 1（FK 解绑后成功删除）</td><td><span class="pill ok">PASS</span></td><td>截图 14 / 删除前=3 删除后=2</td></tr>
+</table>
+
+<h2 id="bugs">3. 发现的 Bug + 修复（issue 修复流程）</h2>
+<p>issue 文档：<code>docs/issues/2026-09-07-agent-studio-thread-row-fk.md</code></p>
+
+<h3>Bug-1：ThreadRow 缺 agent_def_id（功能 bug）</h3>
+<p><b>现象</b>：Studio 会话列表「Agent」列对所有会话显示「默认」，即使创建时绑定了 Agent。TC6 首轮失败（list API 响应 agent_def_id=undefined）。</p>
+<p><b>根因</b>：<code>http_server.rs</code> 的 <code>ThreadRow</code> 结构体（M1 时代）未声明 <code>agent_def_id</code> 字段，<code>threads_list</code> SELECT 也未查该列。Agent Studio 加了 threads.agent_def_id 列但未同步 list API。</p>
+<p><b>修复</b>（Surgical，2 行）：</p>
+<pre>struct ThreadRow {
+    id: Uuid, title: Option&lt;String&gt;, status: String, created_at: DateTime&lt;Utc&gt;,
+    agent_def_id: Option&lt;i64&gt;,   // ← 新增
+}
+// SELECT id, title, status, created_at, agent_def_id FROM threads ...  ← 加列</pre>
+<p><b>复测</b>：TC6 PASS，agent_def_id=10 expected=10。前端 Studio 列表 Agent 列正确显示绑定 Pill。</p>
+
+<h3>Bug-2：delete_agent FK 违约（功能 bug）</h3>
+<p><b>现象</b>：删除一个已绑定会话的 Agent 时，DELETE 返回 500（外键违约），Agent 仍在列表。TC14 失败。</p>
+<p><b>根因</b>：<code>agent_defs.rs delete_agent</code> 直接 <code>DELETE FROM agent_definitions</code>，但 <code>threads.agent_def_id</code> 外键为 <code>REFERENCES agent_definitions(id)</code>（默认 ON DELETE NO ACTION），有引用时 PG 拒绝删除。</p>
+<p><b>修复</b>（Simplicity First，app 层事务，不改 schema FK）：</p>
+<pre>let mut tx = pool.begin().await?;
+// 先解绑引用此 Agent 的 threads（SET NULL，thread 继续用默认 prompt）
+sqlx::query("UPDATE threads SET agent_def_id=NULL WHERE agent_def_id=$1")...;
+sqlx::query("DELETE FROM agent_definitions WHERE id=$1 AND tenant_id=$2")...;
+tx.commit().await?;</pre>
+<p><b>复测</b>：TC14 PASS，删除前=3 删除后=2（减 1），且绑定的 thread 不被破坏（agent_def_id 置 NULL）。</p>
+
+<h3>Loop 迭代轨迹</h3>
+<table>
+<tr><th>轮次</th><th>通过</th><th>失败</th><th>失败原因</th><th>动作</th></tr>
+<tr><td>R1</td><td>13/17</td><td>4</td><td>3× 测试脚本 token 键错(nexus_token→nexus.token) + TC12 导航错</td><td>修脚本</td></tr>
+<tr><td>R2</td><td>13/16</td><td>3</td><td>TC6 断言错 + TC12/TC14 active 状态持久</td><td>修脚本（resetToList）</td></tr>
+<tr><td>R3</td><td>14/16</td><td>2</td><td>TC6 真实 bug(ThreadRow 缺字段) + TC14 真实 bug(FK 违约)</td><td>走 issue 修复流程</td></tr>
+<tr><td>R4</td><td>15/16</td><td>1</td><td>TC14 测试数据残留（多轮积累同名 Agent）</td><td>改计数断言+清理</td></tr>
+<tr><td>R5</td><td><b>16/16</b></td><td>0</td><td>—</td><td>全过</td></tr>
+</table>
+
+<h2 id="gallery">4. 测试通过截图</h2>
+<div class="gallery">
+  <div class="fig"><img src="01-login.png"><div class="cap"><b>TC1</b> 登录页（email 预填 admin@nexus.local）</div></div>
+  <div class="fig"><img src="01b-loggedin.png"><div class="cap"><b>TC1</b> 登录成功跳转概览</div></div>
+  <div class="fig"><img src="02-studio-list.png"><div class="cap"><b>TC2</b> Studio 会话列表加载</div></div>
+  <div class="fig"><img src="03-agent-mgr.png"><div class="cap"><b>TC3</b> Agent 定义管理 Modal</div></div>
+  <div class="fig"><img src="04-agent-form.png"><div class="cap"><b>TC4</b> Agent 表单填写（system_prompt + model）</div></div>
+  <div class="fig"><img src="04b-agent-created.png"><div class="cap"><b>TC4</b> Agent 创建保存后列表含</div></div>
+  <div class="fig"><img src="05-agent-edited.png"><div class="cap"><b>TC5</b> Agent 编辑保存</div></div>
+  <div class="fig"><img src="06-thread-bound.png"><div class="cap"><b>TC6</b> 创建会话绑定 Agent（列表显示 Agent Pill ★修复后）</div></div>
+  <div class="fig"><img src="07-chat-empty.png"><div class="cap"><b>TC7</b> 空 CUI 对话框（就绪）</div></div>
+  <div class="fig"><img src="08-input-filled.png"><div class="cap"><b>TC8</b> 输入框填入消息</div></div>
+  <div class="fig"><img src="09-streaming.png"><div class="cap"><b>TC9</b> 流式输出增量增长中</div></div>
+  <div class="fig"><img src="10-complete.png"><div class="cap"><b>TC10</b> turn 完成（用户气泡 + 助手 Markdown）</div></div>
+  <div class="fig"><img src="11-tool-call.png"><div class="cap"><b>TC11</b> 工具调用卡片（命令执行 /bin/bash -lc ls）</div></div>
+  <div class="fig"><img src="12-history-replay.png"><div class="cap"><b>TC12</b> 历史回放（重新进入还原）</div></div>
+  <div class="fig"><img src="13-light-theme.png"><div class="cap"><b>TC13</b> 浅色主题</div></div>
+  <div class="fig"><img src="14-agent-deleted.png"><div class="cap"><b>TC14</b> Agent 删除（计数减 1 ★修复后）</div></div>
+</div>
+
+<h2 id="evidence">5. 证据</h2>
+<details><summary>5.1 最终测试输出（16/16 PASS）</summary>
+<pre>✓ [TC1] 登录页加载 — email预填=admin@nexus.local
+✓ [TC1] 登录成功跳转概览
+✓ [TC2] Studio 会话列表加载 — card=true newBtn=true agentBtn=true
+✓ [TC3] Agent 定义 Modal 打开
+✓ [TC4] Agent 表单填写
+✓ [TC4] Agent 创建保存 — 列表含UI测试助手=true
+✓ [TC5] Agent 编辑保存 — 含已编辑=true
+✓ [TC6] 创建会话绑定 Agent — thread=308370c0 agent_def_id=10 expected=10
+✓ [TC7] 进入空 CUI 对话框 — input=true send=true ready=true
+✓ [TC8] 输入框填入消息
+✓ [TC9] 流式输出增量增长 — finalLen=1438
+✓ [TC10] 用户气泡 + 助手 Markdown 渲染 — userBubble=2 assistantMsg=3 md-p=2 fallbackBox=0
+✓ [TC11] 工具调用卡片渲染 — toolCard=1 cards=["命令执行|/bin/bash -lc ls"]
+✓ [TC12] 历史回放（重新进入还原） — userBubble=1 assistantMsg=2
+✓ [TC13] 主题切换到浅色 — data-theme=light
+✓ [TC14] Agent 删除 — 删除前=3 删除后=2（应减1）
+
+=== SUMMARY: 16/16 PASS, 0 FAIL ===</pre>
+</details>
+<details><summary>5.2 cargo test 46/46 零回归</summary>
+<pre>test result: ok. 46 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out</pre>
+</details>
+<details><summary>5.3 curl 验证 thread 绑定 DB 持久化（Bug-1 修复后）</summary>
+<pre>$ curl GET /v1/threads | jq '.[0] | keys'
+["agent_def_id","created_at","id","status","title"]   ← agent_def_id 字段已返回
+
+$ docker exec psql "SELECT agent_def_id FROM threads WHERE id=..."
+agent_def_id=7   ← DB 持久化正确</pre>
+</details>
+<details><summary>5.4 curl 验证 delete_agent FK 解绑（Bug-2 修复后）</summary>
+<pre>$ curl DELETE /v1/agents/{id}   # 有绑定 thread 的 Agent
+# 修复前：500 FK 违约
+# 修复后：200，thread.agent_def_id 置 NULL，Agent 删除成功</pre>
+</details>
+
+<h2 id="conclusion">6. 结论</h2>
+<div style="background:var(--panel);border:1px solid var(--ok);border-radius:8px;padding:18px;color:var(--text)">
+<b style="color:var(--ok);font-size:18px">✅ 16/16 全部通过</b><br><br>
+Agent Studio 模块 UI 自动化功能测试全过：登录 → 会话列表 → Agent CRUD → 会话绑定 → CUI 对话框 → 流式输出 → 用户气泡 → 助手 Markdown → 工具调用卡片 → 历史回放 → 主题切换 → Agent 删除，完整用户旅程验证通过。<br><br>
+测试中发现并修复 2 个真实应用 bug（ThreadRow 缺 agent_def_id + delete_agent FK 违约），走 issue 修复流程，cargo test 46/46 零回归，复测全过。改动全部在 <code>codex-rs/nexus-control/</code> crate 内，未改 codex 内核。<br><br>
+<b>环境</b>：PG nexus-pg-m4:5434 / 端口 8766 / 真实 glm-4-flash 模型 / playwright-core + 系统 Chrome headless / 17 张截图。
+</div>
+
+</div>
+</body>
+</html>
