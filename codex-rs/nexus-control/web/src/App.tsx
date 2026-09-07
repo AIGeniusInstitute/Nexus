@@ -11,6 +11,7 @@ import Connectors from "./pages/Connectors";
 import Skills from "./pages/Skills";
 import Orchestration from "./pages/Orchestration";
 import Evals from "./pages/Evals";
+import GoldenSets from "./pages/GoldenSets";
 import Audit from "./pages/Audit";
 import Policy from "./pages/Policy";
 
@@ -30,6 +31,7 @@ const NAV: { group: string; items: { key: string; label: string; icon: string }[
     { key: "usage", label: "用量计量", icon: "📊" },
     { key: "policy", label: "策略", icon: "🛡" },
     { key: "evals", label: "评测", icon: "🎯" },
+    { key: "golden-sets", label: "Golden Set", icon: "🏆" },
     { key: "audit", label: "审计日志", icon: "📜" },
   ]},
 ];
@@ -95,6 +97,7 @@ function Shell() {
       case "usage": return <Usage />;
       case "policy": return <Policy />;
       case "evals": return <Evals />;
+      case "golden-sets": return <GoldenSets />;
       case "audit": return <Audit />;
       default: return <Overview />;
     }
@@ -106,7 +109,7 @@ function Shell() {
       <aside className="sidebar">
         <div className="brand">
           <div className="logo">Nexus</div>
-          <div className="sub">Agent-Native Platform · M19</div>
+          <div className="sub">Agent-Native Platform · M20</div>
         </div>
         <nav className="nav">
           {NAV.map((g) => (

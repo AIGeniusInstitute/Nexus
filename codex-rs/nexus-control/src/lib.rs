@@ -9,6 +9,7 @@ pub mod audit;
 pub mod connectors;
 pub mod db;
 pub mod eval;
+pub mod eval_center;
 pub mod event_store;
 pub mod execpolicy_rules;
 pub mod fork;

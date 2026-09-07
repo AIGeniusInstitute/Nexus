@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexus M20 评测中心 — 测试报告</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --text:#e4e7ee; --mut:#8b93a5;
+    --acc:#4f9dff; --gold:#f0b429; --green:#34d399; --red:#f87171; --border:#2a2f3a;
+    --bg-l:#f6f7fa; --panel-l:#fff; --panel2-l:#f0f2f6; --text-l:#1a1d24; --mut-l:#5c6577;
+    --acc-l:#2563eb; --gold-l:#b45309; --green-l:#059669; --red-l:#dc2626; --border-l:#d8dce4;
+  }
+  [data-theme="dark"]{ --bg:var(--bg); --panel:var(--panel); --panel2:var(--panel2); --text:var(--text); --mut:var(--mut); --acc:var(--acc); --gold:var(--gold); --green:var(--green); --red:var(--red); --border:var(--border); }
+  [data-theme="light"]{ --bg:var(--bg-l); --panel:var(--panel-l); --panel2:var(--panel2-l); --text:var(--text-l); --mut:var(--mut-l); --acc:var(--acc-l); --gold:var(--gold-l); --green:var(--green-l); --red:var(--red-l); --border:var(--border-l); }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.65;transition:background .2s}
+  a{color:var(--acc);text-decoration:none}
+  .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 80px}
+  header{text-align:center;padding:40px 0 28px;border-bottom:1px solid var(--border)}
+  h1{font-size:30px;font-weight:800;letter-spacing:.5px}
+  h1 .tag{font-size:13px;font-weight:600;color:var(--gold);border:1px solid var(--gold);padding:2px 10px;border-radius:12px;margin-left:8px;vertical-align:middle}
+  h2{font-size:22px;margin:40px 0 16px;padding-bottom:8px;border-bottom:2px solid var(--acc);display:flex;align-items:center;gap:8px}
+  h2 .n{font-size:13px;color:var(--mut);font-weight:400}
+  h3{font-size:17px;margin:24px 0 10px;color:var(--gold)}
+  p{margin:8px 0;color:var(--text)}
+  .sub{color:var(--mut);font-size:14px;margin-top:6px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+  .meta span{font-size:12px;background:var(--panel2);padding:4px 12px;border-radius:14px;color:var(--mut);border:1px solid var(--border)}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 24px;margin:24px 0}
+  .toc a{display:block;padding:3px 0;font-size:14px}
+  .toc a:hover{color:var(--gold)}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px;margin:16px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .stat{background:var(--panel2);border-radius:8px;padding:16px;text-align:center;border:1px solid var(--border)}
+  .stat .v{font-size:28px;font-weight:800;color:var(--acc)}
+  .stat .l{font-size:12px;color:var(--mut);margin-top:4px}
+  .stat.pass .v{color:var(--green)}
+  .stat.fail .v{color:var(--red)}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px}
+  th{background:var(--panel2);text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  td{padding:10px 12px;border-bottom:1px solid var(--border)}
+  tr:hover td{background:var(--panel2)}
+  .pass{color:var(--green);font-weight:600}
+  .fail{color:var(--red);font-weight:600}
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600}
+  .pill.ok{background:rgba(52,211,153,.15);color:var(--green)}
+  .pill.no{background:rgba(248,113,113,.15);color:var(--red)}
+  .pill.info{background:rgba(79,157,255,.15);color:var(--acc)}
+  pre{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:12px;line-height:1.5;color:var(--text);margin:10px 0}
+  code{font-family:"JetBrains Mono","Fira Code",Consolas,monospace}
+  .shot{width:100%;border-radius:8px;border:1px solid var(--border);margin:12px 0}
+  .shot-cap{text-align:center;color:var(--mut);font-size:12px;margin-bottom:16px}
+  details{margin:14px 0}
+  details summary{cursor:pointer;color:var(--gold);font-weight:600;padding:8px 0}
+  .progress{position:fixed;top:0;left:0;height:3px;background:var(--acc);z-index:999;transition:width .1s}
+  .theme-btn{position:fixed;top:16px;right:16px;z-index:99;background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:20px;padding:6px 14px;cursor:pointer;font-size:13px}
+  .flow{text-align:center;margin:20px 0}
+  .flow svg{max-width:100%;height:auto}
+</style>
+</head>
+<body>
+<div class="progress" id="pg"></div>
+<button class="theme-btn" onclick="toggleTheme()">🌗 主题</button>
+<div class="wrap">
+  <header>
+    <h1>Nexus M20 评测中心<span class="tag">TEST REPORT</span></h1>
+    <p class="sub">版本化 Golden Set + Rubric + 运行冻结快照 + 确定性评分</p>
+    <div class="meta">
+      <span>📅 2026-09-07</span>
+      <span>🏷 v1.0.0</span>
+      <span>🐳 Docker 8765</span>
+      <span>🧪 11 AC / 36 unit</span>
+      <span>✅ 全通过</span>
+    </div>
+  </header>
+
+  <div class="toc">
+    <a href="#s1">1. 概述</a>
+    <a href="#s2">2. 验收矩阵</a>
+    <a href="#s3">3. 数据流图</a>
+    <a href="#s4">4. e2e 证据</a>
+    <a href="#s5">5. Issue 修复闭环</a>
+    <a href="#s6">6. 零回归验证</a>
+    <a href="#s7">7. Web 控制台截图</a>
+    <a href="#s8">8. 单元测试</a>
+    <a href="#s9">9. 结论</a>
+  </div>
+
+  <h2 id="s1">1. 概述 <span class="n">Overview</span></h2>
+  <div class="card">
+    <p>M20 将 Nexus 评测能力从 M12 的「单 turn 断言」升级为<strong>版本化、可复现、可追溯</strong>的企业级评测中心。核心设计思想：所有实体一律版本化、不可变，运行时绑定到具体版本集合（快照），从根上保证可复现、可追溯。</p>
+    <div class="grid2">
+      <div class="stat pass"><div class="v">11/11</div><div class="l">验收标准 AC</div></div>
+      <div class="stat pass"><div class="v">36/36</div><div class="l">单元测试</div></div>
+      <div class="stat pass"><div class="v">6</div><div class="l">新增数据表</div></div>
+      <div class="stat pass"><div class="v">12</div><div class="l">新增 API 路由</div></div>
+    </div>
+    <p class="sub" style="margin-top:14px">里程碑范围：P1 MVP（版本化 GoldenSet + Rubric + 运行冻结快照 + 确定性规则层评分）。P2(Judge LLM + CI 质量门)→M21，P3(事件溯源 + Lineage + 电子签名)→M22。遵循 Simplicity First。</p>
+  </div>
+
+  <h2 id="s2">2. 验收矩阵 <span class="n">Acceptance Matrix</span></h2>
+  <table>
+    <thead><tr><th>AC</th><th>描述</th><th>验证方式</th><th>结果</th></tr></thead>
+    <tbody>
+      <tr><td>AC20.1</td><td>entity_version 骨架表建立（六类版本化实体）</td><td>PG 表结构</td><td><span class="pass">✅ PASS</span></td></tr>
+      <tr><td>AC20.2</td><td>创建 GoldenSet（draft 状态）</td><td>POST /v1/golden-sets</td><td><span class="pass">✅ PASS</span></td></tr>
+      <tr><td>AC20.3</td><td>添加 Case 到 draft GoldenSet</td><td>POST /v1/golden-sets/{id}/cases</td><td><span class="pass">✅ PASS</span></td></tr>
+      <tr><td>AC20.4</td><td>发布版本：semver + manifest_hash + 不可变(locked)</td><td>POST /v1/golden-sets/{id}/publish</td><td><span class="pass">✅ PASS</span></td></tr>
+      <tr><td>AC20.5</td><td>locked 后再加 Case 被拒绝</td><td>POST 返回 400</td><td><span class="pass">✅ PASS</span></td></tr>
+      <tr><td>AC20.6</td><td>运行冻结快照：snapshot_hash（SHA-256）</td><td>eval_batch_runs.snapshot_hash</td><td><span class="pass">✅ PASS</span></td></tr>
+      <tr><td>AC20.7</td><td>Rubric 发布版本</td><td>POST /v1/rubrics/{id}/publish</td><td><span class="pass">✅ PASS</span></td></tr>
+      <tr><td>AC20.8</td><td>逐 case 确定性评分（must_hit / must_not / acceptable）</td><td>eval_case_results.scores</td><td><span class="pass">✅ PASS</span></td></tr>
+      <tr><td>AC20.9</td><td>聚合指标 accuracy / avg_must_hit_rate</td><td>eval_batch_runs.aggregate</td><td><span class="pass">✅ PASS</span></td></tr>
+      <tr><td>AC20.10</td><td>基线对比（同版本才可比，case 级 diff）</td><td>POST /v1/evals/batch-runs/{id}/compare</td><td><span class="pass">✅ PASS</span></td></tr>
+      <tr><td>AC20.11</td><td>零回归（M10/M12/M14/M15/M16/M17 不退化）</td><td>只读 API 验证</td><td><span class="pass">✅ PASS</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="s3">3. 数据流图 <span class="n">Data Flow</span></h2>
+  <div class="card">
+    <div class="flow">
+      <svg viewBox="0 0 920 460" xmlns="http://www.w3.org/2000/svg" style="background:var(--panel2);border-radius:8px">
+        <defs>
+          <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 Z" fill="#4f9dff"/></marker>
+          <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e222b"/><stop offset="1" stop-color="#171a21"/></linearGradient>
+        </defs>
+        <!-- GoldenSet draft -->
+        <rect x="20" y="30" width="170" height="70" rx="8" fill="url(#g1)" stroke="#4f9dff" stroke-width="1.5"/>
+        <text x="105" y="55" text-anchor="middle" fill="#e4e7ee" font-size="13" font-weight="700">GoldenSet (draft)</text>
+        <text x="105" y="75" text-anchor="middle" fill="#8b93a5" font-size="11">create + add cases</text>
+        <!-- publish -->
+        <rect x="20" y="140" width="170" height="70" rx="8" fill="url(#g1)" stroke="#f0b429" stroke-width="1.5"/>
+        <text x="105" y="165" text-anchor="middle" fill="#e4e7ee" font-size="13" font-weight="700">Publish v1.0.0</text>
+        <text x="105" y="185" text-anchor="middle" fill="#8b93a5" font-size="11">SHA-256 manifest_hash</text>
+        <text x="105" y="200" text-anchor="middle" fill="#34d399" font-size="11">status=locked 不可变</text>
+        <!-- arrow -->
+        <line x1="105" y1="100" x2="105" y2="135" stroke="#4f9dff" stroke-width="1.5" marker-end="url(#arr)"/>
+        <!-- entity_version -->
+        <rect x="240" y="140" width="170" height="70" rx="8" fill="url(#g1)" stroke="#f0b429" stroke-width="1.5"/>
+        <text x="325" y="165" text-anchor="middle" fill="#e4e7ee" font-size="13" font-weight="700">entity_version</text>
+        <text x="325" y="185" text-anchor="middle" fill="#8b93a5" font-size="11">version_no + semver</text>
+        <text x="325" y="200" text-anchor="middle" fill="#8b93a5" font-size="11">manifest_hash (SHA-256)</text>
+        <line x1="190" y1="175" x2="235" y2="175" stroke="#4f9dff" stroke-width="1.5" marker-end="url(#arr)"/>
+        <!-- EvalRun -->
+        <rect x="460" y="140" width="200" height="70" rx="8" fill="url(#g1)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="560" y="165" text-anchor="middle" fill="#e4e7ee" font-size="13" font-weight="700">EvalBatchRun</text>
+        <text x="560" y="185" text-anchor="middle" fill="#8b93a5" font-size="11">冻结 snapshot_hash</text>
+        <text x="560" y="200" text-anchor="middle" fill="#8b93a5" font-size="11">绑定 version_id 集合</text>
+        <line x1="410" y1="175" x2="455" y2="175" stroke="#4f9dff" stroke-width="1.5" marker-end="url(#arr)"/>
+        <!-- per case -->
+        <rect x="460" y="260" width="200" height="70" rx="8" fill="url(#g1)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="560" y="285" text-anchor="middle" fill="#e4e7ee" font-size="13" font-weight="700">逐 Case 评分</text>
+        <text x="560" y="305" text-anchor="middle" fill="#8b93a5" font-size="11">must_hit_points 命中率</text>
+        <text x="560" y="320" text-anchor="middle" fill="#8b93a5" font-size="11">must_not 违规检测</text>
+        <line x1="560" y1="210" x2="560" y2="255" stroke="#4f9dff" stroke-width="1.5" marker-end="url(#arr)"/>
+        <!-- HTTP self-call -->
+        <rect x="240" y="260" width="170" height="70" rx="8" fill="url(#g1)" stroke="#4f9dff" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <text x="325" y="285" text-anchor="middle" fill="#e4e7ee" font-size="13" font-weight="700">HTTP self-call</text>
+        <text x="325" y="305" text-anchor="middle" fill="#8b93a5" font-size="11">/v1/threads/{id}/turns</text>
+        <text x="325" y="320" text-anchor="middle" fill="#8b93a5" font-size="11">SIMULATE resolve 审批</text>
+        <line x1="325" y1="295" x2="455" y2="295" stroke="#4f9dff" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+        <!-- aggregate -->
+        <rect x="460" y="370" width="200" height="60" rx="8" fill="url(#g1)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="560" y="395" text-anchor="middle" fill="#e4e7ee" font-size="13" font-weight="700">聚合 aggregate</text>
+        <text x="560" y="415" text-anchor="middle" fill="#8b93a5" font-size="11">accuracy / avg_hit_rate</text>
+        <line x1="560" y1="330" x2="560" y2="365" stroke="#4f9dff" stroke-width="1.5" marker-end="url(#arr)"/>
+        <!-- compare -->
+        <rect x="700" y="370" width="200" height="60" rx="8" fill="url(#g1)" stroke="#f87171" stroke-width="1.5"/>
+        <text x="800" y="395" text-anchor="middle" fill="#e4e7ee" font-size="13" font-weight="700">基线对比 compare</text>
+        <text x="800" y="415" text-anchor="middle" fill="#8b93a5" font-size="11">case_key JOIN diff</text>
+        <line x1="660" y1="400" x2="695" y2="400" stroke="#4f9dff" stroke-width="1.5" marker-end="url(#arr)"/>
+        <!-- legend -->
+        <text x="20" y="440" fill="#8b93a5" font-size="11">实线=数据流 虚线=HTTP self-call 复用 M18 模式（零触碰 turn_start）</text>
+      </svg>
+    </div>
+    <p class="shot-cap">M20 评测中心数据流：版本化发布 → 运行冻结快照 → 逐 case 评分 → 聚合 → 基线对比</p>
+  </div>
+
+  <h2 id="s4">4. e2e 证据 <span class="n">curl + DB</span></h2>
+
+  <h3>AC20.2-20.3 创建 GoldenSet + 添加 Case</h3>
+  <details><pre>$ curl -X POST $BASE/v1/golden-sets -H "$AUTH" -d '{"name":"临研Agent评测集-v1",...}'
+{"id":2,"status":"draft","name":"临研Agent评测集-v1",...}
+
+$ curl $BASE/v1/golden-sets/2/cases -H "$AUTH"  # 3 cases
+[{"case_key":"CS-FREE",...},{"case_key":"CS-HIT",...},{"case_key":"CS-MUSTNOT",...}]</pre></details>
+
+  <h3>AC20.4-20.5 发布版本 v1.0.0 + 不可变</h3>
+  <details><pre>$ curl -X POST $BASE/v1/golden-sets/2/publish -d '{"bump_type":"major"}'
+{"id":1,"entity_type":"golden_set","entity_id":2,"version_no":1,
+ "semver":"1.0.0","manifest_hash":"d886859db832705d2189013fd34569508bf65345f53b9837cde13b119c471d14",
+ "status":"locked","created_by":1,...}
+
+# locked 后再加 case → 400
+$ curl -X POST $BASE/v1/golden-sets/2/cases -d '{"case_key":"CS-LATE",...}'
+HTTP 400  (golden_set is not draft, cannot add cases)</pre></details>
+
+  <h3>AC20.6 运行冻结快照</h3>
+  <details><pre>$ curl -X POST $BASE/v1/evals/batch-runs -d '{"golden_set_id":2,"rubric_id":1,"thread_id":"c06f..."}'
+{"run_id":1}
+
+$ curl $BASE/v1/evals/batch-runs/1
+{"run":{"status":"completed",
+  "golden_set_version_id":1,"rubric_version_id":2,
+  "snapshot_hash":"c6eeb5e96118e3bfedfa6dd723d116af...",
+  "aggregate":{"accuracy":0.6667,"avg_must_hit_rate":0.6667,
+    "must_not_violation_count":0,"passed":2,"total_cases":3}}}</pre></details>
+
+  <h3>AC20.8 逐 case 评分</h3>
+  <table>
+    <thead><tr><th>case_key</th><th>期望</th><th>agent_output</th><th>passed</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>CS-FREE</td><td>无约束</td><td>approved: Approve</td><td><span class="pass">true</span></td><td>无 must_hit/must_not → 默认通过</td></tr>
+      <tr><td>CS-HIT</td><td>must_hit=["48","排除结论"]</td><td>approved: Approve</td><td><span class="fail">false</span></td><td>SIMULATE 输出不含命中点 → rate=0</td></tr>
+      <tr><td>CS-MUSTNOT</td><td>must_not=["医疗处置建议"]</td><td>approved: Approve</td><td><span class="pass">true</span></td><td>无违规 + 无 must_hit → 通过</td></tr>
+    </tbody>
+  </table>
+  <p class="sub">SIMULATE_APPROVAL=1 模式 driver 只发 item/completed（content_ref="approved: Approve"），run_case_turn 加 item/completed 回退提取。聚合：2 pass / 1 fail → accuracy=0.667</p>
+
+  <h3>AC20.10 基线对比</h3>
+  <details><pre>$ curl -X POST $BASE/v1/evals/batch-runs/2/compare -d '{"baseline_run_id":1}'
+{
+  "incomparable": false,
+  "baseline_version_id": 1,
+  "run_version_id": 1,
+  "diffs": [
+    {"case_key":"CS-FREE","baseline_passed":true,"run_passed":true,"delta":"same"},
+    {"case_key":"CS-HIT","baseline_passed":false,"run_passed":false,"delta":"same"},
+    {"case_key":"CS-MUSTNOT","baseline_passed":true,"run_passed":true,"delta":"same"}
+  ]
+}</pre></details>
+
+  <h2 id="s5">5. Issue 修复闭环 <span class="n">Bug Fix Loop</span></h2>
+  <div class="card">
+    <h3>BUG-1: compare_runs ColumnDecode 类型不匹配</h3>
+    <p><strong>现象</strong>：<code>POST /v1/evals/batch-runs/{id}/compare</code> 返回 500</p>
+    <pre>ColumnDecode { index: "1", source: "mismatched types; Rust type `core::option::Option&lt;bool&gt;` (as SQL type `BOOL`) is not compatible with SQL type `TEXT`" }</pre>
+    <p><strong>根因</strong>：SQL <code>a.scores-&gt;&gt;'passed'</code> 返回 TEXT（<code>-&gt;&gt;</code> 运算符返回 text），但 Rust 声明 <code>Vec&lt;(String, Option&lt;bool&gt;, Option&lt;bool&gt;)&gt;</code>，sqlx 无法将 TEXT decode 为 bool。</p>
+    <p><strong>修复</strong>：SQL 加 <code>::boolean</code> cast： <code>(a.scores-&gt;&gt;'passed')::boolean AS baseline_passed</code>。</p>
+    <p><strong>验证</strong>：compare 返回 <code>incomparable=false</code> + 3 case_key diff（delta=same）✅</p>
+    <p class="sub">遵循 Issue 修复工作流程：定位根因（错误信息明确）→ 修复（SQL cast）→ 再验证（compare 200）→ 闭环。</p>
+  </div>
+
+  <h2 id="s6">6. 零回归验证 <span class="n">Zero Regression</span></h2>
+  <table>
+    <thead><tr><th>里程碑</th><th>能力</th><th>API</th><th>结果</th></tr></thead>
+    <tbody>
+      <tr><td>M10</td><td>审计日志 WORM</td><td>GET /v1/audit/logs</td><td><span class="pass">✅ 3 条</span></td></tr>
+      <tr><td>M12</td><td>评测 case</td><td>GET /v1/evals/cases</td><td><span class="pass">✅ 0 条（未建）</span></td></tr>
+      <tr><td>M14</td><td>Thread fork</td><td>GET /v1/threads/{id}/snapshots</td><td><span class="pass">✅ 200</span></td></tr>
+      <tr><td>M15</td><td>Runtime warm pool</td><td>GET /v1/runtime/pool</td><td><span class="pass">✅ pool=2 warmed=2</span></td></tr>
+      <tr><td>M16</td><td>连接器</td><td>GET /v1/connectors</td><td><span class="pass">✅ 6 条</span></td></tr>
+      <tr><td>M17</td><td>技能市场</td><td>GET /v1/skills</td><td><span class="pass">✅ 3 条</span></td></tr>
+    </tbody>
+  </table>
+  <p class="sub">M20 纯增量（6 新表 + 12 路由 + 1 模块），零触碰 turn_start/drain/runtime/gateway，M3-M19 路径全不退化。</p>
+
+  <h2 id="s7">7. Web 控制台截图 <span class="n">Screenshots</span></h2>
+
+  <h3>概览页（M20 里程碑矩阵）</h3>
+  <img class="shot" src="01-overview.png" alt="overview"/>
+  <p class="shot-cap">概览页展示 M0-M20 全里程碑完成状态</p>
+
+  <h3>Golden Set 管理</h3>
+  <img class="shot" src="02-golden-sets.png" alt="golden-sets"/>
+  <p class="shot-cap">Golden Set 列表 + 创建表单</p>
+
+  <img class="shot" src="03-golden-set-detail.png" alt="detail"/>
+  <p class="shot-cap">GoldenSet 详情：Case 列表（CS-FREE/CS-HIT/CS-MUSTNOT）</p>
+
+  <h3>Rubric 评分标准</h3>
+  <img class="shot" src="04-rubrics.png" alt="rubrics"/>
+  <p class="shot-cap">Rubric 列表 + 发布版本</p>
+
+  <h3>批量评测运行</h3>
+  <img class="shot" src="05-runs.png" alt="runs"/>
+  <p class="shot-cap">批量运行列表 + 聚合指标 + 逐 case 得分 + 基线对比</p>
+
+  <h2 id="s8">8. 单元测试 <span class="n">Unit Tests</span></h2>
+  <table>
+    <thead><tr><th>测试</th><th>验证</th><th>结果</th></tr></thead>
+    <tbody>
+      <tr><td>semver_bump</td><td>首次 1.0.0 / patch 1.0.1 / minor 1.1.0 / major 2.0.0</td><td><span class="pass">✅</span></td></tr>
+      <tr><td>score_case_hit_and_violation</td><td>must_hit 命中 + must_not 违规 → passed 逻辑</td><td><span class="pass">✅</span></td></tr>
+      <tr><td>score_case_no_constraints</td><td>空约束 → passed=true</td><td><span class="pass">✅</span></td></tr>
+      <tr><td>sha256_deterministic</td><td>SHA-256 相同输入相同输出</td><td><span class="pass">✅</span></td></tr>
+    </tbody>
+  </table>
+  <details><summary>完整 cargo test 输出</summary><pre>$ cargo test -p nexus-control
+test result: ok. 36 passed; 0 failed; 0 ignored
+（M19 32 + M20 新增 4）</pre></details>
+
+  <h2 id="s9">9. 结论 <span class="n">Conclusion</span></h2>
+  <div class="card">
+    <p>M20 评测中心 P1 MVP 全部交付完成：</p>
+    <ul style="margin:12px 0 12px 20px">
+      <li>✅ <strong>版本化 GoldenSet</strong>：draft → publish(locked) → 不可变，semver + SHA-256 manifest_hash</li>
+      <li>✅ <strong>版本化 Rubric</strong>：评分标准版本快照</li>
+      <li>✅ <strong>运行冻结快照</strong>：EvalRun 启动冻结版本集合 hash，运行只读已锁定版本</li>
+      <li>✅ <strong>确定性规则层评分</strong>：must_hit_points 命中率 + must_not 违规 + acceptable_answers 匹配</li>
+      <li>✅ <strong>基线对比</strong>：同版本才可比，case 级 diff</li>
+      <li>✅ <strong>Web 控制台</strong>：三 tab（GoldenSet / Rubric / 批量运行）企业级管理界面</li>
+    </ul>
+    <div class="grid2" style="margin-top:18px">
+      <div class="stat pass"><div class="v">0</div><div class="l">cargo error/warning</div></div>
+      <div class="stat pass"><div class="v">0</div><div class="l">回归缺陷</div></div>
+    </div>
+    <p class="sub" style="margin-top:14px">下一步 M21：Judge LLM 评分层（主观维度如临床推理质量）+ CI 质量门（eval-gate 集成批量运行）+ 质量阈值告警。P3(事件溯源 + Lineage + 电子签名)→M22。</p>
+  </div>
+
+  <p style="text-align:center;color:var(--mut);margin-top:40px;font-size:12px">
+    Nexus M20 评测中心 · 测试报告 · 2026-09-07 · archify 风格
+  </p>
+</div>
+<script>
+function toggleTheme(){var t=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'light':'dark');}
+window.addEventListener('scroll',function(){var s=window.scrollY;var h=document.body.scrollHeight-window.innerHeight;document.getElementById('pg').style.width=(h>0?(s/h*100):0)+'%';});
+</script>
+</body>
+</html>

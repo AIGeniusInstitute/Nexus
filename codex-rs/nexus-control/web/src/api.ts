@@ -29,6 +29,15 @@ export interface SkillVersion { id: number; skill_id: number; version: string; c
 export interface Orchestration { id: number; name: string | null; mode: string; status: string; prompt: string | null; created_at: string; completed_at: string | null; }
 export interface AgentStep { id: number; agent_seq: number; role: string | null; thread_id: string; turn_id: number | null; status: string; output_ref: string | null; }
 
+// M20: 版本化 Golden Set + 运行冻结快照
+export interface GoldenSet { id: number; name: string; description: string | null; status: string; active_version_id: number | null; created_at: string; updated_at: string; }
+export interface GoldenSetCase { id: number; golden_set_id: number; case_key: string; domain: string | null; difficulty: string | null; source: string | null; input_json: any; expected_json: any; created_at: string; }
+export interface Rubric { id: number; name: string; status: string; active_version_id: number | null; created_at: string; updated_at: string; }
+export interface EntityVersion { id: number; entity_type: string; entity_id: number; version_no: number; semver: string; manifest_hash: string; status: string; created_at: string; }
+export interface EvalBatchRun { id: number; golden_set_id: number; golden_set_version_id: number; rubric_version_id: number | null; thread_id: string | null; snapshot_hash: string; trigger_type: string; status: string; aggregate: any; started_at: string; finished_at: string | null; }
+export interface EvalCaseResult { id: number; run_id: number; case_id: number; case_key: string; turn_id: number | null; agent_output: string | null; scores: any; created_at: string; }
+export interface CompareResult { incomparable: boolean; baseline_version_id: number; run_version_id: number; diffs: any[]; }
+
 const TOKEN_KEY = "nexus.token";
 export function getToken() { return localStorage.getItem(TOKEN_KEY); }
 export function setToken(t: string) { localStorage.setItem(TOKEN_KEY, t); }
@@ -140,6 +149,23 @@ export const api = {
   orchestration: (id: number) => req<{ orchestration: Orchestration; agents: AgentStep[] }>(`/orchestrations/${id}`),
   startOrchestration: (body: { mode: string; prompt: string; agents?: number; name?: string }) =>
     req<{ orchestration_id: number; status: string }>(`/orchestrations`, { method: "POST", body: JSON.stringify(body) }),
+
+  // M20: Golden Set + Rubric + 批量评测运行
+  goldenSets: () => req<GoldenSet[]>(`/golden-sets`),
+  goldenSet: (id: number) => req<{ golden_set: GoldenSet; cases: GoldenSetCase[] }>(`/golden-sets/${id}`),
+  createGoldenSet: (name: string, description?: string) => req<GoldenSet>(`/golden-sets`, { method: "POST", body: JSON.stringify({ name, description }) }),
+  addCase: (gsId: number, c: { case_key: string; domain?: string; difficulty?: string; source?: string; input_json: any; expected_json: any }) =>
+    req<{ id: number }>(`/golden-sets/${gsId}/cases`, { method: "POST", body: JSON.stringify(c) }),
+  listCases: (gsId: number) => req<GoldenSetCase[]>(`/golden-sets/${gsId}/cases`),
+  publishGoldenSet: (id: number, bump_type?: string) => req<EntityVersion>(`/golden-sets/${id}/publish`, { method: "POST", body: JSON.stringify({ bump_type }) }),
+  rubrics: () => req<Rubric[]>(`/rubrics`),
+  createRubric: (name: string) => req<Rubric>(`/rubrics`, { method: "POST", body: JSON.stringify({ name }) }),
+  publishRubric: (id: number, bump_type: string, criteria: any) => req<EntityVersion>(`/rubrics/${id}/publish`, { method: "POST", body: JSON.stringify({ bump_type, criteria }) }),
+  batchRuns: (limit = 20) => req<EvalBatchRun[]>(`/evals/batch-runs?limit=${limit}`),
+  batchRun: (id: number) => req<{ run: EvalBatchRun; case_results: EvalCaseResult[] }>(`/evals/batch-runs/${id}`),
+  startBatchRun: (body: { golden_set_id: number; rubric_id?: number; thread_id: string }) =>
+    req<{ run_id: number }>(`/evals/batch-runs`, { method: "POST", body: JSON.stringify(body) }),
+  compareBatchRun: (id: number, baseline_run_id: number) => req<CompareResult>(`/evals/batch-runs/${id}/compare`, { method: "POST", body: JSON.stringify({ baseline_run_id }) }),
 };
 
 export function openThreadStream(threadId: string, onItem: (f: any) => void, onRevoke?: () => void): WebSocket {
