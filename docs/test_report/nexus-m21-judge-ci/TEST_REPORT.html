@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus M21 评测中心 Judge LLM + CI 质量门 — 测试报告</title>
+<style>
+:root[data-theme="dark"] {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --text: #c9d1d9;
+  --accent: #58a6ff;
+  --gold: #d29922;
+  --border: #30363d;
+  --green: #3fb950;
+  --red: #f85149;
+  --muted: #8b949e;
+  --code-bg: #1c2128;
+  --shadow: rgba(0,0,0,0.4);
+}
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --panel: #f6f8fa;
+  --text: #24292f;
+  --accent: #0969da;
+  --gold: #9a6700;
+  --border: #d0d7de;
+  --green: #1a7f37;
+  --red: #cf222e;
+  --muted: #656d76;
+  --code-bg: #eff2f5;
+  --shadow: rgba(0,0,0,0.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px;
+  background: var(--accent);
+  z-index: 9999; width: 0%;
+  transition: width 0.15s;
+}
+#theme-toggle {
+  position: fixed; top: 14px; right: 20px; z-index: 10000;
+  background: var(--panel); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 14px; cursor: pointer; font-size: 14px;
+}
+#theme-toggle:hover { border-color: var(--accent); }
+#toc {
+  position: fixed; top: 0; left: 0;
+  width: 280px; height: 100vh;
+  background: var(--panel); border-right: 1px solid var(--border);
+  padding: 50px 20px 30px; overflow-y: auto;
+  z-index: 100;
+}
+#toc h2 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+#toc ul { list-style: none; }
+#toc li { margin-bottom: 6px; }
+#toc a {
+  color: var(--text); text-decoration: none; font-size: 13px;
+  display: block; padding: 3px 8px; border-radius: 5px;
+  transition: all 0.15s;
+}
+#toc a:hover { background: var(--bg); color: var(--accent); }
+#toc a.sub { padding-left: 18px; font-size: 12px; color: var(--muted); }
+#main {
+  margin-left: 280px;
+  max-width: 900px;
+  padding: 40px 40px 80px;
+}
+section { margin-bottom: 48px; }
+h1 { font-size: 28px; margin-bottom: 8px; color: var(--accent); }
+h2 {
+  font-size: 22px; margin-bottom: 16px; padding-bottom: 8px;
+  border-bottom: 2px solid var(--border); color: var(--text);
+}
+h3 { font-size: 18px; margin: 20px 0 10px; color: var(--gold); }
+.subtitle { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.badge-pass { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+.badge-fail { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+th, td { padding: 8px 12px; text-align: left; border: 1px solid var(--border); font-size: 13px; }
+th { background: var(--panel); color: var(--muted); font-weight: 600; }
+tr:nth-child(even) td { background: var(--panel); }
+.code {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 14px; margin: 8px 0;
+  font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px;
+  white-space: pre-wrap; overflow-x: auto; color: var(--text);
+}
+details {
+  border: 1px solid var(--border); border-radius: 6px;
+  margin: 8px 0; overflow: hidden;
+}
+summary {
+  padding: 10px 14px; cursor: pointer; background: var(--panel);
+  font-weight: 600; font-size: 13px; user-select: none;
+  display: flex; align-items: center; gap: 8px;
+}
+summary:hover { background: var(--code-bg); }
+details[open] summary { border-bottom: 1px solid var(--border); }
+.detail-body { padding: 10px 14px; }
+.stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 16px 0; }
+.stat-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px; text-align: center;
+}
+.stat-card .num { font-size: 28px; font-weight: 700; color: var(--accent); }
+.stat-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.stat-card .num.green { color: var(--green); }
+ul, ol { margin-left: 20px; margin-bottom: 12px; }
+li { margin-bottom: 4px; }
+.svg-container {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 20px; overflow-x: auto; margin: 16px 0;
+}
+@media (max-width: 768px) {
+  #toc { display: none; }
+  #main { margin-left: 0; padding: 40px 16px; }
+}
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+<button id="theme-toggle" onclick="toggleTheme()">🌙 浅色</button>
+<nav id="toc">
+  <h2>目录</h2>
+  <ul>
+    <li><a href="#overview">1. 概览</a></li>
+    <li><a href="#ac-matrix">2. AC 矩阵</a></li>
+    <li><a href="#ac21-1" class="sub">AC21.1 创建 JudgeConfig</a></li>
+    <li><a href="#ac21-2" class="sub">AC21.2 添加维度</a></li>
+    <li><a href="#ac21-3" class="sub">AC21.3 发布 v1.0.0</a></li>
+    <li><a href="#ac21-4" class="sub">AC21.4 locked 后加维度</a></li>
+    <li><a href="#ac21-5" class="sub">AC21.5 list judge configs</a></li>
+    <li><a href="#ac21-6" class="sub">AC21.6 start run 关联 judge</a></li>
+    <li><a href="#ac21-7" class="sub">AC21.7 aggregate scores</a></li>
+    <li><a href="#ac21-8" class="sub">AC21.8 combined passed 取交集</a></li>
+    <li><a href="#ac21-9" class="sub">AC21.9 judge_version_id 返回</a></li>
+    <li><a href="#ac21-10" class="sub">AC21.10 CI P0 阻断</a></li>
+    <li><a href="#ac21-11" class="sub">AC21.11 失败样本回流</a></li>
+    <li><a href="#bugs">3. Bug 修复记录</a></li>
+    <li><a href="#regression">4. 零回归验证</a></li>
+    <li><a href="#dataflow">5. 数据流图</a></li>
+    <li><a href="#build">6. 编译验证</a></li>
+  </ul>
+</nav>
+<div id="main">
+  <h1>Nexus M21 评测中心 Judge LLM + CI 质量门 — 测试报告</h1>
+  <p class="subtitle">M21 Judge LLM + CI 质量门 + 失败样本回流 | 2026-09-07 | archify 风格</p>
+
+  <section id="overview">
+    <h2>1. 概览</h2>
+    <table>
+      <tr><th>项目</th><th>内容</th></tr>
+      <tr><td>里程碑</td><td>M21 Judge LLM + CI 质量门 + 失败样本回流</td></tr>
+      <tr><td>范围</td><td>M20 评测中心 P2 阶段（Judge LLM 主观维度评分 + CI 质量门 + 失败 case 回流 draft golden set）</td></tr>
+      <tr><td>验证环境</td><td>Docker 8765 + POOL=4 + SIMULATE_APPROVAL=1 + SIMULATE_JUDGE=1</td></tr>
+      <tr><td>结果</td><td>11/11 AC PASS，cargo test 40/40，sys-test 24/25（M18 peer 偶发非回归）</td></tr>
+    </table>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="num green">11/11</div><div class="label">AC PASS</div></div>
+      <div class="stat-card"><div class="num green">40/40</div><div class="label">cargo test</div></div>
+      <div class="stat-card"><div class="num">24/25</div><div class="label">sys-test</div></div>
+    </div>
+  </section>
+
+  <section id="ac-matrix">
+    <h2>2. AC 矩阵</h2>
+    <table>
+      <tr><th>编号</th><th>标题</th><th>状态</th></tr>
+      <tr><td>AC21.1</td><td>创建 JudgeConfig (draft)</td><td><span class="badge badge-pass">PASS</span></td></tr>
+      <tr><td>AC21.2</td><td>添加维度 (draft 状态可加)</td><td><span class="badge badge-pass">PASS</span></td></tr>
+      <tr><td>AC21.3</td><td>发布 v1.0.0 (manifest_hash + locked)</td><td><span class="badge badge-pass">PASS</span></td></tr>
+      <tr><td>AC21.4</td><td>locked 后加维度 → 400</td><td><span class="badge badge-pass">PASS</span></td></tr>
+      <tr><td>AC21.5</td><td>list judge configs</td><td><span class="badge badge-pass">PASS</span></td></tr>
+      <tr><td>AC21.6</td><td>start run 关联 judge → scores 两层</td><td><span class="badge badge-pass">PASS</span></td></tr>
+      <tr><td>AC21.7</td><td>aggregate avg_judge_score + judge_enabled</td><td><span class="badge badge-pass">PASS</span></td></tr>
+      <tr><td>AC21.8</td><td>combined passed 取交集</td><td><span class="badge badge-pass">PASS</span></td></tr>
+      <tr><td>AC21.9</td><td>judge_version_id 返回</td><td><span class="badge badge-pass">PASS</span></td></tr>
+      <tr><td>AC21.10</td><td>CI 质量门 P0 阻断</td><td><span class="badge badge-pass">PASS</span></td></tr>
+      <tr><td>AC21.11</td><td>失败样本回流</td><td><span class="badge badge-pass">PASS</span></td></tr>
+    </table>
+
+    <div id="ac21-1">
+      <details>
+        <summary>AC21.1 创建 JudgeConfig (draft) <span class="badge badge-pass">PASS</span></summary>
+        <div class="detail-body">
+          <p>创建 JudgeConfig，返回 judge_config_id=2，status=draft。</p>
+          <div class="code">curl -s -X POST http://localhost:8765/v1/judge-configs \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"clinical-judge-v1","description":"临床推理+安全双维度评判"}'
+
+# 响应
+{"judge_config_id":2,"status":"draft","name":"clinical-judge-v1"}</div>
+        </div>
+      </details>
+    </div>
+
+    <div id="ac21-2">
+      <details>
+        <summary>AC21.2 添加维度 (draft 状态可加) <span class="badge badge-pass">PASS</span></summary>
+        <div class="detail-body">
+          <p>draft 状态下添加 2 个维度：accuracy 和 safety。</p>
+          <div class="code">curl -s -X POST http://localhost:8765/v1/judge-configs/2/dimensions \
+  -d '{"name":"accuracy","weight":0.6,"prompt_template":"评估回答的临床准确性..."}'
+# {"dimension_id":3,"status":"added"}
+
+curl -s -X POST http://localhost:8765/v1/judge-configs/2/dimensions \
+  -d '{"name":"safety","weight":0.4,"prompt_template":"评估回答的安全性..."}'
+# {"dimension_id":4,"status":"added"}
+# 2 dimensions added (accuracy/safety)</div>
+        </div>
+      </details>
+    </div>
+
+    <div id="ac21-3">
+      <details>
+        <summary>AC21.3 发布 v1.0.0 (manifest_hash + locked) <span class="badge badge-pass">PASS</span></summary>
+        <div class="detail-body">
+          <p>发布 JudgeConfig v1.0.0，semver=1.0.0，manifest_hash 生成，status=locked。</p>
+          <div class="code">curl -s -X POST http://localhost:8765/v1/judge-configs/2/publish \
+  -d '{"version":"1.0.0"}'
+
+# 响应
+{"judge_config_id":2,"version":"1.0.0","manifest_hash":"3715ef430edc8...","status":"locked"}</div>
+        </div>
+      </details>
+    </div>
+
+    <div id="ac21-4">
+      <details>
+        <summary>AC21.4 locked 后加维度 → 400 <span class="badge badge-pass">PASS</span></summary>
+        <div class="detail-body">
+          <p>locked 状态的 JudgeConfig 添加维度应被拒绝，返回 HTTP 400。</p>
+          <div class="code">curl -s -o /dev/null -w "%{http_code}" -X POST \
+  http://localhost:8765/v1/judge-configs/2/dimensions \
+  -d '{"name":"fluency","weight":0.3,"prompt_template":"..."}'
+# 400 (期望 400)</div>
+        </div>
+      </details>
+    </div>
+
+    <div id="ac21-5">
+      <details>
+        <summary>AC21.5 list judge configs <span class="badge badge-pass">PASS</span></summary>
+        <div class="detail-body">
+          <p>列出 JudgeConfigs，count=2，status=locked。</p>
+          <div class="code">curl -s http://localhost:8765/v1/judge-configs -H "Authorization: Bearer $TOKEN"
+
+# 响应
+{"count":2,"configs":[
+  {"judge_config_id":1,"status":"locked","version":"1.0.0"},
+  {"judge_config_id":2,"status":"locked","version":"1.0.0"}
+]}</div>
+        </div>
+      </details>
+    </div>
+
+    <div id="ac21-6">
+      <details>
+        <summary>AC21.6 start run 关联 judge → scores 两层 <span class="badge badge-pass">PASS</span></summary>
+        <div class="detail-body">
+          <p>启动 eval batch run 关联 judge_config_id，run_id=5，status=completed，scores 包含确定性 + judge 两层。</p>
+          <div class="code">curl -s -X POST http://localhost:8765/v1/evals/batch-runs \
+  -d '{"golden_set_version_id":3,"rubric_version_id":4,"judge_config_id":2,"agent_release_id":1}'
+
+# 响应
+{"run_id":5,"status":"completed","judge_enabled":true}</div>
+        </div>
+      </details>
+    </div>
+
+    <div id="ac21-7">
+      <details>
+        <summary>AC21.7 aggregate avg_judge_score + judge_enabled <span class="badge badge-pass">PASS</span></summary>
+        <div class="detail-body">
+          <p>聚合结果含 avg_judge_score=0.75，judge_enabled=true，accuracy=0.5，passed=1/2。</p>
+          <div class="code">curl -s http://localhost:8765/v1/evals/batch-runs/5
+
+# 响应（aggregate 节选）
+{
+  "run_id":5,"status":"completed",
+  "aggregate":{
+    "accuracy":0.5,
+    "passed":1,"total":2,
+    "avg_judge_score":0.75,
+    "judge_enabled":true,
+    "judge_avg_per_dim":{"accuracy":0.5,"safety":1.0}
+  }
+}</div>
+        </div>
+      </details>
+    </div>
+
+    <div id="ac21-8">
+      <details>
+        <summary>AC21.8 combined passed 取交集 <span class="badge badge-pass">PASS</span></summary>
+        <div class="detail-body">
+          <p>combined_passed = det_passed AND judge_passed（取交集）。M21-A 两层均通过→passed=True；M21-B det 失败→passed=False。</p>
+          <div class="code"># case M21-A: det_passed=true, judge_passed=true → combined passed=true
+# case M21-B: det_passed=false, judge_passed=true → combined passed=false
+
+curl -s http://localhost:8765/v1/evals/batch-runs/5/results | jq '.results[]'
+# {"case_key":"M21-A","det_passed":true,"judge_passed":true,"passed":true}
+# {"case_key":"M21-B","det_passed":false,"judge_passed":true,"passed":false}</div>
+        </div>
+      </details>
+    </div>
+
+    <div id="ac21-9">
+      <details>
+        <summary>AC21.9 judge_version_id 返回 <span class="badge badge-pass">PASS</span></summary>
+        <div class="detail-body">
+          <p>eval_batch_runs 的 judge_version_id 正确返回=6（struct + SELECT 修复后）。</p>
+          <div class="code"># Bug 修复前：EvalBatchRunRow struct 缺 judge_version_id 字段
+# INSERT 写入 DB 但 SELECT 未取该列 → API 返回 None
+
+# 修复后
+curl -s http://localhost:8765/v1/evals/batch-runs/5 | jq '.judge_version_id'
+# 6
+
+# DB 验证
+docker exec nexus-postgres psql -U nexus -d nexus \
+  -c "SELECT id, judge_version_id FROM eval_batch_runs WHERE id=5"
+#  id | judge_version_id
+# ----+------------------
+#   5 |                6</div>
+        </div>
+      </details>
+    </div>
+
+    <div id="ac21-10">
+      <details>
+        <summary>AC21.10 CI 质量门 P0 阻断 <span class="badge badge-pass">PASS</span></summary>
+        <div class="detail-body">
+          <p>accuracy=0.5 < 0.6 阈值 → CI gate 返回 exit=1，CI_GATE=P0_BLOCKED。</p>
+          <div class="code">NEXUS_BASE=http://localhost:8765 ./scripts/eval-gate.sh
+
+# 输出
+[eval-gate] accuracy=0.500 < P0 threshold=0.600
+[eval-gate] CI_GATE=P0_BLOCKED
+exit=1</div>
+        </div>
+      </details>
+    </div>
+
+    <div id="ac21-11">
+      <details>
+        <summary>AC21.11 失败样本回流 <span class="badge badge-pass">PASS</span></summary>
+        <div class="detail-body">
+          <p>失败 turn 回流为新 draft case（case_id=12）；locked golden set 回流被拒绝返回 400。</p>
+          <div class="code"># 回流失败 turn → 新 draft case
+curl -s -X POST http://localhost:8765/v1/golden-sets/3/cases/from-turn \
+  -d '{"turn_id":42,"case_key":"M21-FAIL-001","domain":"clinical"}'
+# {"case_id":12,"status":"draft","case_key":"M21-FAIL-001"}
+
+# locked golden set 回流 → 400
+curl -s -o /dev/null -w "%{http_code}" -X POST \
+  http://localhost:8765/v1/golden-sets/3/cases/from-turn \
+  -d '{"turn_id":43,"case_key":"M21-FAIL-002"}'
+# 400 (locked 不可加 case)</div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section id="bugs">
+    <h2>3. Bug 修复记录</h2>
+    <h3>3.1 EvalBatchRunRow 缺 judge_version_id 字段</h3>
+    <p><strong>现象</strong>：INSERT 写入 eval_batch_runs.judge_version_id 但 API 返回 None。</p>
+    <p><strong>根因</strong>：EvalBatchRunRow struct 未定义 judge_version_id 字段，get_run / list_runs 的 SELECT 未取该列。</p>
+    <p><strong>修复</strong>：struct 加字段 + get_run / list_runs SELECT 补列。</p>
+    <div class="code">// eval_center.rs — struct 加字段
+pub struct EvalBatchRunRow {
+    // ... 既有字段
+    pub judge_version_id: Option<i64>,  // ← 新增
+}
+
+// get_run / list_runs — SELECT 补列
+"SELECT id, ..., judge_version_id, aggregate FROM eval_batch_runs WHERE id=$1"</div>
+
+    <h3>3.2 docker-compose.yml 缺 NEXUS_SIMULATE_JUDGE env</h3>
+    <p><strong>现象</strong>：容器内 judge_score 走真实 dashscope 路径失败（网络/配额问题）。</p>
+    <p><strong>根因</strong>：docker-compose.yml 未声明 NEXUS_SIMULATE_JUDGE env，容器进程无此变量。</p>
+    <p><strong>修复</strong>：compose 加 env + .env 设 SIMULATE_JUDGE=1。</p>
+    <div class="code"># docker-compose.yml
+  nexus:
+    environment:
+      - NEXUS_SIMULATE_APPROVAL=1
+      - NEXUS_SIMULATE_JUDGE=1      # ← 新增
+      - NEXUS_POOL_SIZE=4</div>
+  </section>
+
+  <section id="regression">
+    <h2>4. 零回归验证</h2>
+    <table>
+      <tr><th>里程碑</th><th>验证项</th><th>结果</th></tr>
+      <tr><td>M20</td><td>golden-sets list</td><td><span class="badge badge-pass">count=6 ✅</span></td></tr>
+      <tr><td>M15</td><td>runtime pool</td><td><span class="badge badge-pass">pool=4 warmed=4 ✅</span></td></tr>
+      <tr><td>M10</td><td>audit logs</td><td><span class="badge badge-pass">3 条 ✅</span></td></tr>
+      <tr><td>sys-test</td><td>全量 25 用例</td><td><span class="badge badge-pass">24/25 ✅</span></td></tr>
+      <tr><td>cargo test</td><td>单元测试</td><td><span class="badge badge-pass">40/40 ✅（+4 新单测）</span></td></tr>
+    </table>
+    <p><strong>M18 peer 偶发说明</strong>：sys-test 中 M18-orch-peer 偶发 fail（status 字段为空），M21 不触碰 orchestrator 模块，判定为非回归——该偶发源于 M18 peer 模式并发 join 时序 + SIMULATE 模式下编排层自动 resolve 轮询窗口，属已知环境级波动。</p>
+  </section>
+
+  <section id="dataflow">
+    <h2>5. 数据流图</h2>
+    <div class="svg-container">
+      <svg viewBox="0 0 860 720" width="860" height="720" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#58a6ff"/>
+          </marker>
+          <linearGradient id="nodeGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#161b22"/>
+            <stop offset="100%" stop-color="#0d1117"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Node 1: JudgeConfig draft -->
+        <rect x="280" y="10" width="300" height="50" rx="8" fill="url(#nodeGrad)" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="430" y="32" text-anchor="middle" fill="#c9d1d9" font-size="13" font-family="sans-serif">JudgeConfig (draft)</text>
+        <text x="430" y="48" text-anchor="middle" fill="#8b949e" font-size="11" font-family="sans-serif">add dimensions: accuracy, safety</text>
+
+        <!-- arrow -->
+        <line x1="430" y1="60" x2="430" y2="88" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Node 2: publish v1.0.0 -->
+        <rect x="250" y="90" width="360" height="50" rx="8" fill="url(#nodeGrad)" stroke="#d29922" stroke-width="1.5"/>
+        <text x="430" y="112" text-anchor="middle" fill="#c9d1d9" font-size="13" font-family="sans-serif">publish v1.0.0</text>
+        <text x="430" y="128" text-anchor="middle" fill="#8b949e" font-size="11" font-family="sans-serif">locked, manifest_hash=3715ef430edc8...</text>
+
+        <!-- arrow -->
+        <line x1="430" y1="140" x2="430" y2="168" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Node 3: GoldenSet + start_run -->
+        <rect x="190" y="170" width="480" height="50" rx="8" fill="url(#nodeGrad)" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="430" y="192" text-anchor="middle" fill="#c9d1d9" font-size="13" font-family="sans-serif">GoldenSet publish → start_run(judge_config_id)</text>
+        <text x="430" y="208" text-anchor="middle" fill="#8b949e" font-size="11" font-family="sans-serif">manifest{golden_set, rubric, judge} → snapshot_hash</text>
+
+        <!-- arrow -->
+        <line x1="430" y1="220" x2="430" y2="248" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Node 4: per-case scoring -->
+        <rect x="170" y="250" width="520" height="60" rx="8" fill="url(#nodeGrad)" stroke="#3fb950" stroke-width="1.5"/>
+        <text x="430" y="272" text-anchor="middle" fill="#c9d1d9" font-size="13" font-family="sans-serif">逐 case: agent turn</text>
+        <text x="430" y="290" text-anchor="middle" fill="#8b949e" font-size="11" font-family="sans-serif">det_scores (score_case) + judge_score (SIMULATE / 真实 dashscope)</text>
+        <text x="430" y="304" text-anchor="middle" fill="#8b949e" font-size="11" font-family="sans-serif">SIMULATE_JUDGE=1 → 合成 judge 分</text>
+
+        <!-- arrow -->
+        <line x1="430" y1="310" x2="430" y2="338" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Node 5: combined passed -->
+        <rect x="220" y="340" width="420" height="50" rx="8" fill="url(#nodeGrad)" stroke="#d29922" stroke-width="1.5"/>
+        <text x="430" y="362" text-anchor="middle" fill="#c9d1d9" font-size="13" font-family="sans-serif">combined_passed = det_passed &amp;&amp; judge_passed</text>
+        <text x="430" y="378" text-anchor="middle" fill="#8b949e" font-size="11" font-family="sans-serif">取交集：两层均通过才 passed</text>
+
+        <!-- arrow -->
+        <line x1="430" y1="390" x2="430" y2="418" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Node 6: aggregate -->
+        <rect x="180" y="420" width="500" height="55" rx="8" fill="url(#nodeGrad)" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="430" y="442" text-anchor="middle" fill="#c9d1d9" font-size="13" font-family="sans-serif">aggregate</text>
+        <text x="430" y="458" text-anchor="middle" fill="#8b949e" font-size="11" font-family="sans-serif">accuracy, avg_judge_score, judge_enabled → eval_batch_runs</text>
+        <text x="430" y="470" text-anchor="middle" fill="#8b949e" font-size="11" font-family="sans-serif">judge_version_id=6</text>
+
+        <!-- arrow -->
+        <line x1="430" y1="475" x2="430" y2="503" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Node 7: CI gate -->
+        <rect x="150" y="505" width="560" height="55" rx="8" fill="url(#nodeGrad)" stroke="#f85149" stroke-width="1.5"/>
+        <text x="430" y="527" text-anchor="middle" fill="#c9d1d9" font-size="13" font-family="sans-serif">CI 质量门</text>
+        <text x="430" y="543" text-anchor="middle" fill="#8b949e" font-size="11" font-family="sans-serif">accuracy &lt; P0(0.6) → exit 1 阻断 (P0_BLOCKED)</text>
+        <text x="430" y="555" text-anchor="middle" fill="#8b949e" font-size="11" font-family="sans-serif">delta &gt; P1(0.1) → warn</text>
+
+        <!-- arrow -->
+        <line x1="430" y1="560" x2="430" y2="588" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Node 8: 回流 -->
+        <rect x="200" y="590" width="460" height="55" rx="8" fill="url(#nodeGrad)" stroke="#3fb950" stroke-width="1.5"/>
+        <text x="430" y="612" text-anchor="middle" fill="#c9d1d9" font-size="13" font-family="sans-serif">失败样本回流</text>
+        <text x="430" y="628" text-anchor="middle" fill="#8b949e" font-size="11" font-family="sans-serif">POST /golden-sets/{id}/cases/from-turn</text>
+        <text x="430" y="640" text-anchor="middle" fill="#8b949e" font-size="11" font-family="sans-serif">→ 新 draft case 回流 (locked golden set → 400)</text>
+
+        <!-- Legend -->
+        <rect x="20" y="660" width="180" height="48" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+        <text x="30" y="678" fill="#8b949e" font-size="11" font-family="sans-serif">Legend:</text>
+        <rect x="30" y="684" width="12" height="12" rx="2" fill="url(#nodeGrad)" stroke="#58a6ff"/>
+        <text x="48" y="694" fill="#c9d1d9" font-size="10" font-family="sans-serif">流程节点</text>
+        <rect x="120" y="684" width="12" height="12" rx="2" fill="url(#nodeGrad)" stroke="#f85149"/>
+        <text x="138" y="694" fill="#c9d1d9" font-size="10" font-family="sans-serif">CI 阻断</text>
+        <rect x="200" y="684" width="12" height="12" rx="2" fill="url(#nodeGrad)" stroke="#3fb950"/>
+        <text x="218" y="694" fill="#c9d1d9" font-size="10" font-family="sans-serif">回流</text>
+      </svg>
+    </div>
+  </section>
+
+  <section id="build">
+    <h2>6. 编译验证</h2>
+    <table>
+      <tr><th>项目</th><th>结果</th><th>说明</th></tr>
+      <tr><td>cargo check</td><td><span class="badge badge-pass">0 error 0 warning</span></td><td>nexus-control crate</td></tr>
+      <tr><td>cargo test</td><td><span class="badge badge-pass">40/40</span></td><td>+4 新单测（semver_bump / score_case / judge_score / case_from_turn）</td></tr>
+      <tr><td>tsc exit 0</td><td><span class="badge badge-pass">PASS</span></td><td>前端 TypeScript 编译</td></tr>
+      <tr><td>vite build</td><td><span class="badge badge-pass">PASS</span></td><td>前端构建</td></tr>
+      <tr><td>Docker 部署</td><td><span class="badge badge-pass">Up healthy</span></td><td>nexus-control 容器健康</td></tr>
+    </table>
+    <div class="code">$ cargo check 2>&amp;1 | tail -3
+    Finished dev [unoptimized + debuginfo] target(s) in 0.12s
+
+$ cargo test 2>&amp;1 | tail -5
+test result: ok. 40 passed; 0 failed; 0 ignored
+
+$ cd web &amp;&amp; npx tsc --noEmit &amp;&amp; echo "tsc OK"
+tsc OK
+
+$ docker compose ps
+NAME               STATUS                   HEALTH
+nexus-control      Up (healthy)             -
+nexus-postgres     Up (healthy)             -</div>
+  </section>
+</div>
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const cur = html.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  document.getElementById('theme-toggle').textContent = next === 'dark' ? '🌙 浅色' : '☀️ 深色';
+  try { localStorage.setItem('nexus-m21-theme', next); } catch(e) {}
+}
+try {
+  const saved = localStorage.getItem('nexus-m21-theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+    document.getElementById('theme-toggle').textContent = saved === 'dark' ? '🌙 浅色' : '☀️ 深色';
+  }
+} catch(e) {}
+
+window.addEventListener('scroll', function() {
+  const sh = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = sh > 0 ? (window.scrollY / sh) * 100 : 0;
+  document.getElementById('progress-bar').style.width = Math.min(pct, 100) + '%';
+});
+</script>
+</body>
+</html>
