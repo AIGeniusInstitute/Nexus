@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus 系统环境配置与运维部署文档</title>
+<style>
+  :root[data-theme="dark"]{
+    --bg:#0f1419; --panel:#171d24; --panel2:#1f2731; --text:#d4d4d4; --dim:#8b949e;
+    --accent:#4a9eff; --accent2:#6cb6ff; --gold:#d4a64a; --green:#3fb950; --red:#f85149;
+    --border:#2a323d; --code-bg:#0b0f14; --table-stripe:#1a2027;
+    --svg-bg:#0b0f14; --svg-panel:#1a2330; --svg-text:#c9d1d9; --svg-accent:#4a9eff; --svg-gold:#d4a64a; --svg-green:#3fb950; --svg-red:#f85149; --svg-dim:#6e7681;
+  }
+  :root[data-theme="light"]{
+    --bg:#f6f8fa; --panel:#ffffff; --panel2:#eef1f4; --text:#1f2328; --dim:#57606a;
+    --accent:#0969da; --accent2:#218bff; --gold:#9a6700; --green:#1a7f37; --red:#cf222e;
+    --border:#d0d7de; --code-bg:#f0f2f4; --table-stripe:#f6f8fa;
+    --svg-bg:#ffffff; --svg-panel:#eef1f4; --svg-text:#24292f; --svg-accent:#0969da; --svg-gold:#9a6700; --svg-green:#1a7f37; --svg-red:#cf222e; --svg-dim:#6e7681;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;font-size:15px}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;background:var(--code-bg);padding:.12em .4em;border-radius:4px;font-size:.88em;color:var(--accent2)}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:.85em;line-height:1.5}
+  pre code{background:none;padding:0;color:var(--text)}
+  h1,h2,h3,h4{color:var(--text);line-height:1.3}
+  h2{border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:48px}
+  h3{margin-top:32px;color:var(--accent2)}
+  .muted{color:var(--dim)}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.9em}
+  th,td{border:1px solid var(--border);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:var(--text);font-weight:600}
+  tr:nth-child(even){background:var(--table-stripe)}
+  td code{font-size:.82em}
+  .pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:.78em;font-weight:600}
+  .pill.g{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+  .pill.a{background:rgba(74,158,255,.15);color:var(--accent);border:1px solid rgba(74,158,255,.3)}
+  .pill.y{background:rgba(212,166,74,.15);color:var(--gold);border:1px solid rgba(212,166,74,.3)}
+  .pill.r{background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+
+  /* 顶栏 */
+  header.topbar{position:sticky;top:0;z-index:50;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;height:52px}
+  header.topbar .brand{font-weight:700;font-size:16px;color:var(--accent2)}
+  header.topbar .brand small{color:var(--dim);font-weight:400;margin-left:8px}
+  header.topbar .spacer{flex:1}
+  header.topbar button{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:13px}
+  header.topbar button:hover{border-color:var(--accent)}
+
+  /* 布局 */
+  .layout{display:flex;max-width:1320px;margin:0 auto}
+  nav.toc{flex:0 0 240px;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;padding:18px 10px 18px 18px;border-right:1px solid var(--border);font-size:.9em}
+  nav.toc a{display:block;color:var(--dim);padding:4px 8px;border-radius:5px;border-left:2px solid transparent}
+  nav.toc a:hover{background:var(--panel2);color:var(--text);text-decoration:none;border-left-color:var(--accent)}
+  nav.toc a.l2{padding-left:22px;font-size:.92em}
+  nav.toc .grp{color:var(--gold);font-size:.78em;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 4px;font-weight:700}
+  main{flex:1;min-width:0;padding:0 36px 80px;max-width:1060px}
+
+  /* 滚动进度 */
+  #progress{position:fixed;top:52px;left:0;height:3px;background:var(--accent);z-index:60;transition:width .1s}
+
+  /* hero */
+  .hero{padding:38px 0 22px;border-bottom:1px solid var(--border);margin-bottom:8px}
+  .hero h1{font-size:30px;margin:0 0 6px}
+  .hero .sub{color:var(--dim);font-size:15px}
+  .hero .meta{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin:16px 0}
+  .card h3{margin-top:0}
+  .callout{border-left:3px solid var(--gold);background:rgba(212,166,74,.06);padding:12px 16px;border-radius:6px;margin:14px 0}
+  .callout.red{border-left-color:var(--red);background:rgba(248,81,73,.06)}
+  .callout.blue{border-left-color:var(--accent);background:rgba(74,158,255,.06)}
+  .callout.green{border-left-color:var(--green);background:rgba(63,185,80,.06)}
+
+  details.fold{border:1px solid var(--border);border-radius:8px;margin:10px 0;background:var(--panel)}
+  details.fold[open]{background:var(--panel)}
+  details.fold summary{cursor:pointer;padding:10px 14px;font-weight:600;border-radius:8px;list-style:none;display:flex;align-items:center;gap:8px}
+  details.fold summary::-webkit-details-marker{display:none}
+  details.fold summary::before{content:"▸";color:var(--accent);transition:transform .15s;font-size:.9em}
+  details.fold[open] summary::before{transform:rotate(90deg)}
+  details.fold .body{padding:0 14px 12px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:980px){.grid2{grid-template-columns:1fr} nav.toc{display:none} main{padding:0 18px 60px}}
+
+  svg.arch{width:100%;height:auto;border:1px solid var(--border);border-radius:8px;background:var(--svg-bg);display:block}
+
+  .milestone-bar{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0}
+  .ms{padding:3px 9px;border-radius:12px;font-size:.78em;font-weight:600;border:1px solid var(--green);color:var(--green);background:rgba(63,185,80,.08)}
+  .ms.ext{border-color:var(--gold);color:var(--gold);background:rgba(212,166,74,.08)}
+
+  .stat{display:flex;gap:24px;flex-wrap:wrap;margin:10px 0}
+  .stat .n{font-size:26px;font-weight:700;color:var(--accent2)}
+  .stat .l{font-size:12px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<header class="topbar">
+  <div class="brand">Nexus <small>系统环境配置与运维部署文档</small></div>
+  <div class="spacer"></div>
+  <button id="themeBtn" onclick="toggleTheme()">🌙 浅色</button>
+</header>
+
+<div class="layout">
+<nav class="toc" id="toc"></nav>
+<main>
+
+<!-- ========== HERO ========== -->
+<section class="hero" id="overview">
+  <h1>Nexus 企业级 Agent-Native 平台</h1>
+  <div class="sub">系统环境配置文档 · 一键运维部署脚本 · 控制平面与执行平面架构</div>
+  <div class="meta">
+    <span class="pill a">版本 M0–M19 全交付</span>
+    <span class="pill g">Docker 一键部署</span>
+    <span class="pill y">Web 控制台 11 页</span>
+    <span class="pill g">25/25 系统测试</span>
+  </div>
+  <div class="stat">
+    <div><div class="n">20</div><div class="l">里程碑</div></div>
+    <div><div class="n">44</div><div class="l">API 端点</div></div>
+    <div><div class="n">13</div><div class="l">DB 迁移</div></div>
+    <div><div class="n">23</div><div class="l">控制面模块</div></div>
+    <div><div class="n">32</div><div class="l">单元测试</div></div>
+  </div>
+</section>
+
+<div class="callout blue">
+  <strong>一句话架构判断：</strong> Codex Harness 给的是「一台单用户、本地、可打断的 Agent 引擎」；Nexus 要建的是「让这台引擎变成多租户、可计量、可审计、崩溃不丢会话的企业服务」。前者是执行内核（L5），后者是控制平面（L1–L4 + L6–L7），两者严格分离、不改内核。
+</div>
+
+<!-- ========== 1. 系统环境要求 ========== -->
+<h2 id="env">1. 系统环境要求</h2>
+
+<h3 id="env-hw">1.1 硬件要求</h3>
+<table>
+  <thead><tr><th>资源</th><th>最低</th><th>推荐（生产）</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>CPU</td><td>4 核</td><td>8+ 核</td><td>nexus-control 编译复用宿主机多核；driver 池大小受核数约束</td></tr>
+    <tr><td>内存</td><td>4 GB</td><td>8+ GB</td><td>codex 引擎 ~297MB（strip）+ PG + 容器开销</td></tr>
+    <tr><td>磁盘</td><td>10 GB</td><td>50+ GB</td><td>含 codex 工作区 target/（编译）、Docker 镜像、PG 数据卷</td></tr>
+    <tr><td>架构</td><td>x86_64</td><td>x86_64</td><td>codex 引擎二进制为 x86_64；ARM 需自行重编</td></tr>
+  </tbody>
+</table>
+
+<h3 id="env-os">1.2 操作系统</h3>
+<p>Linux（Ubuntu 22.04+ / Debian 12+ / CentOS 9+ 推荐）。macOS 可开发，但 Docker 部署以 Linux 宿主为目标。Windows 建议 WSL2 + Docker Desktop。</p>
+
+<h3 id="env-deps">1.3 依赖工具</h3>
+<table>
+  <thead><tr><th>工具</th><th>版本要求</th><th>用途</th><th>安装</th></tr></thead>
+  <tbody>
+    <tr><td>Docker</td><td>24+</td><td>容器化部署（引擎 + 控制面 + PG）</td><td><code>curl -fsSL https://get.docker.com | sh</code></td></tr>
+    <tr><td>Docker Compose</td><td>v2（插件）</td><td>多服务编排</td><td>Docker Desktop 自带 / <code>apt install docker-compose-plugin</code></td></tr>
+    <tr><td>Rust 工具链</td><td>1.85+（2024 edition）</td><td>编译 nexus-control 控制面</td><td><code>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh</code></td></tr>
+    <tr><td>Node.js</td><td>20+</td><td>构建 Web 控制台（Vite）</td><td><code>https://nodejs.org</code> 或 nvm</td></tr>
+    <tr><td>codex 引擎二进制</td><td>随仓库</td><td>驱动 turn 的执行内核（L5，黑盒）</td><td>默认 <code>~/.local/bin/codex</code>，用 <code>NEXUS_CODEX_BIN_PATH</code> 覆盖</td></tr>
+    <tr><td>binutils（strip）</td><td>—</td><td>瘦身二进制（非致命）</td><td><code>apt install binutils</code></td></tr>
+    <tr><td>curl / openssl</td><td>—</td><td>健康检查 / 生成 JWT secret</td><td>系统自带</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong>启动 Docker 守护进程（本机已知坑）：</strong> Docker 已装但 systemd 默认 disabled。需执行
+  <code>sudo systemctl start docker.socket docker</code>。Docker context 默认可能指向 Desktop socket（不响应），需 <code>docker context use default</code> 切到系统 dockerd。国内镜像源 <code>docker.1ms.run</code> 已写入 <code>/etc/docker/daemon.json</code>。
+</div>
+
+<h3 id="env-paths">1.4 关键路径</h3>
+<table>
+  <thead><tr><th>路径</th><th>含义</th></tr></thead>
+  <tbody>
+    <tr><td><code>~/Nexus</code></td><td>仓库根目录</td></tr>
+    <tr><td><code>~/Nexus/codex-rs/nexus-control/</code></td><td>控制面 crate（23 模块，本仓库的"系统"）</td></tr>
+    <tr><td><code>~/Nexus/deploy/</code></td><td>部署与运维脚本目录</td></tr>
+    <tr><td><code>~/Nexus/docs/architecture/</code></td><td>平台架构设计文档（9 子目录 62 文件）</td></tr>
+    <tr><td><code>~/Nexus/scripts/sys-test.sh</code></td><td>端到端系统测试脚本（25 用例）</td></tr>
+  </tbody>
+</table>
+
+<!-- ========== 2. 架构 ========== -->
+<h2 id="arch">2. 系统架构</h2>
+
+<svg class="arch" id="svg-arch" viewBox="0 0 980 460" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--svg-dim)"/></marker>
+  </defs>
+  <!-- 控制面 -->
+  <rect x="20" y="20" width="940" height="180" rx="10" fill="var(--svg-panel)" stroke="var(--svg-accent)" stroke-width="1.5"/>
+  <text x="36" y="44" fill="var(--svg-accent)" font-size="13" font-weight="700">控制平面 · 长期有状态 · 多租户 · 强一致</text>
+  <g font-size="11" fill="var(--svg-text)">
+    <rect x="40" y="60" width="130" height="40" rx="6" fill="var(--svg-bg)" stroke="var(--svg-border, #2a323d)"/><text x="105" y="84" text-anchor="middle">API/WS 网关</text>
+    <rect x="185" y="60" width="130" height="40" rx="6" fill="var(--svg-bg)" stroke="#2a323d"/><text x="250" y="84" text-anchor="middle">任务编排</text>
+    <rect x="330" y="60" width="130" height="40" rx="6" fill="var(--svg-bg)" stroke="#2a323d"/><text x="395" y="84" text-anchor="middle">审批中心</text>
+    <rect x="475" y="60" width="130" height="40" rx="6" fill="var(--svg-bg)" stroke="#2a323d"/><text x="540" y="84" text-anchor="middle">策略中心</text>
+    <rect x="620" y="60" width="130" height="40" rx="6" fill="var(--svg-bg)" stroke="#2a323d"/><text x="685" y="84" text-anchor="middle">配额计量</text>
+    <rect x="765" y="60" width="175" height="40" rx="6" fill="var(--svg-bg)" stroke="#2a323d"/><text x="852" y="84" text-anchor="middle">知识库 / 连接器 / Skills</text>
+  </g>
+  <g font-size="11" fill="var(--svg-text)">
+    <rect x="40" y="120" width="445" height="40" rx="6" fill="var(--svg-bg)" stroke="#2a323d"/><text x="262" y="144" text-anchor="middle">Postgres（tenant/user/thread/turn/item/approval/usage/audit · RLS + pgvector）</text>
+    <rect x="495" y="120" width="445" height="40" rx="6" fill="var(--svg-bg)" stroke="#2a323d"/><text x="717" y="144" text-anchor="middle">对象存储（artifacts/rollouts/snapshots · 按租户前缀 + CMK）</text>
+  </g>
+  <text x="36" y="184" fill="var(--svg-dim)" font-size="11">L1–L3 控制平面（自建核心）+ L7 存储/治理</text>
+
+  <!-- 连接线 -->
+  <line x1="490" y1="200" x2="490" y2="248" stroke="var(--svg-dim)" stroke-width="1.2" marker-end="url(#arr)"/>
+  <text x="500" y="226" fill="var(--svg-gold)" font-size="10">① JSON-RPC ② 事件流 ③ 调度</text>
+
+  <!-- 执行面 -->
+  <rect x="20" y="250" width="940" height="190" rx="10" fill="var(--svg-panel)" stroke="var(--svg-gold)" stroke-width="1.5"/>
+  <text x="36" y="274" fill="var(--svg-gold)" font-size="13" font-weight="700">执行平面 · 一次性 · 单租户单任务 · 无状态 · 可销毁</text>
+  <rect x="120" y="294" width="740" height="120" rx="8" fill="var(--svg-bg)" stroke="var(--svg-red)" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="140" y="312" fill="var(--svg-red)" font-size="10">Sandbox Pod（NetworkPolicy: 默认全禁）</text>
+  <g font-size="11" fill="var(--svg-text)">
+    <rect x="150" y="326" width="200" height="70" rx="6" fill="var(--svg-panel)" stroke="#2a323d"/>
+    <text x="250" y="350" text-anchor="middle" font-weight="600">codex app-server</text>
+    <text x="250" y="376" text-anchor="middle" fill="var(--svg-dim)" font-size="10">config.toml + execpolicy</text>
+    <rect x="380" y="326" width="200" height="70" rx="6" fill="var(--svg-panel)" stroke="#2a323d"/>
+    <text x="480" y="350" text-anchor="middle" font-weight="600">Workspace</text>
+    <text x="480" y="376" text-anchor="middle" fill="var(--svg-dim)" font-size="10">git worktree / PVC 快照</text>
+    <rect x="610" y="326" width="200" height="70" rx="6" fill="var(--svg-panel)" stroke="#2a323d"/>
+    <text x="710" y="350" text-anchor="middle" font-weight="600">MCP Gateway sidecar</text>
+    <text x="710" y="376" text-anchor="middle" fill="var(--svg-dim)" font-size="10">凭据注入 · 工具白名单</text>
+  </g>
+  <text x="36" y="430" fill="var(--svg-dim)" font-size="11">L4 执行平面（薄壳 + 复用）+ L5 Harness（黑盒，不改）</text>
+</svg>
+
+<h3 id="arch-layers">2.1 八层分层模型</h3>
+<table>
+  <thead><tr><th>层</th><th>职责</th><th>关键模块</th><th>复用 Codex</th></tr></thead>
+  <tbody>
+    <tr><td>L1 接入层</td><td>多渠道统一入口</td><td>Web 门户、IM Bot、IDE 插件、OpenAPI、CLI</td><td>否</td></tr>
+    <tr><td>L2 网关层</td><td>南北流量、鉴权、实时推送</td><td>API Gateway、WS 网关、OIDC/SAML、限流</td><td>否</td></tr>
+    <tr><td>L3 控制平面</td><td><strong>平台大脑与账本</strong></td><td>身份租户、编排、审批、策略、计量、连接器、知识库</td><td>否（自建核心）</td></tr>
+    <tr><td>L4 执行平面</td><td>Harness 托管外壳</td><td>Runtime 池、沙箱 Pod、MCP Gateway、Workspace</td><td>薄壳 + 复用</td></tr>
+    <tr><td>L5 Harness</td><td>Agent 执行内核</td><td>Agent Loop、Tool Router、ExecPolicy、OS 沙箱</td><td><strong>是（黑盒不改）</strong></td></tr>
+    <tr><td>L6 模型层</td><td>模型访问与计量</td><td>Model Gateway、多模型路由、Token 计量</td><td>部分</td></tr>
+    <tr><td>L7 存储治理</td><td>持久化与可观测</td><td>Postgres(RLS)、对象存储、pgvector、WORM 审计、OTel、评测</td><td>否</td></tr>
+    <tr><td>贯穿</td><td>安全合规</td><td>租户四重取证、KMS、网络策略、审计留存</td><td>否</td></tr>
+  </tbody>
+</table>
+
+<h3 id="arch-principles">2.2 六条设计原则</h3>
+<ol>
+  <li><strong>控制/执行分离</strong>：控制面长期有状态、多租户、强一致；执行面无状态、一次性、可销毁；仅经 app-server 协议与对象存储通信。</li>
+  <li><strong>Harness 不持有企业真相</strong>：租户/权限/凭据/计费/审计全在控制面；沙箱仅持有"本次任务短期令牌 + 最小工作集"。</li>
+  <li><strong>事件即事实</strong>：所有用户可见状态来自 app-server 事件流；前端不直连 Harness。</li>
+  <li><strong>默认最小权限</strong>：新租户默认只读沙箱 + 全量审批；权限只能显式提升。</li>
+  <li><strong>可重建优于高可用</strong>：不为沙箱 Pod 做 HA，而是"任何 Pod 死亡都能从云端状态重建"。</li>
+  <li><strong>配置即政策</strong>：租户差异表达为下发的 <code>config.toml</code> + execpolicy 规则集，而非代码分支。</li>
+</ol>
+
+<!-- ========== 3. 核心组件 ========== -->
+<h2 id="components">3. 核心组件</h2>
+
+<h3 id="comp-nc">3.1 nexus-control 控制面（23 模块）</h3>
+<p>位于 <code>codex-rs/nexus-control/</code>，Rust workspace member，edition 2024。这是本仓库的"系统"，<strong>不修改</strong> codex-rs 内核任何源码。</p>
+<table>
+  <thead><tr><th>模块</th><th>里程碑</th><th>职责</th></tr></thead>
+  <tbody>
+    <tr><td><code>main.rs</code></td><td>M0</td><td>CLI 入口（serve/migrate/login/threads/run/poc）</td></tr>
+    <tr><td><code>http_server.rs</code></td><td>M1</td><td>axum 0.8 REST + WS 路由（44 端点）+ 静态文件服务</td></tr>
+    <tr><td><code>auth.rs</code> / <code>rbac.rs</code></td><td>M1</td><td>JWT HS256 + bcrypt + RBAC check_permission 三级通配</td></tr>
+    <tr><td><code>runtime.rs</code></td><td>M2/M5/M15</td><td>DriverPool（N driver 线程）+ Warm Pool eager spawn + RAII guard</td></tr>
+    <tr><td><code>stdio_client.rs</code></td><td>M2/M7</td><td>app-server JSON-RPC over stdio 客户端 + amendment 回写</td></tr>
+    <tr><td><code>event_store.rs</code></td><td>M2</td><td>事件落库（thread/turn/item 幂等）</td></tr>
+    <tr><td><code>ws.rs</code></td><td>M1/M3</td><td>WebSocket 网关：per-thread broadcast + replay + 撤销断连</td></tr>
+    <tr><td><code>policy.rs</code></td><td>M3/M6/M7</td><td>策略评估 + 自学习 + execpolicy amendment 合并</td></tr>
+    <tr><td><code>execpolicy_rules.rs</code></td><td>M4</td><td>Starlark .rules 生成 + config.toml 写入（租户下发）</td></tr>
+    <tr><td><code>metering.rs</code></td><td>M4</td><td>usage_records + cost 推导 + 每日聚合</td></tr>
+    <tr><td><code>audit.rs</code></td><td>M10</td><td>WORM 审计日志（INSERT-only，PG trigger 防篡改）</td></tr>
+    <tr><td><code>timeline.rs</code></td><td>M11</td><td>per-turn trace_id 贯穿 + timeline/trace 聚合查询</td></tr>
+    <tr><td><code>eval.rs</code></td><td>M12</td><td>评测用例 + 断言 + eval_runs</td></tr>
+    <tr><td><code>kb.rs</code></td><td>M13</td><td>pgvector RAG：embedding + HNSW 混合召回 + 溯源</td></tr>
+    <tr><td><code>fork.rs</code></td><td>M14</td><td>Thread Snapshot + Fork（单 imported turn）+ Rollback（事务删）</td></tr>
+    <tr><td><code>model_gateway.rs</code></td><td>M8/M9</td><td>Responses↔Chat SSE 双向协议转换 + function calling 双向转换</td></tr>
+    <tr><td><code>connectors.rs</code></td><td>M16</td><td>连接器市场治理（tier/status/质量分）</td></tr>
+    <tr><td><code>skills.rs</code></td><td>M17</td><td>Skills 版本快照 + publish + rollback</td></tr>
+    <tr><td><code>orchestrator.rs</code></td><td>M18</td><td>多 Agent 协作（编排者-工作者/对等/批评对抗）HTTP self-call</td></tr>
+    <tr><td><code>mcp.rs</code></td><td>M19</td><td>自建 stdio JSON-RPC 2.0 客户端（真实 MCP 转发）</td></tr>
+    <tr><td><code>db.rs</code></td><td>M1</td><td>Postgres 连接池 + 手动迁移（include_str! + raw_sql）</td></tr>
+  </tbody>
+</table>
+
+<h3 id="comp-engine">3.2 codex 执行引擎（L5，黑盒）</h3>
+<p>位于 <code>codex-rs/</code>（106+ crate Rust 工作区，Apache-2.0，Tokio async）。一个 <strong>Turn</strong> 跑七阶段：准入 → 快照 → 采样 → 工具派发 → 结果回写 → 压缩决策 → 完成/中断。核心原语必须区分：</p>
+<table>
+  <thead><tr><th>原语</th><th>层级</th><th>含义</th></tr></thead>
+  <tbody>
+    <tr><td>Thread</td><td>协议层</td><td>app-server 长生命周期会话（fork/resume/rollback）</td></tr>
+    <tr><td>Session</td><td>Core 内部</td><td>运行态持有者，<strong>不外暴露</strong></td></tr>
+    <tr><td>Turn</td><td>—</td><td>一次任务往返（用户消息 → 模型推理 → 工具调用 → 结果）</td></tr>
+    <tr><td>Step</td><td>—</td><td>Turn 内一次采样快照</td></tr>
+    <tr><td>Item</td><td>—</td><td>Turn 中可持久化的原子事实（命令、文件编辑、工具结果）</td></tr>
+  </tbody>
+</table>
+<div class="callout red"><strong>集成红线：</strong>必须经 <code>app-server</code>（JSON-RPC）集成，<strong>禁用</strong> <code>codex exec</code>（一次性）与 in-process SDK（无法 kill/resume）。只有 app-server 提供 Thread、双向事件流、turn/interrupt、协议级审批回写、thread/resume。</div>
+
+<h3 id="comp-db">3.3 Postgres + pgvector</h3>
+<p>镜像 <code>pgvector/pgvector:pg16</code>。M13 知识库 RAG 依赖 pgvector 扩展（1024 维 HNSW 余弦索引）。13 个 SQL migration 由 <code>nexus-control serve</code> 启动时幂等执行。关键表族：</p>
+<table>
+  <thead><tr><th>域</th><th>表</th><th>里程碑</th></tr></thead>
+  <tbody>
+    <tr><td>身份租户</td><td>users / tenants / threads / memberships / role_grants</td><td>M1</td></tr>
+    <tr><td>会话执行</td><td>turns / items / app_server_events</td><td>M2</td></tr>
+    <tr><td>审批</td><td>approval_tickets / approval_audit / policies</td><td>M3</td></tr>
+    <tr><td>计量</td><td>usage_records / model_pricing</td><td>M4</td></tr>
+    <tr><td>策略学习</td><td>policy_feedback</td><td>M6</td></tr>
+    <tr><td>审计</td><td>audit_logs（WORM trigger 防篡改）</td><td>M10</td></tr>
+    <tr><td>评测</td><td>eval_cases / eval_runs</td><td>M12</td></tr>
+    <tr><td>知识库</td><td>kb_documents（vector(1024) + HNSW）/ knowledge_bases</td><td>M13</td></tr>
+    <tr><td>快照</td><td>workspace_snapshots</td><td>M14</td></tr>
+    <tr><td>生态</td><td>connectors / tool_call_logs / skills / skill_versions</td><td>M16/M17</td></tr>
+    <tr><td>编排</td><td>orchestrations / orchestration_agents</td><td>M18</td></tr>
+  </tbody>
+</table>
+
+<h3 id="comp-web">3.4 Web 控制台（11 页）</h3>
+<p>React 18 + Vite 5 + TypeScript，hash 路由，自写 UI 原语（零重依赖）。构建产物 <code>web-dist/</code> 由 <code>tower-http ServeDir</code> 在容器内 <code>/app/web-dist</code> 服务。单 bundle ~190KB JS / 6KB CSS。</p>
+<div class="grid2">
+  <div class="card"><h3 style="margin-top:0">能力域</h3>
+    <ul>
+      <li>Overview 首页（里程碑矩阵）</li>
+      <li>Threads（时间线 + WS + snapshot fork/rollback）</li>
+      <li>Approvals（审批 + amendment）</li>
+      <li>Orchestration（3 协作模式）</li>
+      <li>KnowledgeBase（RAG 摄入/召回）</li>
+      <li>Connectors（CRUD + 真实 MCP invoke）</li>
+    </ul>
+  </div>
+  <div class="card"><h3 style="margin-top:0">治理域</h3>
+    <ul>
+      <li>Skills（版本 + rollback）</li>
+      <li>Usage（7 日柱图）</li>
+      <li>Policy（规则 + 反馈）</li>
+      <li>Evals（用例 + 断言）</li>
+      <li>Audit（WORM 日志）</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ========== 4. 配置体系 ========== -->
+<h2 id="config">4. 配置体系</h2>
+
+<h3 id="config-env">4.1 环境变量（deploy/.env）</h3>
+<table>
+  <thead><tr><th>变量</th><th>默认</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>NEXUS_JWT_SECRET</code></td><td>自动生成</td><td>JWT HS256 签名密钥，生产必改（<code>openssl rand -hex 32</code>）</td></tr>
+    <tr><td><code>NEXUS_ADMIN_EMAIL</code></td><td>admin@nexus.local</td><td>首次启动 seed 管理员（之后改密需进 DB）</td></tr>
+    <tr><td><code>NEXUS_ADMIN_PASSWORD</code></td><td>admin123</td><td>管理员密码（bcrypt，仅 flag 注入不入镜像）</td></tr>
+    <tr><td><code>NEXUS_POOL_SIZE</code></td><td>4</td><td>并发 driver 池大小（同时 in-flight turn 上限）</td></tr>
+    <tr><td><code>NEXUS_MODEL</code></td><td>deepseek-v4-pro</td><td>模型 id（写入 config.toml + turns.model）</td></tr>
+    <tr><td><code>NEXUS_UPSTREAM_MODEL_URL</code></td><td>空</td><td>模型上游端点（留空走 mock，turn 仍可完成）</td></tr>
+    <tr><td><code>NEXUS_MODEL_KEY</code></td><td>空</td><td><strong>仅从 .env 读取，严禁硬编码进镜像/脚本</strong></td></tr>
+    <tr><td><code>NEXUS_EMBED_MODEL</code></td><td>text-embedding-v3</td><td>知识库 embedding 模型（1024 维）</td></tr>
+    <tr><td><code>NEXUS_SIMULATE_APPROVAL</code></td><td>0</td><td>1=合成审批（无需真实模型验证 HITL/学习闭环）</td></tr>
+    <tr><td><code>NEXUS_SIMULATE_COMMAND</code></td><td>rm -rf /tmp/nexus-sim</td><td>SIMULATE 下注入的命令（策略学习演示）</td></tr>
+    <tr><td><code>NEXUS_DISABLE_WARM_POOL</code></td><td>—</td><td>设 1 关闭 eager spawn（降级 lazy 冷启动）</td></tr>
+    <tr><td><code>NEXUS_POLICY_LEARN_THRESHOLD</code></td><td>3</td><td>策略自学习一致判定阈值</td></tr>
+    <tr><td><code>NEXUS_WEB_DIR</code></td><td>/app/web-dist</td><td>静态资源目录（ServeDir）</td></tr>
+    <tr><td><code>POSTGRES_USER/PASSWORD/DB</code></td><td>nexus</td><td>PG 凭据</td></tr>
+    <tr><td><code>PG_PORT</code> / <code>NEXUS_PORT</code></td><td>5435 / 8765</td><td>端口映射</td></tr>
+    <tr><td><code>RUST_LOG</code></td><td>nexus_control=info</td><td>tracing 日志级别</td></tr>
+  </tbody>
+</table>
+
+<h3 id="config-rules">4.2 config.toml + execpolicy（租户下发）</h3>
+<p>每个租户的 <code>config.toml</code> + <code>.rules</code> 由控制面动态生成写入 <code>NEXUS_CODEX_HOME/rules/tenant-{id}.rules</code> 与 <code>config.toml</code>，app-server 自动加载。差异表达为下发配置而非代码分支。</p>
+<details class="fold"><summary>config.toml 关键字段</summary><div class="body">
+<pre><code>[model]
+model = "deepseek-v4-pro"      # NEXUS_MODEL 注入
+wire_api = "responses"         # codex 强制（chat wire_api 已删）
+
+[approval]
+approval_policy = "untrusted" # 非 allow 命令触发真实审批
+sandbox_mode = "danger-full-access" # 让 codex 发 CommandExecutionRequestApproval</code></pre>
+</div></details>
+<details class="fold"><summary>execpolicy .rules（Starlark 语法）</summary><div class="body">
+<pre><code># prefix_rule: argv 前缀匹配 → 决策
+prefix_rule(pattern=["rm","-rf"], decision="forbidden")   # 种子 deny
+prefix_rule(pattern=["ls"],        decision="allow")      # 种子 allow
+prefix_rule(pattern=["npm","install"], decision="forbidden") # learned (M6)
+prefix_rule(pattern=["git","clone"],   decision="allow")     # amendment (M7)</code></pre>
+<p class="muted">安全单调：deny 永不回退；amendment 优先级 40 &lt; seed deny 80/100；risk=high 拒绝自动 allow。</p>
+</div></details>
+
+<h3 id="config-mig">4.3 数据库迁移（13 个）</h3>
+<p>位于 <code>codex-rs/nexus-control/migrations/</code>，<code>serve</code> 启动时 <code>run_migrations()</code> 幂等执行（include_str! + sqlx::raw_sql，避免 migrate! 宏拉 sqlite feature）。</p>
+<table>
+  <thead><tr><th>迁移</th><th>里程碑</th><th>关键变更</th></tr></thead>
+  <tbody>
+    <tr><td>000001_initial</td><td>M1</td><td>29 表（26 实体 + 2 网关 + app_server_events）+ seed admin</td></tr>
+    <tr><td>000002_m2_runtime</td><td>M2</td><td>items 加 codex_item_id + 部分唯一索引</td></tr>
+    <tr><td>000003_m3_approval</td><td>M3</td><td>approval_tickets/audit + policies（7 种子规则）</td></tr>
+    <tr><td>000004_m4_metering</td><td>M4</td><td>tenants.max_concurrent_turns + model_pricing</td></tr>
+    <tr><td>000005_m6_policy_learning</td><td>M6</td><td>policies.source + policy_feedback</td></tr>
+    <tr><td>000006_m10_audit</td><td>M10</td><td>audit_logs ALTER + WORM trigger</td></tr>
+    <tr><td>000007_m11_tracing</td><td>M11</td><td>turns.trace_id + idx_audit_trace</td></tr>
+    <tr><td>000008_m12_eval</td><td>M12</td><td>eval_cases / eval_runs</td></tr>
+    <tr><td>000009_m13_kb_rag</td><td>M13</td><td>CREATE EXTENSION vector + kb_documents(vector 1024) + HNSW</td></tr>
+    <tr><td>000010_m14_fork_rollback</td><td>M14</td><td>workspace_snapshots ALTER</td></tr>
+    <tr><td>000011_m16_connector_market</td><td>M16</td><td>connectors.tier/status + tool_call_logs</td></tr>
+    <tr><td>000012_m17_skills_market</td><td>M17</td><td>skills.description/status/active_version_id</td></tr>
+    <tr><td>000013_m18_orchestration</td><td>M18</td><td>orchestrations / orchestration_agents</td></tr>
+  </tbody>
+</table>
+
+<!-- ========== 5. API 路由 ========== -->
+<h2 id="api">5. API 路由（44 端点）</h2>
+
+<details class="fold" open><summary>健康与认证</summary><div class="body">
+<table>
+  <tr><td><code>GET</code></td><td><code>/health</code></td><td>健康检查</td></tr>
+  <tr><td><code>POST</code></td><td><code>/v1/auth/login</code></td><td>登录返 JWT</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/auth/me</code></td><td>当前用户 + 权限</td></tr>
+</table>
+</div></details>
+
+<details class="fold"><summary>会话（Thread / Turn / Item）</summary><div class="body">
+<table>
+  <tr><td><code>GET/POST</code></td><td><code>/v1/threads</code></td><td>会话列表 / 创建</td></tr>
+  <tr><td><code>POST</code></td><td><code>/v1/threads/{id}/turns</code></td><td>启动 turn（acquire slot + drain）</td></tr>
+  <tr><td><code>POST</code></td><td><code>/v1/threads/{id}/turns/{tid}/interrupt</code></td><td>中断 turn</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/threads/{id}/items</code></td><td>Item 流</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/ws/threads/{id}/events</code></td><td>WebSocket 事件流（增量 replay）</td></tr>
+</table>
+</div></details>
+
+<details class="fold"><summary>审批中心（HITL）</summary><div class="body">
+<table>
+  <tr><td><code>GET</code></td><td><code>/v1/threads/{id}/approvals</code></td><td>会话审批列表</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/approvals</code></td><td>全局审批列表</td></tr>
+  <tr><td><code>POST</code></td><td><code>/v1/approvals/{aid}/resolve</code></td><td>批准/拒绝/带 amendment 批准</td></tr>
+</table>
+</div></details>
+
+<details class="fold"><summary>计量 / 策略 / 审计 / 追踪</summary><div class="body">
+<table>
+  <tr><td><code>GET</code></td><td><code>/v1/usage?days=N</code></td><td>租户用量聚合</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/usage/users/{uid}</code></td><td>用户用量（admin 跨租户）</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/policy/feedback</code></td><td>策略反馈记录</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/policy/rules</code></td><td>当前生效规则</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/audit/logs</code></td><td>WORM 审计日志（admin 跨租户）</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/audit/logs/{id}</code></td><td>单条审计</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/threads/{id}/timeline</code></td><td>时间线聚合</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/traces/{trace_id}</code></td><td>trace 关联查询</td></tr>
+</table>
+</div></details>
+
+<details class="fold"><summary>评测 / 知识库 / 快照</summary><div class="body">
+<table>
+  <tr><td><code>POST/GET</code></td><td><code>/v1/evals/cases</code></td><td>评测用例</td></tr>
+  <tr><td><code>POST</code></td><td><code>/v1/evals/runs/{cid}</code></td><td>对 turn 断言</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/evals/runs</code></td><td>评测结果</td></tr>
+  <tr><td><code>POST/GET</code></td><td><code>/v1/kbs</code></td><td>知识库</td></tr>
+  <tr><td><code>POST/GET</code></td><td><code>/v1/kbs/{id}/documents</code></td><td>文档摄入</td></tr>
+  <tr><td><code>DELETE</code></td><td><code>/v1/kbs/{id}/documents/{did}</code></td><td>删除文档</td></tr>
+  <tr><td><code>POST</code></td><td><code>/v1/kbs/{id}/search</code></td><td>混合召回</td></tr>
+  <tr><td><code>POST/GET</code></td><td><code>/v1/threads/{id}/snapshots</code></td><td>快照</td></tr>
+  <tr><td><code>POST</code></td><td><code>/v1/threads/{id}/snapshots/{sid}/fork</code></td><td>分叉新线程</td></tr>
+  <tr><td><code>POST</code></td><td><code>/v1/threads/{id}/snapshots/{sid}/rollback</code></td><td>回滚</td></tr>
+</table>
+</div></details>
+
+<details class="fold"><summary>运行时 / 连接器 / Skills / 编排</summary><div class="body">
+<table>
+  <tr><td><code>GET</code></td><td><code>/v1/runtime/pool</code></td><td>driver 池状态（warmed/in_flight/free）</td></tr>
+  <tr><td><code>POST/GET</code></td><td><code>/v1/connectors</code></td><td>连接器 CRUD</td></tr>
+  <tr><td><code>GET/PUT/DELETE</code></td><td><code>/v1/connectors/{id}</code></td><td>单连接器</td></tr>
+  <tr><td><code>POST</code></td><td><code>/v1/connectors/{id}/publish|offline</code></td><td>发布/下线（admin）</td></tr>
+  <tr><td><code>GET/POST</code></td><td><code>/v1/connectors/{id}/quality|invoke</code></td><td>质量分 / 真实 MCP 调用</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/connectors/{id}/calls</code></td><td>调用历史</td></tr>
+  <tr><td><code>POST/GET</code></td><td><code>/v1/skills</code></td><td>技能 CRUD</td></tr>
+  <tr><td><code>POST/GET</code></td><td><code>/v1/skills/{id}/versions</code></td><td>版本快照</td></tr>
+  <tr><td><code>POST</code></td><td><code>/v1/skills/{id}/rollback</code></td><td>回滚 active 版本</td></tr>
+  <tr><td><code>POST/GET</code></td><td><code>/v1/orchestrations</code></td><td>启动/列表协作</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/orchestrations/{id}</code></td><td>协作详情</td></tr>
+</table>
+</div></details>
+
+<!-- ========== 6. 部署架构 ========== -->
+<h2 id="deploy">6. 部署架构（Docker 一键）</h2>
+
+<svg class="arch" viewBox="0 0 980 340" xmlns="http://www.w3.org/2000/svg">
+  <rect x="20" y="20" width="940" height="300" rx="12" fill="var(--svg-panel)" stroke="var(--svg-accent)" stroke-width="1.5"/>
+  <text x="40" y="46" fill="var(--svg-accent)" font-size="13" font-weight="700">Docker 宿主（本机）</text>
+
+  <!-- postgres -->
+  <rect x="60" y="70" width="380" height="220" rx="8" fill="var(--svg-bg)" stroke="#2a323d"/>
+  <text x="80" y="94" fill="var(--svg-text)" font-size="13" font-weight="700">nexus-postgres</text>
+  <text x="80" y="112" fill="var(--svg-dim)" font-size="10">pgvector/pgvector:pg16</text>
+  <text x="80" y="140" fill="var(--svg-text)" font-size="11">▸ POSTGRES_USER/PASSWORD/DB</text>
+  <text x="80" y="160" fill="var(--svg-text)" font-size="11">▸ 健康检查: pg_isready（3s/30retries）</text>
+  <text x="80" y="180" fill="var(--svg-text)" font-size="11">▸ 卷: nexus-pg-data（持久化）</text>
+  <text x="80" y="200" fill="var(--svg-text)" font-size="11">▸ 端口: 5435:5432</text>
+  <text x="80" y="228" fill="var(--svg-gold)" font-size="10">schema: 29 表 + 13 migration（M1–M18）</text>
+  <text x="80" y="252" fill="var(--svg-gold)" font-size="10">扩展: vector（HNSW cosine）</text>
+
+  <!-- nexus -->
+  <rect x="540" y="70" width="380" height="220" rx="8" fill="var(--svg-bg)" stroke="#2a323d"/>
+  <text x="560" y="94" fill="var(--svg-text)" font-size="13" font-weight="700">nexus-control</text>
+  <text x="560" y="112" fill="var(--svg-dim)" font-size="10">debian:bookworm-slim（~400MB 瘦镜像）</text>
+  <text x="560" y="140" fill="var(--svg-text)" font-size="11">▸ /usr/local/bin/nexus-control（控制面）</text>
+  <text x="560" y="160" fill="var(--svg-text)" font-size="11">▸ /usr/local/bin/codex（引擎 strip ~297MB）</text>
+  <text x="560" y="180" fill="var(--svg-text)" font-size="11">▸ /app/web-dist（静态资源 ServeDir）</text>
+  <text x="560" y="200" fill="var(--svg-text)" font-size="11">▸ 卷: nexus-codex-home（config.toml/rules）</text>
+  <text x="560" y="220" fill="var(--svg-text)" font-size="11">▸ 端口: 8765:8765（HTTP + WS）</text>
+  <text x="560" y="248" fill="var(--svg-green)" font-size="10">serve: 迁移 + seed admin + driver pool</text>
+  <text x="560" y="272" fill="var(--svg-green)" font-size="10">健康: curl /health（5s/30retries）</text>
+
+  <!-- 连接 -->
+  <line x1="440" y1="160" x2="540" y2="160" stroke="var(--svg-accent)" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="460" y="152" fill="var(--svg-dim)" font-size="10">PG</text>
+  <line x1="540" y1="200" x2="440" y2="200" stroke="var(--svg-dim)" stroke-width="1" stroke-dasharray="3 3"/>
+</svg>
+
+<h3 id="deploy-strategy">6.1 构建策略</h3>
+<div class="callout"><strong>宿主机编译 + 瘦镜像打包</strong>（非容器内全量编译）：codex 工作区 100+ crate，容器内从零 release 编译耗时极长；nexus-control 是小 crate，宿主机多核秒级完成（<code>cargo build --release -p nexus-control</code>）。codex 引擎二进制复用驱动 M0–M19 的同一份（strip 后入镜像）。Web 控制台 <code>npm install + vite build</code> 在宿主机构建后 COPY 进上下文。</div>
+
+<h3 id="deploy-volumes">6.2 数据卷与端口</h3>
+<table>
+  <thead><tr><th>卷</th><th>挂载</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>nexus-pg-data</code></td><td>/var/lib/postgresql/data</td><td>PG 数据（跨重启保留）</td></tr>
+    <tr><td><code>nexus-codex-home</code></td><td>/app/.codex</td><td>config.toml + rules/ + 子进程工作目录</td></tr>
+  </tbody>
+</table>
+
+<!-- ========== 7. 运维操作手册 ========== -->
+<h2 id="ops">7. 运维操作手册（ops.sh）</h2>
+<p>一键运维脚本 <code>deploy/ops.sh</code> 覆盖全生命周期。部署细节（编译+打包+启动）委托 <code>deploy/deploy.sh</code>，本脚本聚焦运维动作。</p>
+
+<table>
+  <thead><tr><th>子命令</th><th>作用</th></tr></thead>
+  <tbody>
+    <tr><td><code>up [--no-build]</code></td><td>全流程部署（编译+构建镜像+启动+健康检查）</td></tr>
+    <tr><td><code>down</code></td><td>停止容器，保留数据卷</td></tr>
+    <tr><td><code>restart</code></td><td>仅重启 nexus 控制面（不动 Postgres）</td></tr>
+    <tr><td><code>purge</code></td><td>停止 + 删数据卷（清空 DB，需二次确认）</td></tr>
+    <tr><td><code>status</code></td><td>容器状态 + /health + driver 池 + 用量 + 待审批</td></tr>
+    <tr><td><code>health</code></td><td>仅健康检查</td></tr>
+    <tr><td><code>logs [nexus|postgres]</code></td><td>跟随日志</td></tr>
+    <tr><td><code>psql [sql]</code></td><td>进入 psql 或执行单条 SQL</td></tr>
+    <tr><td><code>shell</code></td><td>进入 nexus 容器 bash</td></tr>
+    <tr><td><code>backup [file]</code></td><td>pg_dump 逻辑备份到 downloads/（gzip）</td></tr>
+    <tr><td><code>restore &lt;file&gt;</code></td><td>从备份恢复（覆盖，需确认）</td></tr>
+    <tr><td><code>upgrade</code></td><td>git pull + 重新编译 + 重建 + 重启</td></tr>
+    <tr><td><code>rebuild-web</code></td><td>仅重建前端并热替换（不重启后端，刷新即生效）</td></tr>
+    <tr><td><code>sys-test</code></td><td>端到端系统测试（M0–M19，25 用例）</td></tr>
+    <tr><td><code>env-check</code></td><td>前置依赖 + 配置 + 端口自检</td></tr>
+  </tbody>
+</table>
+
+<h3 id="ops-quick">7.1 快速操作</h3>
+<pre><code># 首次部署
+cd ~/Nexus
+$EDITOR deploy/.env          # 填模型 key（或留空走 mock）
+./deploy/ops.sh env-check    # 自检
+./deploy/ops.sh up           # 部署
+
+# 日常运维
+./deploy/ops.sh status       # 一眼看全貌
+./deploy/ops.sh logs         # 看日志
+./deploy/ops.sh health       # 健康检查
+
+# 升级 / 前端热更
+./deploy/ops.sh upgrade      # 拉新代码 + 重新部署
+./deploy/ops.sh rebuild-web  # 只更前端，不重启后端
+
+# 备份恢复
+./deploy/ops.sh backup       # → downloads/nexus-backup-*.sql.gz
+./deploy/ops.sh restore downloads/nexus-backup-20260907-081900.sql.gz
+
+# 数据库
+./deploy/ops.sh psql "SELECT count(*) FROM turns WHERE status='running';"
+./deploy/ops.sh shell        # 进容器排查
+
+# 系统测试
+./deploy/ops.sh sys-test     # 25 用例端到端</code></pre>
+
+<h3 id="ops-faq">7.2 排障 FAQ</h3>
+<details class="fold"><summary>nexus-control 健康检查超时 / CrashLoopBackOff</summary><div class="body">
+<pre><code>./deploy/ops.sh logs nexus | tail -60
+# 常见：
+#  - NEXUS_JWT_SECRET 缺失 → deploy.sh 首次会自动生成
+#  - PG 未就绪 → depends_on service_healthy 已保证，检查 nexus-postgres 健康
+#  - admin 凭据未注入 → compose command flag 已注入，确认 .env 有 NEXUS_ADMIN_*</code></pre>
+</div></details>
+<details class="fold"><summary>端口 5435 / 8765 被占用</summary><div class="body">
+<pre><code>ss -tlnp | grep -E ':5435|:8765'
+# 改 .env: PG_PORT / NEXUS_PORT 为空闲端口后 ./deploy/ops.sh up</code></pre>
+</div></details>
+<details class="fold"><summary>429 too_many_concurrent_turns</summary><div class="body">
+<pre><code># 残留 running turn 阻塞门控
+./deploy/ops.sh psql "UPDATE turns SET status='interrupted' WHERE status='running';"
+./deploy/ops.sh restart</code></pre>
+</div></details>
+<details class="fold"><summary>Docker context 不响应</summary><div class="body">
+<pre><code>docker context use default   # 切到系统 dockerd（非 Desktop）
+sudo systemctl start docker.socket docker</code></pre>
+</div></details>
+<details class="fold"><summary>npm install 缺 esbuild 二进制</summary><div class="body">
+<pre><code># allow-scripts 拦截 postinstall，手动补装
+cd ~/Nexus/codex-rs/nexus-control/web
+node node_modules/esbuild/install.js
+# 或直接 ./deploy/ops.sh rebuild-web（脚本已自动处理）</code></pre>
+</div></details>
+
+<!-- ========== 8. 安全与合规 ========== -->
+<h2 id="security">8. 安全与合规</h2>
+
+<div class="grid2">
+  <div class="card"><h3 style="margin-top:0">🔒 密钥隔离</h3>
+    <ul>
+      <li><code>NEXUS_MODEL_KEY</code> 仅经 <code>.env</code> 注入 compose env，<strong>不写入镜像/脚本/记忆</strong></li>
+      <li>JWT HS256 随机密钥（<code>openssl rand -hex 32</code>），生产强制非默认</li>
+      <li>管理员密码 bcrypt 哈希，仅 CLI flag 注入</li>
+      <li>沙箱内零长期密钥：短期、按任务绑定、可撤销令牌</li>
+    </ul>
+  </div>
+  <div class="card"><h3 style="margin-top:0">📜 WORM 审计</h3>
+    <ul>
+      <li><code>audit_logs</code> 表 PG trigger <code>prevent_audit_modification</code>：BEFORE UPDATE OR DELETE → RAISE EXCEPTION</li>
+      <li>应用层 <code>audit_log()</code> 只 INSERT、best-effort（失败不阻塞业务）</li>
+      <li>login / turn / approval / interrupt 全埋点，trace_id 贯穿</li>
+      <li>admin 跨租户可见，非 admin 本租户隔离</li>
+    </ul>
+  </div>
+  <div class="card"><h3 style="margin-top:0">🛡️ 沙箱三层隔离</h3>
+    <ul>
+      <li>容器层：K8s + Seccomp/AppArmor/Kata/Firecracker</li>
+      <li>命令层：codex OS 沙箱（Seatbelt/Landlock+seccomp+bwrap）</li>
+      <li>网络层：NetworkPolicy 默认全禁，仅放行 Model/MCP Gateway</li>
+    </ul>
+  </div>
+  <div class="card"><h3 style="margin-top:0">🏢 多租户隔离</h3>
+    <ul>
+      <li>逻辑：PG RLS（行级安全）</li>
+      <li>运行时：namespace 隔离</li>
+      <li>密钥：按租户 CMK</li>
+      <li>存储：按租户前缀</li>
+      <li>四重取证，"租户 A 拿到租户 B 数据"可验证</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout red"><strong>策略安全单调性：</strong> deny 永不回退（人 approve 也不降级 learned deny）。execpolicy amendment 优先级 40 &lt; seed deny；risk=high 拒绝自动 allow；UPSERT <code>WHERE source!='seed'</code> 不覆盖种子 deny。新租户默认只读沙箱 + 全量审批，权限只能显式提升。</div>
+
+<!-- ========== 9. 里程碑全景 ========== -->
+<h2 id="milestones">9. 里程碑全景（M0–M19）</h2>
+<div class="milestone-bar">
+  <span class="ms">M0 PoC</span><span class="ms">M1 身份</span><span class="ms">M2 执行闭环</span><span class="ms">M3 审批</span><span class="ms">M4 计量</span>
+  <span class="ms">M5 并发池</span><span class="ms">M6 策略学习</span><span class="ms">M7 amendment</span><span class="ms">M8 真实模型</span><span class="ms">M9 function call</span>
+  <span class="ms">M10 审计</span><span class="ms">M11 tracing</span><span class="ms">M12 评测</span><span class="ms">M13 RAG</span><span class="ms">M14 fork</span>
+  <span class="ms">M15 warm pool</span><span class="ms">M16 连接器</span><span class="ms">M17 skills</span><span class="ms">M18 协作</span><span class="ms">M19 MCP</span>
+  <span class="ms ext">Docker</span><span class="ms ext">Web 控制台</span>
+</div>
+
+<table>
+  <thead><tr><th>阶段</th><th>里程碑</th><th>状态</th></tr></thead>
+  <tbody>
+    <tr><td>① PoC</td><td>M0 stdio 集成+事件落库+resume+execpolicy+三层沙箱</td><td><span class="pill g">✓ 完成</span></td></tr>
+    <tr><td>② 单租户 MVP</td><td>M1–M4 身份/执行闭环/审批/计量</td><td><span class="pill g">✓ 完成</span></td></tr>
+    <tr><td>③ 多租户隔离</td><td>M5–M7 并发池/策略自学习/execpolicy 回写</td><td><span class="pill g">✓ 完成</span></td></tr>
+    <tr><td>④ 可靠性治理</td><td>M8–M10 真实模型/function calling/审计 WORM</td><td><span class="pill g">✓ 完成</span></td></tr>
+    <tr><td>⑤ 可观测评测</td><td>M11–M12 全链路 tracing/评测 CI 门禁</td><td><span class="pill g">✓ 完成</span></td></tr>
+    <tr><td>⑥ 知识协作生态</td><td>M13–M19 KB RAG/fork/连接器/skills/协作/MCP</td><td><span class="pill g">✓ 完成</span></td></tr>
+    <tr><td>部署 + Web</td><td>Docker 一键 + Web 控制台 11 页</td><td><span class="pill g">✓ 完成</span></td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong>外部环境依赖项（按用户指令留置，非代码缺口）：</strong>
+  IM Bot 推送审批卡片（飞书/钉钉 bot token）· per-tenant 独占 slot（真实多租户场景驱动）· 多 Pod 分布式 driver 池（Redis 跨 Pod 调度，需真实 K8s）· 多模型路由（配额超限）· 私有化部署（vLLM/Ollama）· 100+ 并发稳定性（需 K8s HPA）。
+</div>
+
+<div class="muted" style="margin-top:48px;text-align:center;font-size:.85em">
+  Nexus · 系统环境配置与运维部署文档 · 基于 codex-rs Harness · M0–M19 全交付 · 2026-09-07
+</div>
+
+</main>
+</div>
+
+<script>
+// 主题切换
+function toggleTheme(){
+  var html=document.documentElement, cur=html.getAttribute('data-theme');
+  var next = cur==='dark'?'light':'dark';
+  html.setAttribute('data-theme', next);
+  document.getElementById('themeBtn').textContent = next==='dark'?'🌙 浅色':'☀ 深色';
+  try{localStorage.setItem('nexus-theme', next);}catch(e){}
+}
+(function(){try{var t=localStorage.getItem('nexus-theme');if(t){document.documentElement.setAttribute('data-theme',t);document.getElementById('themeBtn').textContent=t==='dark'?'🌙 浅色':'☀ 深色';}}catch(e){}})();
+
+// 滚动进度
+window.addEventListener('scroll', function(){
+  var st=document.documentElement.scrollTop||document.body.scrollTop;
+  var sh=(document.documentElement.scrollHeight||document.body.scrollHeight)-window.innerHeight;
+  var p=sh>0?(st/sh*100):0;
+  document.getElementById('progress').style.width=p+'%';
+});
+
+// 生成目录
+(function(){
+  var nav=document.getElementById('toc');
+  var secs=document.querySelectorAll('main h2');
+  var html='';
+  var lastWasH2=false;
+  secs.forEach(function(h){
+    if(!h.id) return;
+    var lvl=h.tagName==='H2'?'l1':'l2';
+    if(lvl==='l1'){ html+='<a class="l1" href="#'+h.id+'">'+h.textContent.replace(/^\d+\.\s*/,'')+'</a>'; }
+  });
+  // 加分组小标题
+  var groups=[
+    {before:'overview',label:'总览'},
+    {before:'env',label:'环境要求'},
+    {before:'arch',label:'架构'},
+    {before:'components',label:'组件'},
+    {before:'config',label:'配置'},
+    {before:'api',label:'API'},
+    {before:'deploy',label:'部署'},
+    {before:'ops',label:'运维'},
+    {before:'security',label:'安全'},
+    {before:'milestones',label:'里程碑'}
+  ];
+  // 简单平铺目录
+  nav.innerHTML=html;
+})();
+</script>
+</body>
+</html>
