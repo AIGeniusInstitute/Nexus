@@ -27,8 +27,12 @@ use uuid::Uuid;
 use crate::auth::{AuthProvider, AuthUser, JwtIssuer};
 use crate::audit;
 use crate::connectors;
+use crate::content_store;
+use crate::domain_events;
+use crate::esign;
 use crate::eval;
 use crate::eval_center;
+use crate::lineages;
 use crate::skills;
 use crate::fork;
 use crate::kb;
@@ -114,6 +118,14 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/judge-configs/{id}/dimensions", post(jc_add_dimension))
         .route("/v1/judge-configs/{id}/publish", post(jc_publish))
         .route("/v1/golden-sets/{id}/cases/from-turn", post(gs_case_from_turn))
+        // M22: event sourcing + lineage + e-signature + CAS
+        .route("/v1/events/{etype}/{eid}", get(event_list))
+        .route("/v1/lineage/{etype}/{eid}", get(lineage_get))
+        .route("/v1/esign", post(esign_sign))
+        .route("/v1/esign/{id}", get(esign_get))
+        .route("/v1/esign/{id}/verify", get(esign_verify))
+        .route("/v1/esigns", get(esign_list))
+        .route("/v1/content", post(content_store_write))
         .route("/v1/kbs", post(kb_create).get(kb_list))
         .route("/v1/kbs/{id}/documents", post(kb_doc_ingest).get(kb_doc_list))
         .route("/v1/kbs/{id}/documents/{did}", axum::routing::delete(kb_doc_delete))
@@ -883,6 +895,12 @@ async fn approval_resolve(
         Some("approval"), Some(&aid.to_string()),
         Some(&detail), trace_id.as_deref(),
     ).await;
+    // M22: also emit into the domain event stream (event-sourced timeline;
+    // distinct from the M10 WORM audit log — this is the lifecycle feed).
+    domain_events::record_event(
+        &st.pool, c.tid, "approval", aid, "approval_resolved",
+        &serde_json::json!({"decision": new_status, "turn_id": turn_id, "command": command}),
+    ).await;
 
     // M5: dispatch the resolve to the driver slot running this turn. If the
     // turn already completed (no slot mapping), the ticket is already marked
@@ -1179,6 +1197,10 @@ async fn gs_publish(
 ) -> Result<Json<eval_center::EntityVersionRow>, (StatusCode, String)> {
     let row = eval_center::publish_golden_set_version(&st.pool, c.tid, id, c.uid, req).await
         .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    domain_events::record_event(
+        &st.pool, c.tid, "golden_set", id, "published",
+        &serde_json::json!({"version_id": row.id, "semver": row.semver, "manifest_hash": row.manifest_hash}),
+    ).await;
     Ok(Json(row))
 }
 
@@ -1215,6 +1237,10 @@ async fn eval_batch_start(
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let run_id = eval_center::start_run(&st.pool, &st.base_url, &st.jwt, &c, req).await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    domain_events::record_event(
+        &st.pool, c.tid, "eval_batch_run", run_id, "run_completed",
+        &serde_json::json!({"trigger": "manual"}),
+    ).await;
     Ok(Json(serde_json::json!({"run_id": run_id})))
 }
 
@@ -1280,6 +1306,10 @@ async fn jc_publish(
 ) -> Result<Json<eval_center::EntityVersionRow>, (StatusCode, String)> {
     let row = eval_center::publish_judge_config_version(&st.pool, c.tid, id, c.uid, req).await
         .map_err(map_eval_err)?;
+    domain_events::record_event(
+        &st.pool, c.tid, "judge_config", id, "published",
+        &serde_json::json!({"version_id": row.id, "semver": row.semver, "manifest_hash": row.manifest_hash}),
+    ).await;
     Ok(Json(row))
 }
 
@@ -1554,4 +1584,108 @@ async fn snapshot_rollback(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(serde_json::json!({ "deleted_items": di, "deleted_turns": dt })))
+}
+
+// ===== M22: event sourcing + lineage + e-signature + CAS handlers =====
+
+#[derive(Deserialize)]
+struct EventQuery {
+    as_of: Option<DateTime<Utc>>,
+    // when as_of is set, also return the replayed state snapshot
+    replay: Option<bool>,
+}
+
+async fn event_list(
+    AuthUser(c): AuthUser,
+    State(st): State<AppState>,
+    Path((etype, eid)): Path<(String, i64)>,
+    Query(q): Query<EventQuery>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let events = domain_events::list_events(&st.pool, c.tid, &etype, eid, q.as_of)
+        .await
+        .map_err(map_eval_err)?;
+    let replay = if q.replay.unwrap_or(false) {
+        domain_events::replay_state(&events)
+    } else {
+        Value::Null
+    };
+    Ok(Json(serde_json::json!({
+        "entity_type": etype,
+        "entity_id": eid,
+        "as_of": q.as_of.map(|t| t.to_rfc3339()),
+        "events": events,
+        "replayed_state": replay,
+    })))
+}
+
+async fn lineage_get(
+    AuthUser(c): AuthUser,
+    State(st): State<AppState>,
+    Path((etype, eid)): Path<(String, i64)>,
+) -> Result<Json<lineages::LineageGraph>, (StatusCode, String)> {
+    let g = lineages::lineage_for(&st.pool, c.tid, &etype, eid)
+        .await
+        .map_err(map_eval_err)?;
+    Ok(Json(g))
+}
+
+async fn esign_sign(
+    AuthUser(c): AuthUser,
+    State(st): State<AppState>,
+    Json(req): Json<esign::SignReq>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let id = esign::sign(&st.pool, c.tid, c.uid, &req)
+        .await
+        .map_err(map_eval_err)?;
+    Ok(Json(serde_json::json!({ "esign_id": id })))
+}
+
+async fn esign_get(
+    AuthUser(c): AuthUser,
+    State(st): State<AppState>,
+    Path(id): Path<i64>,
+) -> Result<Json<esign::EsignRow>, (StatusCode, String)> {
+    let row = esign::get_esign(&st.pool, c.tid, id)
+        .await
+        .map_err(map_eval_err)?;
+    Ok(Json(row))
+}
+
+async fn esign_verify(
+    AuthUser(c): AuthUser,
+    State(st): State<AppState>,
+    Path(id): Path<i64>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let v = esign::verify_esign(&st.pool, c.tid, id)
+        .await
+        .map_err(map_eval_err)?;
+    Ok(Json(v))
+}
+
+#[derive(Deserialize)]
+struct EsignListQuery {
+    entity_type: String,
+    entity_id: i64,
+}
+
+async fn esign_list(
+    AuthUser(c): AuthUser,
+    State(st): State<AppState>,
+    Query(q): Query<EsignListQuery>,
+) -> Result<Json<Vec<esign::EsignRow>>, (StatusCode, String)> {
+    let rows = esign::list_esigns(&st.pool, c.tid, &q.entity_type, q.entity_id)
+        .await
+        .map_err(map_eval_err)?;
+    Ok(Json(rows))
+}
+
+async fn content_store_write(
+    AuthUser(_c): AuthUser,
+    State(st): State<AppState>,
+    Json(req): Json<content_store::StoreReq>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let hash = content_store::store_content(&st.pool, req.content.as_bytes(), &req.content_type)
+        .await
+        .map_err(map_eval_err)?;
+    Ok(Json(serde_json::json!({ "content_hash": hash, "ref": format!("cas:{hash}") })))
 }

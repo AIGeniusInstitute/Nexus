@@ -1,15 +1,15 @@
 import React from "react";
-import { api, type GoldenSet, type GoldenSetCase, type Rubric, type EvalBatchRun, type EntityVersion, type CompareResult, type JudgeConfig } from "../api";
+import { api, type GoldenSet, type GoldenSetCase, type Rubric, type EvalBatchRun, type EntityVersion, type CompareResult, type JudgeConfig, type DomainEvent, type EsignRecord, type LineageGraph } from "../api";
 import { Card, Table, Button, Pill, Empty, ErrBar, Modal, Field, useAsync, fmtTime } from "../ui";
 
-type Tab = "gs" | "rubric" | "judge" | "runs";
+type Tab = "gs" | "rubric" | "judge" | "runs" | "lineage";
 
 export default function GoldenSets() {
   const [tab, setTab] = React.useState<Tab>("gs");
   return (
     <div>
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        {([["gs", "Golden Set"], ["rubric", "Rubric 评分标准"], ["judge", "Judge 配置"], ["runs", "批量评测运行"]] as [Tab, string][]).map(([k, l]) => (
+        {([["gs", "Golden Set"], ["rubric", "Rubric 评分标准"], ["judge", "Judge 配置"], ["runs", "批量评测运行"], ["lineage", "溯源 / 签名"]] as [Tab, string][]).map(([k, l]) => (
           <Button key={k} variant={tab === k ? "primary" : "default"} className="sm" onClick={() => setTab(k)}>{l}</Button>
         ))}
       </div>
@@ -17,6 +17,7 @@ export default function GoldenSets() {
       {tab === "rubric" && <RubricTab />}
       {tab === "judge" && <JudgeTab />}
       {tab === "runs" && <RunsTab />}
+      {tab === "lineage" && <LineageTab />}
     </div>
   );
 }
@@ -358,6 +359,86 @@ function JudgeTab() {
             )}
           </div>
       </Modal>
+      )}
+    </Card>
+  );
+}
+
+// ───────────────── M22: 溯源 / 签名 ─────────────────
+function LineageTab() {
+  const [etype, setEtype] = React.useState("eval_batch_run");
+  const [eid, setEid] = React.useState("");
+  const [sig, setSig] = React.useState<{ purpose: string; meaning: string }>({ purpose: "审核批准", meaning: "本人审核确认此评测结果可发布" });
+  const ev = useAsync(() => eid ? api.events(etype, Number(eid)) : Promise.resolve(null), [etype, eid]);
+  const lg = useAsync(() => eid ? api.lineage(etype, Number(eid)) : Promise.resolve(null), [etype, eid]);
+  const sigs = useAsync(() => eid ? api.esigns(etype, Number(eid)) : Promise.resolve([]), [etype, eid]);
+  const [verify, setVerify] = React.useState<{ valid: boolean } | null>(null);
+
+  function doSign() {
+    api.esign({ entity_type: etype, entity_id: Number(eid), signature_purpose: sig.purpose, meaning_text: sig.meaning })
+      .then(() => { sigs.reload(); setVerify(null); })
+      .catch((e) => alert(String(e)));
+  }
+  function doVerify(id: number) {
+    api.verifyEsign(id).then((v) => setVerify(v)).catch((e) => alert(String(e)));
+  }
+
+  return (
+    <Card title="溯源 · 事件流 · 电子签名（M22）">
+      <Field label="实体类型">
+        <select className="input" value={etype} onChange={(e) => setEtype(e.target.value)}>
+          <option value="eval_batch_run">eval_batch_run</option>
+          <option value="golden_set">golden_set</option>
+          <option value="judge_config">judge_config</option>
+          <option value="approval">approval</option>
+        </select>
+      </Field>
+      <Field label="实体 ID">
+        <input className="input" value={eid} onChange={(e) => setEid(e.target.value)} placeholder="如 5" />
+      </Field>
+
+      <h4 style={{ marginTop: 18 }}>事件流（as-of 回放）</h4>
+      <ErrBar err={ev.err} />
+      {ev.data?.events && ev.data.events.length === 0 && <Empty>暂无事件</Empty>}
+      {ev.data?.events && ev.data.events.length > 0 && (
+        <table className="tbl"><thead><tr><th>seq</th><th>event_type</th><th>occurred_at</th><th>payload</th></tr></thead><tbody>
+          {ev.data.events.map((e: DomainEvent) => (
+            <tr key={e.id}><td>{e.event_seq}</td><td><Pill tone="info">{e.event_type}</Pill></td><td>{fmtTime(e.occurred_at)}</td><td><code style={{ fontSize: 11 }}>{JSON.stringify(e.payload).slice(0, 80)}</code></td></tr>
+          ))}</tbody></table>
+      )}
+      {ev.data?.replayed_state && (
+        <details style={{ marginTop: 8 }}><summary>回放状态快照</summary><pre style={{ fontSize: 11, overflow: "auto" }}>{JSON.stringify(ev.data.replayed_state, null, 2)}</pre></details>
+      )}
+
+      <h4 style={{ marginTop: 18 }}>血缘图（Lineage）</h4>
+      <ErrBar err={lg.err} />
+      {lg.data && lg.data.nodes.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {lg.data.nodes.map((n) => (<Pill key={n.id} tone="info">{n.kind}: {n.label}</Pill>))}
+        </div>
+      )}
+      {lg.data && lg.data.edges.length > 0 && (
+        <table className="tbl"><thead><tr><th>from</th><th>relation</th><th>to</th></tr></thead><tbody>
+          {lg.data.edges.map((e, i) => (<tr key={i}><td>{e.from}</td><td>{e.relation}</td><td>{e.to}</td></tr>))}
+        </tbody></table>
+      )}
+
+      <h4 style={{ marginTop: 18 }}>电子签名（21 CFR Part 11）</h4>
+      <Field label="签名含义（purpose）"><input className="input" value={sig.purpose} onChange={(e) => setSig({ ...sig, purpose: e.target.value })} /></Field>
+      <Field label="含义声明（meaning）"><input className="input" value={sig.meaning} onChange={(e) => setSig({ ...sig, meaning: e.target.value })} /></Field>
+      <Button variant="primary" className="sm" onClick={doSign}>签署</Button>
+      <ErrBar err={sigs.err} />
+      {sigs.data && sigs.data.length > 0 && (
+        <table className="tbl"><thead><tr><th>id</th><th>signer</th><th>purpose</th><th>signed_at</th><th>verify</th></tr></thead><tbody>
+          {sigs.data.map((s: EsignRecord) => (
+            <tr key={s.id}><td>{s.id}</td><td>user#{s.signer_user_id}</td><td>{s.signature_purpose}</td><td>{fmtTime(s.signed_at)}</td>
+              <td><Button className="sm" onClick={() => doVerify(s.id)}>验证</Button></td></tr>
+          ))}</tbody></table>
+      )}
+      {verify && (
+        <div style={{ marginTop: 8 }}>
+          <Pill tone={verify.valid ? "ok" : "warn"}>{verify.valid ? "✓ 签名有效" : "✗ 签名校验失败"}</Pill>
+        </div>
       )}
     </Card>
   );

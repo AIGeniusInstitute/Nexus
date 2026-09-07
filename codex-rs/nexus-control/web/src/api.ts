@@ -41,6 +41,11 @@ export interface CompareResult { incomparable: boolean; baseline_version_id: num
 // M21: Judge LLM + 失败样本回流
 export interface JudgeConfig { id: number; name: string; description: string | null; status: string; active_version_id: number | null; created_at: string; updated_at: string; }
 
+// M22: 事件溯源 + Lineage + 电子签名 + CAS
+export interface DomainEvent { id: number; tenant_id: number; entity_type: string; entity_id: number; event_type: string; event_seq: number; payload: any; occurred_at: string; }
+export interface EsignRecord { id: number; tenant_id: number; entity_type: string; entity_id: number; version_id: number | null; signer_user_id: number; signature_purpose: string; signature_hash: string; meaning_text: string; signed_at: string; }
+export interface LineageGraph { root: string; nodes: { id: string; kind: string; label: string; detail: any }[]; edges: { from: string; to: string; relation: string }[]; }
+
 const TOKEN_KEY = "nexus.token";
 export function getToken() { return localStorage.getItem(TOKEN_KEY); }
 export function setToken(t: string) { localStorage.setItem(TOKEN_KEY, t); }
@@ -177,6 +182,21 @@ export const api = {
   publishJudgeConfig: (id: number, bump_type: string, config: any) => req<EntityVersion>(`/judge-configs/${id}/publish`, { method: "POST", body: JSON.stringify({ bump_type, config }) }),
   caseFromTurn: (gsId: number, body: { turn_id: number; case_key: string; expected_json: any; user_query?: string }) =>
     req<{ case_id: number }>(`/golden-sets/${gsId}/cases/from-turn`, { method: "POST", body: JSON.stringify(body) }),
+
+  // M22: 事件溯源 + Lineage + 电子签名 + CAS
+  events: (entityType: string, entityId: number, asOf?: string) =>
+    req<{ entity_type: string; entity_id: number; as_of: string | null; events: DomainEvent[]; replayed_state: any }>(
+      `/events/${entityType}/${entityId}${asOf ? `?as_of=${encodeURIComponent(asOf)}&replay=true` : ""}`),
+  lineage: (entityType: string, entityId: number) =>
+    req<LineageGraph>(`/lineage/${entityType}/${entityId}`),
+  esign: (body: { entity_type: string; entity_id: number; version_id?: number; signature_purpose: string; meaning_text: string }) =>
+    req<{ esign_id: number }>(`/esign`, { method: "POST", body: JSON.stringify(body) }),
+  getEsign: (id: number) => req<EsignRecord>(`/esign/${id}`),
+  verifyEsign: (id: number) => req<{ valid: boolean; hash_match: boolean; elements_complete: boolean }>(`/esign/${id}/verify`),
+  esigns: (entityType: string, entityId: number) =>
+    req<EsignRecord[]>(`/esigns?entity_type=${entityType}&entity_id=${entityId}`),
+  storeContent: (content: string, contentType?: string) =>
+    req<{ content_hash: string; ref: string }>(`/content`, { method: "POST", body: JSON.stringify({ content, content_type: contentType || "text/plain" }) }),
 };
 
 export function openThreadStream(threadId: string, onItem: (f: any) => void, onRevoke?: () => void): WebSocket {
