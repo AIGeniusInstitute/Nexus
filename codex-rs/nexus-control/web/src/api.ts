@@ -2,8 +2,10 @@
 const BASE = "/v1";
 
 export interface LoginResp { token: string; user_id: number; perms: string[]; }
-export interface Thread { id: string; title: string | null; status: string; created_at: string; }
+export interface Thread { id: string; title: string | null; status: string; created_at: string; agent_def_id?: number | null; }
 export interface Item { id: number; turn_id: number; seq: number; item_type: string; content_ref: string | null; created_at: string; }
+export interface AgentDef { id: number; name: string; description: string | null; system_prompt: string | null; model: string | null; created_at: string; updated_at: string; }
+export interface StreamFrame { thread_id: string; seq: number; type: string; content: string | null; item_id?: string; approval_id?: number; command?: string; }
 export interface Approval {
   id: number; thread_id: string; turn_id: number; kind: string | null; status: string;
   command: string | null; cwd: string | null; reason: string | null;
@@ -69,10 +71,19 @@ export const api = {
 
   // Threads / Turns / Items
   listThreads: () => req<Thread[]>(`/threads`),
-  createThread: (title?: string) => req<{ id: string }>(`/threads`, { method: "POST", body: JSON.stringify(title ? { title } : {}) }),
+  createThread: (title?: string, agentDefId?: number) => req<{ id: string }>(`/threads`, { method: "POST", body: JSON.stringify({ title: title || null, agent_def_id: agentDefId ?? null }) }),
   startTurn: (threadId: string, input: string) => req<{ turn_id: number }>(`/threads/${threadId}/turns`, { method: "POST", body: JSON.stringify({ input }) }),
   interruptTurn: (threadId: string, turnId: number) => req<{ status: string }>(`/threads/${threadId}/turns/${turnId}/interrupt`, { method: "POST" }),
   listItems: (threadId: string, since = 0) => req<Item[]>(`/threads/${threadId}/items?since=${since}`),
+
+  // Agent Studio: Agent 定义 CRUD
+  listAgents: () => req<AgentDef[]>(`/agents`),
+  createAgent: (b: { name: string; description?: string; system_prompt?: string; model?: string }) =>
+    req<AgentDef>(`/agents`, { method: "POST", body: JSON.stringify(b) }),
+  getAgent: (id: number) => req<AgentDef>(`/agents/${id}`),
+  updateAgent: (id: number, b: { name?: string; description?: string; system_prompt?: string; model?: string }) =>
+    req<AgentDef>(`/agents/${id}`, { method: "PUT", body: JSON.stringify(b) }),
+  deleteAgent: (id: number) => req<{ deleted: number }>(`/agents/${id}`, { method: "DELETE" }),
 
   // Approvals
   listApprovals: () => req<Approval[]>(`/approvals`),

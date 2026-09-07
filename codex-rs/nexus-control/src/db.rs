@@ -32,6 +32,7 @@ const M18_MIGRATION_SQL: &str = include_str!("../migrations/20260906000013_m18_o
 const M20_MIGRATION_SQL: &str = include_str!("../migrations/20260906000014_m20_eval_center.sql");
 const M21_MIGRATION_SQL: &str = include_str!("../migrations/20260906000015_m21_judge_ci.sql");
 const M22_MIGRATION_SQL: &str = include_str!("../migrations/20260906000016_m22_event_esign_cas.sql");
+const AGENT_STUDIO_MIGRATION_SQL: &str = include_str!("../migrations/20260907000001_agent_studio.sql");
 
 /// Run embedded migrations (idempotent: IF NOT EXISTS / ON CONFLICT). Uses
 /// raw SQL (simple-query protocol) so the multi-statement DDL runs in one call
@@ -101,7 +102,11 @@ pub async fn run_migrations(pool: &PgPool) -> Result<()> {
         .execute(pool)
         .await
         .context("run m22 migrations")?;
-    tracing::info!("migrations applied (incl. m2, m3, m4, m6, m10, m11, m12, m13, m14, m16, m17, m18, m20, m21, m22)");
+    sqlx::raw_sql(AGENT_STUDIO_MIGRATION_SQL)
+        .execute(pool)
+        .await
+        .context("run agent-studio migrations")?;
+    tracing::info!("migrations applied (incl. m2..m22, agent-studio)");
     Ok(())
 }
 

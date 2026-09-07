@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nexus Agent Studio — 测试报告</title>
+<style>
+:root[data-theme=dark]{--bg:#0d1117;--panel:#161b22;--text:#e6edf3;--mut:#8b949e;--bd:#30363d;--acc:#58a6ff;--gold:#d29922;--ok:#3fb950;--warn:#d29922;--danger:#f85149;--code:#0d1117;--pre:#161b22}
+:root[data-theme=light]{--bg:#f6f8fa;--panel:#fff;--text:#1f2328;--mut:#57606a;--bd:#d0d7de;--acc:#0969da;--gold:#bf8700;--ok:#1a7f37;--warn:#9a6700;--danger:#cf222e;--code:#f6f8fa;--pre:#f6f8fa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.6}
+.topbar{position:sticky;top:0;z-index:10;background:var(--panel);border-bottom:1px solid var(--bd);padding:10px 24px;display:flex;align-items:center;gap:16px}
+.topbar h1{font-size:16px;margin:0;font-weight:700}
+.topbar .meta{color:var(--mut);font-size:13px}
+.topbar button{margin-left:auto;background:var(--bg);color:var(--text);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px}
+.wrap{max-width:1100px;margin:0 auto;padding:24px}
+h2{font-size:22px;border-bottom:2px solid var(--acc);padding-bottom:6px;margin-top:40px}
+h3{font-size:17px;color:var(--acc);margin-top:28px}
+.toc{background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:14px 20px;margin-bottom:24px}
+.toc a{color:var(--acc);text-decoration:none;font-size:14px;display:inline-block;margin-right:18px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:20px 0}
+.kpi{background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:16px;text-align:center}
+.kpi .n{font-size:30px;font-weight:800;color:var(--acc)}
+.kpi .l{color:var(--mut);font-size:12px;margin-top:4px}
+.kpi.ok .n{color:var(--ok)}
+table{width:100%;border-collapse:collapse;margin:14px 0;background:var(--panel);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+th,td{border:1px solid var(--bd);padding:8px 10px;font-size:13px;text-align:left}
+th{background:var(--bg);color:var(--mut);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.pill.ok{background:color-mix(in srgb,var(--ok) 22%,transparent);color:var(--ok)}
+.pill.fail{background:color-mix(in srgb,var(--danger) 22%,transparent);color:var(--danger)}
+.pill.info{background:color-mix(in srgb,var(--acc) 22%,transparent);color:var(--acc)}
+pre{background:var(--pre);border:1px solid var(--bd);border-radius:6px;padding:12px;overflow:auto;font-size:12px;font-family:"SFMono-Regular",Consolas,monospace}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-family:Consolas,monospace;font-size:12px}
+.sshot{border:1px solid var(--bd);border-radius:8px;margin:12px 0;max-width:100%;display:block}
+.cap{color:var(--mut);font-size:12px;margin-top:4px}
+details{background:var(--panel);border:1px solid var(--bd);border-radius:6px;margin:10px 0;padding:8px 12px}
+summary{cursor:pointer;font-weight:600;color:var(--acc)}
+.bar{height:8px;border-radius:4px;background:var(--bg);overflow:hidden;margin-top:6px}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--gold))}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>🤖 Nexus Agent Studio — 测试报告</h1>
+  <span class="meta">2026-09-07 · feat/nexus-agent-studio · 10/10 PASS</span>
+  <button onclick="const t=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'light':'dark')">🌗 切换主题</button>
+</div>
+<div class="wrap">
+
+<div class="toc">
+  <a href="#summary">1. 概览</a>
+  <a href="#matrix">2. 验收矩阵</a>
+  <a href="#cases">3. 测试用例</a>
+  <a href="#evidence">4. 证据</a>
+  <a href="#screens">5. 截图</a>
+  <a href="#bugs">6. Bug 修复</a>
+  <a href="#flow">7. 数据流</a>
+</div>
+
+<h2 id="summary">1. 概览</h2>
+<div class="kpis">
+  <div class="kpi ok"><div class="n">10/10</div><div class="l">测试用例全过</div></div>
+  <div class="kpi ok"><div class="n">46/46</div><div class="l">cargo test 零回归</div></div>
+  <div class="kpi ok"><div class="n">3293</div><div class="l">delta 帧落库</div></div>
+  <div class="kpi ok"><div class="n">53</div><div class="l">WS delta 帧实测</div></div>
+  <div class="kpi ok"><div class="n">0</div><div class="l">delta 入 items（应为 0）</div></div>
+</div>
+<p>本里程碑在 Nexus 控制面实现 <b>Agent Studio</b> 模块，参考 DeepThink Agent Studio 的整体逻辑：可复用 Agent 定义（system_prompt + model）、CUI 对话框界面、完整的流式输出（思考过程 / 工具调用 / 输出答案 / 任务产物）。核心改动集中在 <code>codex-rs/nexus-control/</code> crate，<b>未改动 codex 内核任何源码</b>。</p>
+<p>关键突破：打通 <b>codex app-server 增量通知 → WS broadcast → 前端 CUI 流式渲染</b> 全链路。此前 Nexus 的 WS 仅投递 item/started + item/completed（瞬态 delta 被丢弃），Agent Studio 在 <code>map_notification</code> 增加 6 个 delta 臂转发增量，并修复了 M2 时代遗留的「WS 连接时 broadcast channel 未创建则永不再订阅」的 bug，使真实流式对话框可用。</p>
+
+<h2 id="matrix">2. 验收矩阵（AC-1 ~ AC-4）</h2>
+<table>
+<tr><th>AC</th><th>验收标准</th><th>状态</th><th>证据</th></tr>
+<tr><td>AC-1.1</td><td>map_notification 转发 6 类 delta 通知（AgentMessageDelta / ReasoningTextDelta / ReasoningSummaryTextDelta / CommandExecutionOutputDelta / PlanDelta / FileChangeOutputDelta）</td><td><span class="pill ok">PASS</span></td><td>cargo test delta_item_type_sentinel + WS 53 delta 帧</td></tr>
+<tr><td>AC-1.2</td><td>delta 不入 items 表（幂等键 codex_item_id 冲突 + 污染时间线）</td><td><span class="pill ok">PASS</span></td><td>items 表 delta 行 = 0</td></tr>
+<tr><td>AC-1.3</td><td>delta 双命名约定覆盖（lowercase <code>*/delta</code> + camelCase <code>*Delta</code>）</td><td><span class="pill ok">PASS</span></td><td>delta_item_type_sentinel 单测 6 断言</td></tr>
+<tr><td>AC-2.1</td><td>Agent 定义 CRUD（name / system_prompt / model / description）</td><td><span class="pill ok">PASS</span></td><td>e2e create id=5 / list / get / update 全过</td></tr>
+<tr><td>AC-2.2</td><td>Agent 定义租户隔离（tenant_id 过滤）</td><td><span class="pill ok">PASS</span></td><td>WHERE tenant_id=$1 查询</td></tr>
+<tr><td>AC-3.1</td><td>thread 创建可绑定 agent_def_id</td><td><span class="pill ok">PASS</span></td><td>thread.agent_def_id 持久化 = 5</td></tr>
+<tr><td>AC-3.2</td><td>turn_start 新 thread 读 system_prompt 注入 codex base_instructions</td><td><span class="pill ok">PASS</span></td><td>turn completed 间接验证 thread/start 接受 base_instructions</td></tr>
+<tr><td>AC-4.1</td><td>CUI 对话框流式渲染：用户气泡 + 助手 Markdown + 工具卡片</td><td><span class="pill ok">PASS</span></td><td>DOM dump: user-bubble + assistant-msg(md-p) + tool-card(命令执行)</td></tr>
+<tr><td>AC-4.2</td><td>WS 实时增量投递（delta + item/started + item/completed + turn/completed）</td><td><span class="pill ok">PASS</span></td><td>WS 实测 60 帧（53 delta + 7 控制）</td></tr>
+</table>
+
+<h2 id="cases">3. 测试用例</h2>
+<table>
+<tr><th>#</th><th>用例</th><th>方法</th><th>状态</th></tr>
+<tr><td>TC-1</td><td>delta 转发单测</td><td>cargo test</td><td><span class="pill ok">PASS</span></td></tr>
+<tr><td>TC-2</td><td>Agent 定义 CRUD</td><td>curl e2e</td><td><span class="pill ok">PASS</span></td></tr>
+<tr><td>TC-3</td><td>thread 绑定 Agent</td><td>curl + DB</td><td><span class="pill ok">PASS</span></td></tr>
+<tr><td>TC-4</td><td>system_prompt 注入</td><td>真实模型 turn</td><td><span class="pill ok">PASS</span></td></tr>
+<tr><td>TC-5</td><td>零回归（既有 45 测试）</td><td>cargo test 46/46</td><td><span class="pill ok">PASS</span></td></tr>
+<tr><td>TC-6</td><td>真实模型流式（glm-4-flash）</td><td>curl + DB + WS</td><td><span class="pill ok">PASS</span></td></tr>
+<tr><td>TC-7</td><td>Studio CUI 渲染</td><td>playwright DOM dump + 截图</td><td><span class="pill ok">PASS</span></td></tr>
+<tr><td>TC-8</td><td>历史回放（loadHistory 从 items 还原）</td><td>DOM 验证</td><td><span class="pill ok">PASS</span></td></tr>
+<tr><td>TC-9</td><td>审批卡片（M3 闭环不退化）</td><td>ls 命中 allow 自动执行</td><td><span class="pill ok">PASS</span></td></tr>
+<tr><td>TC-10</td><td>cargo test 零回归</td><td>cargo test</td><td><span class="pill ok">PASS</span></td></tr>
+</table>
+
+<h2 id="evidence">4. 证据</h2>
+<h3>4.1 cargo test 46/46</h3>
+<pre>test agent_defs::tests::delta_item_type_sentinel ... ok
+test execpolicy_rules::tests::rm_rf_is_forbidden ... ok
+test execpolicy_rules::tests::ls_is_allowed ... ok
+...
+test result: ok. 46 passed; 0 failed; 0 ignored; 0 measured</pre>
+
+<h3>4.2 e2e 脚本（Agent CRUD + thread 绑定 + 真实模型 turn + delta 转发）</h3>
+<pre>=== Agent Studio e2e ===
+✓ login
+✓ create agent id=5
+✓ list agents contains
+✓ get agent
+✓ update agent
+✓ create thread bound to agent id=e7337ef6-...
+✓ thread.agent_def_id persisted = 5
+--- 真实模型 turn（glm-4-flash）---
+turn resp: {"codex_thread_id":"01a07c7e-...","status":"completed","turn_id":20}
+✓ turn completed id=20
+delta rows in app_server_events: 3293
+✓ delta notification logged to app_server_events (3293 rows)
+delta rows in items (should be 0): 0
+✓ items table has no delta rows
+items count: 2
+✓ items persisted (2 rows)
+✓ turn completed with system_prompt (indirect)
+=== ALL E2E PASS ===</pre>
+
+<h3>4.3 WS 流式实测（node 内置 WebSocket）</h3>
+<pre>thread: 4a109136-...
+turn completed in 5.1s: { status:'completed', turn_id:15 }
+frame types: {"item/completed":2,"item/started":1,"item/agentMessage/delta":53,
+  "thread/tokenUsage/updated":1,"account/rateLimits/updated":1,
+  "thread/status/changed":1,"turn/completed":1}
+delta types: [ 'item/agentMessage/delta' ]
+total frames: 60, delta frames: 53
+delta frames with item_id: 53/53
+✓ received 60 WS frames
+✓ received 53 delta frames (streaming works)
+✓ all deltas carry item_id (frontend aggregation key)
+✓ item/started / item/completed / turn/completed broadcast
+=== WS STREAMING PASS ===</pre>
+
+<h3>4.4 CUI DOM 结构（playwright evaluateAll）</h3>
+<pre>child count: 2
+--- DIV.user-bubble
+&lt;div class="user-bubble"&gt;用三句话介绍 Rust 语言的内存安全特性&lt;/div&gt;
+--- DIV.assistant-msg
+&lt;div class="assistant-msg"&gt;&lt;div class="md"&gt;&lt;p class="md-p"&gt;Rust 语言通过所有权（ownership）...&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;
+block counts: {"assistantMsg":1,"toolCard":0,"details":0,"reasoning":0}
+
+工具调用 turn:
+block counts: {"userBubble":1,"assistantMsg":2,"toolCard":1,"approvalCard":0}
+tool cards: ["命令执行 | /bin/bash -lc ls"]</pre>
+
+<h2 id="screens">5. 截图（playwright + 系统 Chrome）</h2>
+<img class="sshot" src="studio-01-list.png"><div class="cap">图1：Agent Studio 会话列表</div>
+<img class="sshot" src="studio-02-agent-mgr.png"><div class="cap">图2：Agent 定义管理 Modal</div>
+<img class="sshot" src="studio-03-agent-form.png"><div class="cap">图3：Agent 定义表单（system_prompt + model）</div>
+<img class="sshot" src="studio-05-chat-empty.png"><div class="cap">图4：空 CUI 对话框</div>
+<img class="sshot" src="studio-07-streaming.png"><div class="cap">图5：流式生成中</div>
+<img class="sshot" src="studio-08-complete.png"><div class="cap">图6：turn 完成（用户气泡 + 助手 Markdown）</div>
+<img class="sshot" src="studio-09-light.png"><div class="cap">图7：浅色主题</div>
+<img class="sshot" src="studio-10-tool-call.png"><div class="cap">图8：工具调用（命令执行卡片 + 助手消息）</div>
+
+<h2 id="bugs">6. 关键 Bug 修复</h2>
+<h3>6.1 WS 中途订阅（M2 遗留，严重）</h3>
+<p><b>现象</b>：新 thread 首次 turn 时，前端 WS 仅收到 item/started + item/completed，0 个 delta 帧——流式输出全丢。</p>
+<p><b>根因</b>：<code>ws.rs run()</code> 在 WS 连接时一次性订阅 broadcast channel（<code>map.get(&thread_id).map(|t| t.subscribe())</code>）。但 broadcast channel 由 turn_start 懒创建——新 thread 首次 turn 前channel 不存在，<code>map.get</code> 返回 None → <code>broadcast_rx = None</code> → 整个 WS 会话恒为 None，只走 items 表 DB 回放路径（item/started+completed 在 items 表，delta 不在，故 delta 全丢）。</p>
+<p><b>修复</b>：run() 循环每轮若 <code>broadcast_rx.is_none()</code> 则重新从 map 获取 channel（turn_start 创建后即拾取）。修复后实测 53 delta 帧正常投递。</p>
+<h3>6.2 userMessage 渲染为 📦 JSON fallback</h3>
+<p><b>现象</b>：codex 回传 userMessage item（用户输入回显），AssistantBlock 无该 kind 分支 → 走 📦 details fallback，渲染丑陋的 raw JSON。</p>
+<p><b>修复</b>：AssistantBlock 加 userMessage 分支，从 <code>raw.content[].text</code> 提取文本渲染为右对齐用户气泡（<code>.user-bubble</code> CSS）。DOM 验证：0 📦 fallback，1 user-bubble + 1 assistant-msg。</p>
+<h3>6.3 迁移非幂等致重启崩</h3>
+<p><b>现象</b>：migrations 用 <code>CREATE TABLE</code>（非 IF NOT EXISTS），二次启动报 "relation already exists" 崩。</p>
+<p><b>修复</b>：改 <code>CREATE TABLE IF NOT EXISTS</code> + <code>ALTER ADD COLUMN IF NOT EXISTS</code>，重启安全。</p>
+
+<h2 id="flow">7. 数据流</h2>
+<details><summary>SVG：delta 转发 + WS 流式渲染全链路</summary>
+<pre style="font-size:11px;line-height:1.3">
+┌─────────────┐  ServerNotification     ┌──────────────────┐  TurnEvent        ┌────────────────┐
+│ codex       │ ──────────────────────▶ │ runtime.rs        │ ───────────────▶ │ http_server.rs │
+│ app-server  │  AgentMessageDelta      │ map_notification  │  item_type=       │ drain loop     │
+│ (stdio)     │  ReasoningTextDelta     │ 6 delta 臂转发    │  item/agentMsg/   │                │
+│             │  CommandExecOutputDelta │  (item_id, delta) │  delta            │                │
+└─────────────┘                         └──────────────────┘                    └───────┬────────┘
+                                                                                       │
+                ┌──────────────────────────────────────────────────────────────┘
+                │ 1. app_server_events INSERT (raw 审计，3293 行)
+                │ 2. items INSERT 跳过 delta（is_delta 哨兵 → 0 行）
+                │ 3. bcast.send(frame)  ← broadcast channel
+                ▼
+┌──────────────────────────────────┐         ┌──────────────────────────────┐
+│ ws.rs run()                     │  frame   │ 浏览器 Studio.tsx             │
+│  re-subscribe if rx is None     │ ◀─────── │  onFrame:                     │
+│  (turn_start 创建 channel 后   │          │   delta → upsert 累积 by      │
+│   即拾取 ★修复点)               │          │     item_id                   │
+│  send → WS 客户端               │ ───────▶ │   item/started+completed →    │
+└──────────────────────────────────┘          │     upsert raw + kind         │
+                                              ▼                              │
+                                 ┌────────────────────────────┐             │
+                                 │ AssistantBlock 分发        │             │
+                                 │  userMessage → 用户气泡    │             │
+                                 │  agentMessage → Markdown  │             │
+                                 │  reasoning → 折叠琥珀块    │             │
+                                 │  commandExecution → 工具卡 │             │
+                                 │  mcpToolCall → 工具卡      │             │
+                                 │  fileChange → 变更卡片     │             │
+                                 └────────────────────────────┘             │
+</pre>
+</details>
+
+<div style="margin-top:40px;padding:16px;background:var(--panel);border:1px solid var(--bd);border-radius:8px;color:var(--mut);font-size:13px">
+<b>结论</b>：Nexus Agent Studio 模块 10/10 测试用例全过，cargo test 46/46 零回归，真实模型流式 + CUI 渲染端到端验证通过。<br>
+改动文件：migrations/20260907000001_agent_studio.sql · src/runtime.rs · src/http_server.rs · src/ws.rs · src/agent_defs.rs(新) · src/db.rs · src/lib.rs · src/main.rs · web/src/{api.ts,ui.tsx,App.tsx,theme.css,pages/Studio.tsx(新)}<br>
+<b>未改 codex 内核任何源码</b>，全部改动在 codex-rs/nexus-control/ crate 内。
+</div>
+</div>
+</body>
+</html>

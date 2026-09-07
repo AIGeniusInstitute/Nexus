@@ -27,6 +27,7 @@ use uuid::Uuid;
 use crate::auth::{AuthProvider, AuthUser, JwtIssuer};
 use crate::audit;
 use crate::connectors;
+use crate::agent_defs;
 use crate::content_store;
 use crate::domain_events;
 use crate::esign;
@@ -147,6 +148,9 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/skills/{id}/rollback", post(skill_rollback))
         .route("/v1/orchestrations", post(orchestration_start).get(orchestration_list))
         .route("/v1/orchestrations/{id}", get(orchestration_get))
+        // Agent Studio: Agent 定义 CRUD（tenant-scoped）。
+        .route("/v1/agents", post(agent_create).get(agent_list))
+        .route("/v1/agents/{id}", get(agent_get).put(agent_update).delete(agent_delete))
         .route("/v1/ws/threads/{id}/events", get(crate::ws::ws_handler))
         .layer(middleware::from_fn_with_state(state.clone(), idempotency_layer))
         .layer(middleware::from_fn_with_state(state.clone(), user_rate_limit))
@@ -272,6 +276,55 @@ async fn connector_delete(
     AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     connectors::delete_connector(&st.pool, c.tid, id).await.map_err(map_conn_err)?;
+    Ok(Json(serde_json::json!({ "deleted": id })))
+}
+
+// ---- Agent Studio: Agent 定义 handlers ----
+
+fn map_agent_err(e: anyhow::Error) -> (StatusCode, String) {
+    let s = e.to_string();
+    if s.contains("not found") {
+        (StatusCode::NOT_FOUND, s)
+    } else {
+        (StatusCode::INTERNAL_SERVER_ERROR, s)
+    }
+}
+
+async fn agent_create(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Json(req): Json<agent_defs::CreateAgentReq>,
+) -> Result<Json<agent_defs::AgentDefRow>, (StatusCode, String)> {
+    let row = agent_defs::create_agent(&st.pool, c.tid, c.uid, req).await
+        .map_err(map_agent_err)?;
+    Ok(Json(row))
+}
+
+async fn agent_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+) -> Result<Json<Vec<agent_defs::AgentDefRow>>, (StatusCode, String)> {
+    let rows = agent_defs::list_agents(&st.pool, c.tid).await.map_err(map_agent_err)?;
+    Ok(Json(rows))
+}
+
+async fn agent_get(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<agent_defs::AgentDefRow>, (StatusCode, String)> {
+    let row = agent_defs::get_agent(&st.pool, c.tid, id).await.map_err(map_agent_err)?;
+    Ok(Json(row))
+}
+
+async fn agent_update(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+    Json(req): Json<agent_defs::UpdateAgentReq>,
+) -> Result<Json<agent_defs::AgentDefRow>, (StatusCode, String)> {
+    let row = agent_defs::update_agent(&st.pool, c.tid, id, req).await
+        .map_err(map_agent_err)?;
+    Ok(Json(row))
+}
+
+async fn agent_delete(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    agent_defs::delete_agent(&st.pool, c.tid, id).await.map_err(map_agent_err)?;
     Ok(Json(serde_json::json!({ "deleted": id })))
 }
 
@@ -471,11 +524,19 @@ async fn threads_list(AuthUser(c): AuthUser, State(st): State<AppState>) -> Resu
 }
 
 #[derive(Deserialize)]
-struct CreateThreadReq { title: Option<String> }
+struct CreateThreadReq {
+    title: Option<String>,
+    /// Agent Studio: bind this thread to an Agent definition so turn_start
+    /// injects its system_prompt as codex `base_instructions`.
+    agent_def_id: Option<i64>,
+}
 
 async fn thread_create(AuthUser(c): AuthUser, State(st): State<AppState>, Json(req): Json<CreateThreadReq>) -> Result<Json<Value>, (StatusCode, String)> {
-    let row: (Uuid,) = sqlx::query_as("INSERT INTO threads (tenant_id, owner_user_id, title) VALUES ($1, $2, $3) RETURNING id")
-        .bind(c.tid).bind(c.uid).bind(req.title)
+    let row: (Uuid,) = sqlx::query_as(
+        "INSERT INTO threads (tenant_id, owner_user_id, title, agent_def_id)
+         VALUES ($1, $2, $3, $4) RETURNING id",
+    )
+        .bind(c.tid).bind(c.uid).bind(req.title).bind(req.agent_def_id)
         .fetch_one(&st.pool).await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(serde_json::json!({ "id": row.0 })))
@@ -485,16 +546,32 @@ async fn thread_create(AuthUser(c): AuthUser, State(st): State<AppState>, Json(r
 struct TurnReq { input: Option<String> }
 
 async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<Uuid>, Json(req): Json<TurnReq>) -> Result<Json<Value>, (StatusCode, String)> {
-    // Verify thread belongs to user's tenant + read codex_thread_id (NULL=new).
-    let row: Option<(Option<String>,)> = sqlx::query_as(
-        "SELECT codex_thread_id FROM threads WHERE id=$1 AND tenant_id=$2",
+    // Verify thread belongs to user's tenant + read codex_thread_id (NULL=new)
+    // and agent_def_id (Agent Studio: thread-level system prompt binding).
+    let row: Option<(Option<String>, Option<i64>)> = sqlx::query_as(
+        "SELECT codex_thread_id, agent_def_id FROM threads WHERE id=$1 AND tenant_id=$2",
     )
     .bind(id).bind(c.tid).fetch_optional(&st.pool).await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let codex_thread_id = match row {
-        Some((existing,)) => existing,
+    let (codex_thread_id, agent_def_id) = match row {
+        Some((existing, aid)) => (existing, aid),
         None => return Err((StatusCode::NOT_FOUND, "thread not found".into())),
     };
+
+    // Agent Studio: resolve system_prompt from the bound Agent definition.
+    // Only applies to fresh threads (codex_thread_id NULL); resume path
+    // ignores it — instructions are sticky on the codex thread.
+    let system_prompt: Option<String> = if codex_thread_id.is_none() {
+        match agent_def_id {
+            Some(aid) => sqlx::query_scalar::<_, Option<String>>(
+                "SELECT system_prompt FROM agent_definitions WHERE id=$1 AND tenant_id=$2",
+            )
+            .bind(aid).bind(c.tid).fetch_optional(&st.pool).await
+            .ok().flatten().flatten()
+            .filter(|s| !s.is_empty()),
+            None => None,
+        }
+    } else { None };
 
     // M4: 多租户并发上限（锁 mutex 前置门控，防同租户请求积压）。
     let running: i64 = sqlx::query_scalar(
@@ -551,6 +628,7 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
             turn_db_id,
             input: input.clone(),
             start_seq: max_seq,
+            system_prompt,
         })
         .is_err()
     {
@@ -672,17 +750,28 @@ async fn turn_start(AuthUser(c): AuthUser, State(st): State<AppState>, Path(id):
             .bind(id).bind(turn_db_id).bind(ev.seq).bind(&ev.raw_json)
             .execute(&st.pool).await;
 
-            // items: only item/* notifications carry a codex_item_id.
-            if let Some(cid) = &ev.codex_item_id {
-                let _ = sqlx::query(
-                    "INSERT INTO items (thread_id, turn_id, seq, item_type, content_ref, codex_item_id)
-                     VALUES ($1, $2, $3, $4, $5, $6)
-                     ON CONFLICT (codex_item_id) WHERE codex_item_id IS NOT NULL DO UPDATE
-                       SET content_ref = EXCLUDED.content_ref, item_type = EXCLUDED.item_type",
-                )
-                .bind(id).bind(turn_db_id).bind(ev.seq).bind(&ev.item_type)
-                .bind(ev.content_ref.as_deref()).bind(cid)
-                .execute(&st.pool).await;
+            // items: only item/started + item/completed carry a codex_item_id.
+            // Agent Studio: delta notifications are transient streaming fragments
+            // — NOT persisted into `items` (would collide on codex_item_id and
+            // pollute the item timeline). codex delta methods are either
+            // `*/delta` (lowercase, e.g. item/agentMessage/delta, item/plan/delta)
+            // or `*Delta` (camelCase, e.g. item/reasoning/textDelta,
+            // item/commandExecution/outputDelta). Match both. They are still
+            // logged to app_server_events (above) + broadcast (below).
+            let is_delta = ev.item_type.ends_with("/delta")
+                || ev.item_type.ends_with("Delta");
+            if !is_delta {
+                if let Some(cid) = &ev.codex_item_id {
+                    let _ = sqlx::query(
+                        "INSERT INTO items (thread_id, turn_id, seq, item_type, content_ref, codex_item_id)
+                         VALUES ($1, $2, $3, $4, $5, $6)
+                         ON CONFLICT (codex_item_id) WHERE codex_item_id IS NOT NULL DO UPDATE
+                           SET content_ref = EXCLUDED.content_ref, item_type = EXCLUDED.item_type",
+                    )
+                    .bind(id).bind(turn_db_id).bind(ev.seq).bind(&ev.item_type)
+                    .bind(ev.content_ref.as_deref()).bind(cid)
+                    .execute(&st.pool).await;
+                }
             }
 
             // Accumulate usage.

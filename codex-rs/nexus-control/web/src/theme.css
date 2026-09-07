@@ -129,3 +129,58 @@ textarea { min-height: 70px; resize: vertical; }
 .badge-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .scroll-x { overflow-x: auto; }
 .hint { font-size: 11px; color: var(--mut); margin-top: 4px; }
+
+/* ---- Agent Studio: CUI 对话框 ---- */
+.studio-chat { display: flex; flex-direction: column; height: calc(100vh - 110px); min-height: 500px; }
+.studio-head { padding: 10px 0; }
+.studio-stream { flex: 1; overflow-y: auto; padding: 8px 4px 16px; display: flex; flex-direction: column; gap: 10px; }
+.studio-input { padding: 10px 0; border-top: 1px solid var(--bd); }
+.assistant-msg { padding: 10px 14px; background: var(--panel); border: 1px solid var(--bd); border-radius: 10px; max-width: 92%; }
+/* markdown */
+.md { font-size: 14px; line-height: 1.6; word-break: break-word; }
+.md-p { margin: 6px 0; }
+.md-h { font-size: 15px; font-weight: 700; margin: 10px 0 6px; }
+.md-ul { margin: 6px 0; padding-left: 22px; }
+.md-ul li { margin: 3px 0; list-style: disc; }
+.md-code { background: rgba(0,0,0,0.32); border: 1px solid var(--bd); border-radius: 8px; padding: 10px 12px; overflow-x: auto; margin: 8px 0; font-size: 12.5px; }
+.md-code code { font-family: ui-monospace, "SF Mono", Menlo, monospace; white-space: pre; }
+.md-ic { background: rgba(127,127,127,0.18); padding: 1px 5px; border-radius: 4px; font-family: ui-monospace, Menlo, monospace; font-size: 0.9em; }
+/* reasoning block (琥珀色折叠) */
+.reasoning { border: 1px solid rgba(245,158,11,0.35); background: rgba(245,158,11,0.07); border-radius: 8px; margin: 6px 0; }
+.reasoning-h { display: flex; align-items: center; gap: 8px; padding: 7px 10px; cursor: pointer; font-size: 12.5px; color: #d97706; }
+.reasoning-ic { font-size: 10px; }
+.reasoning-len { color: var(--mut); font-size: 11px; margin-left: auto; }
+.reasoning-b { padding: 4px 12px 10px; border-top: 1px solid rgba(245,158,11,0.2); color: var(--mut); font-size: 13px; }
+/* tool card */
+.tool-card { border: 1px solid var(--bd); border-radius: 8px; margin: 6px 0; background: var(--bg); overflow: hidden; }
+.tool-card-h { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: rgba(127,127,127,0.08); border-bottom: 1px solid var(--bd); font-size: 13px; }
+.tool-ic { font-size: 12px; }
+.tool-title { font-weight: 600; }
+.tool-badge { margin-left: auto; }
+.tool-card-b { padding: 8px 10px; }
+.kv { display: flex; gap: 8px; padding: 3px 0; font-size: 12.5px; align-items: flex-start; }
+.kv-k { color: var(--mut); min-width: 56px; }
+.kv-v { flex: 1; word-break: break-all; }
+.tool-output { background: rgba(0,0,0,0.4); border: 1px solid var(--bd); border-radius: 6px; padding: 8px 10px; font-size: 12px; margin: 6px 0; overflow: auto; }
+.tool-output code { font-family: ui-monospace, Menlo, monospace; white-space: pre-wrap; }
+.approval-card { border: 1px solid var(--acc); border-radius: 8px; padding: 12px; margin: 8px 0; background: rgba(59,130,246,0.07); }
+.mono { font-family: ui-monospace, Menlo, monospace; }
+
+/* Agent Studio — user bubble (right-aligned, user's echoed input). */
+.studio-stream .user-bubble {
+  align-self: flex-end;
+  background: linear(135deg, color-mix(in srgb, var(--acc) 22%, var(--panel)), var(--panel));
+  background: color-mix(in srgb, var(--acc) 18%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--acc) 35%, var(--bd));
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 14px 14px 4px 14px;
+  max-width: 72%;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 6px 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,.12);
+}
+.studio-stream { display: flex; flex-direction: column; }
