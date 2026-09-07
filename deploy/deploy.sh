@@ -91,7 +91,7 @@ JWT_SEC=$(grep -E '^NEXUS_JWT_SECRET=' "$ENV_FILE" | head -1 | cut -d= -f2- | tr
 if [[ -z "$JWT_SEC" || "$JWT_SEC" == "change-me-to-a-long-random-secret" ]]; then
   warn "NEXUS_JWT_SECRET 仍是默认值/空，正在生成随机密钥写入 .env ..."
   NEW_SEC="$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | xxd -p -c 64)"
-  sed -i "s|^NEXUS_JWT_SECRET=.*|NEXUS_JWT_SECRET=$NEW_SEC|" "$ENV_FILE"
+  sed -i.bak "s|^NEXUS_JWT_SECRET=.*|NEXUS_JWT_SECRET=$NEW_SEC|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
   ok "已生成随机 JWT secret 并写入 .env"
 fi
 ok ".env 就绪"

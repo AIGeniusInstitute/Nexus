@@ -70,10 +70,10 @@ pub fn write_config_toml(
 
 model = "{model}"
 model_provider = "nexus-gateway"
-# M9: untrusted approval policy — commands require approval unless an
-# explicit execpolicy rule allows them, so real CommandExecutionRequestApproval
-# flows can be exercised end-to-end (not just via SIMULATE).
-approval_policy = "untrusted"
+# Approval policy is left unset: codex removed the `untrusted` value
+# (AskForApproval::UnlessTrusted) from config.toml — it is now an internal
+# policy derived from project trust, and defaults to OnRequest (the model
+# decides when to ask). Command allow/deny is enforced by execpolicy `.rules`.
 sandbox_mode = "danger-full-access"
 
 [model_providers.nexus-gateway]

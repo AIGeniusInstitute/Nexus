@@ -2,3 +2,5 @@ bin/
 .env
 *.log
 web-dist/
+# build-linux-binaries.sh 的 Linux 交叉编译产物缓存(数 GB, 不入库)
+target-linux/
