@@ -6,6 +6,7 @@
 
 pub mod auth;
 pub mod audit;
+pub mod agent_defs;
 pub mod connectors;
 pub mod content_store;
 pub mod db;

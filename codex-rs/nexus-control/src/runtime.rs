@@ -47,6 +47,10 @@ pub enum DriverCommand {
         turn_db_id: i64,
         input: String,
         start_seq: i64,
+        /// Agent Studio: thread-level system prompt injected as
+        /// `base_instructions` on `thread/start` (fresh threads only; resume
+        /// ignores it — instructions are sticky on the codex thread).
+        system_prompt: Option<String>,
     },
     /// Interrupt the in-flight turn: kill the app-server child. The next
     /// `RunTurn` respawns + resumes.
@@ -363,6 +367,7 @@ fn driver_loop(
                 turn_db_id,
                 input,
                 start_seq,
+                system_prompt,
             } => {
                 // Lazily spawn + initialize on first use, after interrupt, or
                 // when the previous child has died. M15: when the warm pool
@@ -403,7 +408,14 @@ fn driver_loop(
                         }
                     }
                 } else {
-                    match p.thread_start(ThreadStartParams::default()) {
+                    // Agent Studio: inject system_prompt as base_instructions
+                    // for fresh threads (resume path ignores it — codex
+                    // thread state retains instructions from creation).
+                    let mut params = ThreadStartParams::default();
+                    if let Some(sp) = &system_prompt {
+                        params.base_instructions = Some(sp.clone());
+                    }
+                    match p.thread_start(params) {
                         Ok(r) => r.thread.id,
                         Err(e) => {
                             emit_error(&event_tx, thread_id, turn_db_id, start_seq, &e);
@@ -858,6 +870,31 @@ fn map_notification(
                 }),
                 false,
             )
+        }
+        // Agent Studio: stream delta notifications so the CUI can render
+        // thinking / answer / tool-output incrementally. Each delta carries
+        // an `item_id` (to aggregate on the frontend) and a `delta` text
+        // fragment. Deltas are NOT persisted into `items` (the http_server
+        // drain skips `*/delta` for the items table) — only broadcast +
+        // app_server_events. They reuse the 4-tuple shape: codex_item_id +
+        // content_ref(=delta), no usage, not completed.
+        ServerNotification::AgentMessageDelta(p) => {
+            (Some(p.item_id.clone()), Some(p.delta.clone()), None, false)
+        }
+        ServerNotification::ReasoningTextDelta(p) => {
+            (Some(p.item_id.clone()), Some(p.delta.clone()), None, false)
+        }
+        ServerNotification::ReasoningSummaryTextDelta(p) => {
+            (Some(p.item_id.clone()), Some(p.delta.clone()), None, false)
+        }
+        ServerNotification::CommandExecutionOutputDelta(p) => {
+            (Some(p.item_id.clone()), Some(p.delta.clone()), None, false)
+        }
+        ServerNotification::PlanDelta(p) => {
+            (Some(p.item_id.clone()), Some(p.delta.clone()), None, false)
+        }
+        ServerNotification::FileChangeOutputDelta(p) => {
+            (Some(p.item_id.clone()), Some(p.delta.clone()), None, false)
         }
         _ => (None, None, None, false),
     }

@@ -3,6 +3,7 @@ import { api, getToken, setToken, clearToken, openThreadStream, type LoginResp }
 import { Button, Pill, useAsync } from "./ui";
 
 import Overview from "./pages/Overview";
+import Studio from "./pages/Studio";
 import Threads from "./pages/Threads";
 import Approvals from "./pages/Approvals";
 import Usage from "./pages/Usage";
@@ -18,6 +19,7 @@ import Policy from "./pages/Policy";
 const NAV: { group: string; items: { key: string; label: string; icon: string }[] }[] = [
   { group: "运行", items: [
     { key: "overview", label: "概览", icon: "◎" },
+    { key: "studio", label: "Agent Studio", icon: "🤖" },
     { key: "threads", label: "会话", icon: "💬" },
     { key: "approvals", label: "审批", icon: "✓" },
     { key: "orchestration", label: "协作编排", icon: "🧩" },
@@ -88,6 +90,7 @@ function Shell() {
   function page() {
     switch (route) {
       case "overview": return <Overview />;
+      case "studio": return <Studio />;
       case "threads": return <Threads />;
       case "approvals": return <Approvals />;
       case "orchestration": return <Orchestration />;
@@ -109,7 +112,7 @@ function Shell() {
       <aside className="sidebar">
         <div className="brand">
           <div className="logo">Nexus</div>
-          <div className="sub">Agent-Native Platform · M21</div>
+          <div className="sub">Agent-Native Platform · Agent Studio</div>
         </div>
         <nav className="nav">
           {NAV.map((g) => (

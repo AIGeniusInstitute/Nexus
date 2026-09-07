@@ -53,16 +53,36 @@ async fn run(mut socket: WebSocket, st: AppState, thread_id: Uuid, claims: Claim
     let mut last_seq: i64 = 0;
     let mut perm_tick = 0u32;
     // Subscribe to the per-thread broadcast channel (live push).
-    let rx: Option<broadcast::Receiver<Value>> = {
+    // NOTE: the channel is lazily created by turn_start on the first turn for
+    // a thread. If a WS client connects BEFORE any turn ran on this thread
+    // (the Agent Studio common case: create thread → open chat → send first
+    // message), the channel does not exist yet and rx is None. We re-check the
+    // map at the top of every loop iteration below so we pick up the channel
+    // as soon as turn_start creates it. Without this, live delta frames
+    // (item/reasoning/textDelta, item/agentMessage/delta, …) are never
+    // delivered — only DB-replayed item/started+item/completed arrive.
+    let mut broadcast_rx: Option<broadcast::Receiver<Value>> = {
         let map = st.broadcast.lock().await;
         map.get(&thread_id).map(|t| t.subscribe())
     };
     tracing::info!(uid = claims.uid, thread_id = %thread_id, "ws attached");
 
-    let mut broadcast_rx = rx;
     let mut gap_tick = 0u32;
 
     loop {
+        // Re-acquire the broadcast channel if it didn't exist at connect time
+        // (created mid-session by the first turn_start on this thread).
+        if broadcast_rx.is_none() {
+            let rx = {
+                let map = st.broadcast.lock().await;
+                map.get(&thread_id).map(|t| t.subscribe())
+            };
+            if rx.is_some() {
+                broadcast_rx = rx;
+                tracing::info!(thread_id = %thread_id, "ws acquired broadcast channel mid-session");
+            }
+        }
+
         // 1. Replay any persisted items since last_seq (catches up on connect
         //    + refills gaps if broadcast lagged/dropped).
         if let Ok(rows) = sqlx::query_as::<_, (i64, String, Option<String>)>(
