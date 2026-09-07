@@ -109,7 +109,7 @@ function Shell() {
       <aside className="sidebar">
         <div className="brand">
           <div className="logo">Nexus</div>
-          <div className="sub">Agent-Native Platform · M20</div>
+          <div className="sub">Agent-Native Platform · M21</div>
         </div>
         <nav className="nav">
           {NAV.map((g) => (

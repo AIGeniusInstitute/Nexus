@@ -1,20 +1,21 @@
 import React from "react";
-import { api, type GoldenSet, type GoldenSetCase, type Rubric, type EvalBatchRun, type EntityVersion, type CompareResult } from "../api";
+import { api, type GoldenSet, type GoldenSetCase, type Rubric, type EvalBatchRun, type EntityVersion, type CompareResult, type JudgeConfig } from "../api";
 import { Card, Table, Button, Pill, Empty, ErrBar, Modal, Field, useAsync, fmtTime } from "../ui";
 
-type Tab = "gs" | "rubric" | "runs";
+type Tab = "gs" | "rubric" | "judge" | "runs";
 
 export default function GoldenSets() {
   const [tab, setTab] = React.useState<Tab>("gs");
   return (
     <div>
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        {([["gs", "Golden Set"], ["rubric", "Rubric 评分标准"], ["runs", "批量评测运行"]] as [Tab, string][]).map(([k, l]) => (
+        {([["gs", "Golden Set"], ["rubric", "Rubric 评分标准"], ["judge", "Judge 配置"], ["runs", "批量评测运行"]] as [Tab, string][]).map(([k, l]) => (
           <Button key={k} variant={tab === k ? "primary" : "default"} className="sm" onClick={() => setTab(k)}>{l}</Button>
         ))}
       </div>
       {tab === "gs" && <GoldenSetTab />}
       {tab === "rubric" && <RubricTab />}
+      {tab === "judge" && <JudgeTab />}
       {tab === "runs" && <RunsTab />}
     </div>
   );
@@ -289,5 +290,75 @@ function RunDetailModal({ run, onClose }: { run: EvalBatchRun; onClose: () => vo
         )}
       </div>
     </Modal>
+  );
+}
+
+// ───────────────── Judge 配置 (M21) ─────────────────
+
+function JudgeTab() {
+  const list = useAsync(() => api.judgeConfigs(), []);
+  const [name, setName] = React.useState("");
+  const [desc, setDesc] = React.useState("");
+  const [modal, setModal] = React.useState<JudgeConfig | null>(null);
+  const [dimName, setDimName] = React.useState("");
+  const [dimWeight, setDimWeight] = React.useState("0.5");
+  const [dimDesc, setDimDesc] = React.useState("");
+  const [dims, setDims] = React.useState<any[]>([]);
+  const [pub, setPub] = React.useState<EntityVersion | null>(null);
+  return (
+    <Card>
+      <h3>Judge LLM 配置</h3>
+      <p className="muted" style={{ fontSize: 13, margin: "4px 0 12px" }}>版本化的 LLM 评分配置：prompt 模板 + 评分维度 + judge 模型。draft→publish(locked 不可变)。</p>
+      {list.err && <ErrBar err={list.err} />}
+      <Table cols={[
+        { key: "id", label: "ID", render: (r: JudgeConfig) => r.id },
+        { key: "name", label: "名称", render: (r: JudgeConfig) => <a onClick={() => { setModal(r); setDims(r.description ? (JSON.parse(r.description) as any[]) : []); }}>{r.name}</a> },
+        { key: "status", label: "状态", render: (r: JudgeConfig) => <Pill tone={r.status === "locked" ? "info" : "mut"}>{r.status}</Pill> },
+        { key: "vid", label: "版本", render: (r: JudgeConfig) => r.active_version_id ?? "—" },
+        { key: "time", label: "时间", render: (r: JudgeConfig) => fmtTime(r.updated_at) },
+      ]} rows={list.data ?? []} />
+      {list.data && list.data.length === 0 && <Empty>暂无 Judge 配置</Empty>}
+      <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <Field label="名称"><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="如：临床推理评分器" /></Field>
+        <Field label="描述"><input className="input" value={desc} onChange={(e) => setDesc(e.target.value)} /></Field>
+        <Button variant="primary" onClick={async () => { try { await api.createJudgeConfig(name, desc); setName(""); setDesc(""); list.reload(); } catch (e: any) { alert(String(e)); } }}>创建</Button>
+      </div>
+
+      {modal && (
+      <Modal onClose={() => { setModal(null); setPub(null); }} title={`Judge: ${modal.name}`}>
+          <div>
+            <div style={{ marginBottom: 12 }}>
+              <Pill tone={modal.status === "locked" ? "info" : "mut"}>{modal.status}</Pill>
+              {modal.active_version_id && <span style={{ marginLeft: 8 }} className="muted">version #{modal.active_version_id}</span>}
+            </div>
+            {modal.status === "draft" && (
+              <div style={{ marginBottom: 16, padding: 12, border: "1px solid var(--border)", borderRadius: 8 }}>
+                <div style={{ fontWeight: 600, marginBottom: 8 }}>添加评分维度</div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <Field label="维度名"><input className="input" value={dimName} onChange={(e) => setDimName(e.target.value)} placeholder="accuracy" /></Field>
+                  <Field label="权重"><input className="input" style={{ width: 80 }} value={dimWeight} onChange={(e) => setDimWeight(e.target.value)} /></Field>
+                  <Field label="描述"><input className="input" value={dimDesc} onChange={(e) => setDimDesc(e.target.value)} /></Field>
+                  <Button className="sm" onClick={async () => {
+                    if (!modal) return;
+                    try { await api.addJudgeDimension(modal.id, { name: dimName, weight: Number(dimWeight), description: dimDesc }); setDims([...dims, { name: dimName, weight: Number(dimWeight), description: dimDesc }]); setDimName(""); setDimDesc(""); list.reload(); } catch (e: any) { alert(String(e)); }
+                  }}>添加</Button>
+                </div>
+                <Button variant="primary" className="sm" style={{ marginTop: 12 }} onClick={async () => {
+                  if (!modal) return;
+                  try { const v = await api.publishJudgeConfig(modal.id, "major", { prompt_template: "你是临床研究评测专家。根据评分维度对 Agent 回复逐项打分（0.0-1.0），返回纯 JSON。", dimensions: dims, temperature: 0.0 }); setPub(v); list.reload(); } catch (e: any) { alert(String(e)); }
+                }}>发布 v1.0.0</Button>
+              </div>
+            )}
+            {pub && <Pill tone="ok">✅ 已发布 v{pub.semver} (hash: {pub.manifest_hash.slice(0, 12)}…)</Pill>}
+            {dims.length > 0 && (
+              <div>
+                <div style={{ fontWeight: 600, margin: "8px 0" }}>评分维度</div>
+                {dims.map((d, i) => <div key={i} style={{ fontSize: 13, padding: "4px 0" }}>• {d.name} (权重 {d.weight}) — {d.description}</div>)}
+              </div>
+            )}
+          </div>
+      </Modal>
+      )}
+    </Card>
   );
 }

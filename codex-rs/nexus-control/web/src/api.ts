@@ -38,6 +38,9 @@ export interface EvalBatchRun { id: number; golden_set_id: number; golden_set_ve
 export interface EvalCaseResult { id: number; run_id: number; case_id: number; case_key: string; turn_id: number | null; agent_output: string | null; scores: any; created_at: string; }
 export interface CompareResult { incomparable: boolean; baseline_version_id: number; run_version_id: number; diffs: any[]; }
 
+// M21: Judge LLM + 失败样本回流
+export interface JudgeConfig { id: number; name: string; description: string | null; status: string; active_version_id: number | null; created_at: string; updated_at: string; }
+
 const TOKEN_KEY = "nexus.token";
 export function getToken() { return localStorage.getItem(TOKEN_KEY); }
 export function setToken(t: string) { localStorage.setItem(TOKEN_KEY, t); }
@@ -166,6 +169,14 @@ export const api = {
   startBatchRun: (body: { golden_set_id: number; rubric_id?: number; thread_id: string }) =>
     req<{ run_id: number }>(`/evals/batch-runs`, { method: "POST", body: JSON.stringify(body) }),
   compareBatchRun: (id: number, baseline_run_id: number) => req<CompareResult>(`/evals/batch-runs/${id}/compare`, { method: "POST", body: JSON.stringify({ baseline_run_id }) }),
+
+  // M21: Judge LLM + 失败样本回流
+  judgeConfigs: () => req<JudgeConfig[]>(`/judge-configs`),
+  createJudgeConfig: (name: string, description?: string) => req<JudgeConfig>(`/judge-configs`, { method: "POST", body: JSON.stringify({ name, description }) }),
+  addJudgeDimension: (id: number, dimension: any) => req<{ ok: boolean }>(`/judge-configs/${id}/dimensions`, { method: "POST", body: JSON.stringify(dimension) }),
+  publishJudgeConfig: (id: number, bump_type: string, config: any) => req<EntityVersion>(`/judge-configs/${id}/publish`, { method: "POST", body: JSON.stringify({ bump_type, config }) }),
+  caseFromTurn: (gsId: number, body: { turn_id: number; case_key: string; expected_json: any; user_query?: string }) =>
+    req<{ case_id: number }>(`/golden-sets/${gsId}/cases/from-turn`, { method: "POST", body: JSON.stringify(body) }),
 };
 
 export function openThreadStream(threadId: string, onItem: (f: any) => void, onRevoke?: () => void): WebSocket {
