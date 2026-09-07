@@ -28,6 +28,7 @@ use crate::auth::{AuthProvider, AuthUser, JwtIssuer};
 use crate::audit;
 use crate::connectors;
 use crate::eval;
+use crate::eval_center;
 use crate::skills;
 use crate::fork;
 use crate::kb;
@@ -98,6 +99,16 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/evals/cases", post(eval_case_create).get(eval_cases_list))
         .route("/v1/evals/runs/{case_id}", post(eval_run))
         .route("/v1/evals/runs", get(eval_runs_list))
+        // --- M20: 版本化 Golden Set + 运行冻结快照 ---
+        .route("/v1/golden-sets", post(gs_create).get(gs_list))
+        .route("/v1/golden-sets/{id}", get(gs_get))
+        .route("/v1/golden-sets/{id}/cases", post(gs_add_case).get(gs_list_cases))
+        .route("/v1/golden-sets/{id}/publish", post(gs_publish))
+        .route("/v1/rubrics", post(rubric_create).get(rubric_list))
+        .route("/v1/rubrics/{id}/publish", post(rubric_publish))
+        .route("/v1/evals/batch-runs", post(eval_batch_start).get(eval_batch_list))
+        .route("/v1/evals/batch-runs/{id}", get(eval_batch_get))
+        .route("/v1/evals/batch-runs/{id}/compare", post(eval_batch_compare))
         .route("/v1/kbs", post(kb_create).get(kb_list))
         .route("/v1/kbs/{id}/documents", post(kb_doc_ingest).get(kb_doc_list))
         .route("/v1/kbs/{id}/documents/{did}", axum::routing::delete(kb_doc_delete))
@@ -1104,6 +1115,131 @@ async fn eval_runs_list(
     let rows = eval::list_runs(&st.pool, c.tid, limit).await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(rows))
+}
+
+// ---------- M20: 版本化 Golden Set + 运行冻结快照 ----------
+#[derive(Deserialize)]
+struct GsCreateReq { name: String, description: Option<String> }
+
+async fn gs_create(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Json(req): Json<GsCreateReq>,
+) -> Result<Json<eval_center::GoldenSetRow>, (StatusCode, String)> {
+    let row = eval_center::create_golden_set(&st.pool, c.tid, c.uid, req.into()).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(row))
+}
+
+impl From<GsCreateReq> for eval_center::CreateGoldenSetReq {
+    fn from(r: GsCreateReq) -> Self { Self { name: r.name, description: r.description } }
+}
+
+async fn gs_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+) -> Result<Json<Vec<eval_center::GoldenSetRow>>, (StatusCode, String)> {
+    let rows = eval_center::list_golden_sets(&st.pool, c.tid).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn gs_get(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let gs = eval_center::get_golden_set(&st.pool, c.tid, id).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let cases = eval_center::list_cases(&st.pool, c.tid, id).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({"golden_set": gs, "cases": cases})))
+}
+
+async fn gs_add_case(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+    Path(id): Path<i64>, Json(req): Json<eval_center::AddCaseReq>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let cid = eval_center::add_case(&st.pool, c.tid, id, req).await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    Ok(Json(serde_json::json!({"id": cid})))
+}
+
+async fn gs_list_cases(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<Vec<eval_center::GoldenSetCaseRow>>, (StatusCode, String)> {
+    let rows = eval_center::list_cases(&st.pool, c.tid, id).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn gs_publish(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+    Path(id): Path<i64>, Json(req): Json<eval_center::PublishReq>,
+) -> Result<Json<eval_center::EntityVersionRow>, (StatusCode, String)> {
+    let row = eval_center::publish_golden_set_version(&st.pool, c.tid, id, c.uid, req).await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    Ok(Json(row))
+}
+
+#[derive(Deserialize)]
+struct RubricCreateReq { name: String }
+
+async fn rubric_create(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Json(req): Json<RubricCreateReq>,
+) -> Result<Json<eval_center::RubricRow>, (StatusCode, String)> {
+    let row = eval_center::create_rubric(&st.pool, c.tid, c.uid, eval_center::CreateRubricReq { name: req.name }).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(row))
+}
+
+async fn rubric_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+) -> Result<Json<Vec<eval_center::RubricRow>>, (StatusCode, String)> {
+    let rows = eval_center::list_rubrics(&st.pool, c.tid).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn rubric_publish(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+    Path(id): Path<i64>, Json(req): Json<eval_center::PublishRubricReq>,
+) -> Result<Json<eval_center::EntityVersionRow>, (StatusCode, String)> {
+    let row = eval_center::publish_rubric_version(&st.pool, c.tid, id, c.uid, req).await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    Ok(Json(row))
+}
+
+async fn eval_batch_start(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Json(req): Json<eval_center::StartRunReq>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let run_id = eval_center::start_run(&st.pool, &st.base_url, &st.jwt, &c, req).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({"run_id": run_id})))
+}
+
+async fn eval_batch_list(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Query(q): Query<EvalQuery>,
+) -> Result<Json<Vec<eval_center::EvalBatchRunRow>>, (StatusCode, String)> {
+    let limit = q.limit.unwrap_or(100).clamp(1, 1000);
+    let rows = eval_center::list_runs(&st.pool, c.tid, limit).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(rows))
+}
+
+async fn eval_batch_get(
+    AuthUser(c): AuthUser, State(st): State<AppState>, Path(id): Path<i64>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let (run, results) = eval_center::get_run(&st.pool, c.tid, id).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({"run": run, "case_results": results})))
+}
+
+#[derive(Deserialize)]
+struct EvalBatchCompareReq { baseline_run_id: i64 }
+
+async fn eval_batch_compare(
+    AuthUser(c): AuthUser, State(st): State<AppState>,
+    Path(id): Path<i64>, Json(req): Json<EvalBatchCompareReq>,
+) -> Result<Json<eval_center::CompareResult>, (StatusCode, String)> {
+    let res = eval_center::compare_runs(&st.pool, c.tid, id, req.baseline_run_id).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(res))
 }
 
 #[derive(Serialize, sqlx::FromRow)]
