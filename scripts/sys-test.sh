@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Nexus 系统测试验收脚本 — 覆盖 M0-M19 全功能（Docker 端到端）
+# Nexus 系统测试验收脚本 — 覆盖 M0-M22 全功能（Docker 端到端）
 set -uo pipefail
 BASE="${BASE:-http://localhost:8765}"
 EMAIL="${EMAIL:-admin@nexus.local}"
@@ -84,6 +84,40 @@ chk=$(cat /tmp/mcpchk 2>/dev/null)
 [ "$chk" = "PASS" ] && emit "M19-mcp-echo" "PASS" "mcp=true result=$(echo $RES | python3 -c 'import sys,json;print(json.load(sys.stdin)["result"][:40])' 2>/dev/null)" || emit "M19-mcp-echo" "FAIL" "res=$RES"
 Q=$(curl -s "$BASE/v1/connectors/$MCID/quality" -H "$AUTH" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("quality_score"))' 2>/dev/null)
 [ -n "$Q" ] && emit "M19-mcp-quality" "PASS" "score=$Q" || emit "M19-mcp-quality" "FAIL" "no score"
+
+
+# M20 评测中心：版本化 GoldenSet + 确定性评分
+GS=$(curl -s -X POST "$BASE/v1/golden-sets" -H "$AUTH" -H 'Content-Type: application/json' -d '{"name":"sys-test-gs"}' | python3 -c 'import sys,json;print(json.load(sys.stdin).get("id",""))' 2>/dev/null)
+curl -s -X POST "$BASE/v1/golden-sets/$GS/cases" -H "$AUTH" -H 'Content-Type: application/json' -d '{"case_key":"ST-1","input_json":{"q":"hi"},"expected_json":{"must_hit_points":["test"]}}' >/dev/null 2>&1
+GV=$(curl -s -X POST "$BASE/v1/golden-sets/$GS/publish" -H "$AUTH" -H 'Content-Type: application/json' -d '{"bump_type":"major"}' | python3 -c 'import sys,json;print(json.load(sys.stdin).get("semver",""))' 2>/dev/null)
+[ "$GV" = "1.0.0" ] && emit "M20-golden-set-publish" "PASS" "v$GV locked" || emit "M20-golden-set-publish" "FAIL" "semver=$GV"
+TID2=$(curl -s -X POST "$BASE/v1/threads" -H "$AUTH" -H 'Content-Type: application/json' -d '{}' | python3 -c 'import sys,json;print(json.load(sys.stdin).get("id",""))' 2>/dev/null)
+RUN=$(curl -s --max-time 30 -X POST "$BASE/v1/evals/batch-runs" -H "$AUTH" -H 'Content-Type: application/json' -d "{\"golden_set_id\":$GS,\"thread_id\":\"$TID2\"}" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("run_id",""))' 2>/dev/null)
+ACC=$(curl -s "$BASE/v1/evals/batch-runs/$RUN" -H "$AUTH" | python3 -c 'import sys,json;print(json.load(sys.stdin)["run"]["aggregate"]["accuracy"])' 2>/dev/null)
+[ -n "$ACC" ] && emit "M20-batch-run" "PASS" "run=$RUN acc=$ACC" || emit "M20-batch-run" "FAIL" "no run"
+
+# M21 Judge LLM + CI 质量门
+JC=$(curl -s -X POST "$BASE/v1/judge-configs" -H "$AUTH" -H 'Content-Type: application/json' -d '{"name":"sys-test-jc"}' | python3 -c 'import sys,json;print(json.load(sys.stdin).get("id",""))' 2>/dev/null)
+JCV=$(curl -s -X POST "$BASE/v1/judge-configs/$JC/publish" -H "$AUTH" -H 'Content-Type: application/json' -d '{"bump_type":"major","config":{"dimensions":[]}}' | python3 -c 'import sys,json;print(json.load(sys.stdin).get("semver",""))' 2>/dev/null)
+[ "$JCV" = "1.0.0" ] && emit "M21-judge-publish" "PASS" "v$JCV" || emit "M21-judge-publish" "FAIL" "semver=$JCV"
+TID3=$(curl -s -X POST "$BASE/v1/threads" -H "$AUTH" -H 'Content-Type: application/json' -d '{}' | python3 -c 'import sys,json;print(json.load(sys.stdin).get("id",""))' 2>/dev/null)
+JRUN=$(curl -s --max-time 30 -X POST "$BASE/v1/evals/batch-runs" -H "$AUTH" -H 'Content-Type: application/json' -d "{\"golden_set_id\":$GS,\"thread_id\":\"$TID3\",\"judge_config_id\":$JC}" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("run_id",""))' 2>/dev/null)
+JS=$(curl -s "$BASE/v1/evals/batch-runs/$JRUN" -H "$AUTH" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d["run"]["aggregate"].get("avg_judge_score",0))' 2>/dev/null)
+[ -n "$JS" ] && emit "M21-judge-score" "PASS" "avg_judge=$JS" || emit "M21-judge-score" "FAIL" "no judge"
+CFCASE=$(curl -s -X POST "$BASE/v1/golden-sets" -H "$AUTH" -H 'Content-Type: application/json' -d '{"name":"sys-test-reflux"}' | python3 -c 'import sys,json;print(json.load(sys.stdin).get("id",""))' 2>/dev/null)
+CF=$(curl -s -X POST "$BASE/v1/golden-sets/$CFCASE/cases/from-turn" -H "$AUTH" -H 'Content-Type: application/json' -d "{\"turn_id\":1,\"case_key\":\"ST-REFLUX\",\"expected_json\":{}}" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("case_id",""))' 2>/dev/null)
+[ -n "$CF" ] && emit "M21-case-from-turn" "PASS" "case_id=$CF" || emit "M21-case-from-turn" "FAIL" "no case"
+
+# M22 事件溯源 + Lineage + 电子签名 + CAS
+CH=$(curl -s -X POST "$BASE/v1/content" -H "$AUTH" -H 'Content-Type: application/json' -d '{"content":"sys-test-cas"}' | python3 -c 'import sys,json;print(json.load(sys.stdin).get("content_hash",""))' 2>/dev/null)
+[ -n "$CH" ] && emit "M22-cas-write" "PASS" "hash=${CH:0:12}..." || emit "M22-cas-write" "FAIL" "no hash"
+EV=$(curl -s "$BASE/v1/events/golden_set/$GS" -H "$AUTH" | python3 -c 'import sys,json;print(len(json.load(sys.stdin).get("events",[])))' 2>/dev/null)
+[ -n "$EV" ] && [ "$EV" -ge "1" ] && emit "M22-event-stream" "PASS" "events=$EV" || emit "M22-event-stream" "FAIL" "events=$EV" || emit "M22-event-stream" "FAIL" "events=$EV"
+SID=$(curl -s -X POST "$BASE/v1/esign" -H "$AUTH" -H 'Content-Type: application/json' -d "{\"entity_type\":\"golden_set\",\"entity_id\":$GS,\"signature_purpose\":\"approve\",\"meaning_text\":\"confirmed\"}" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("esign_id",""))' 2>/dev/null)
+VR=$(curl -s "$BASE/v1/esign/$SID/verify" -H "$AUTH" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("valid"))' 2>/dev/null)
+[ "$VR" = "True" ] && emit "M22-esign-verify" "PASS" "valid=$VR" || emit "M22-esign-verify" "FAIL" "valid=$VR"
+LG=$(curl -s "$BASE/v1/lineage/eval_batch_run/$RUN" -H "$AUTH" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(len(d.get("nodes",[])))' 2>/dev/null)
+[ -n "$LG" ] && [ "$LG" -ge "3" ] && emit "M22-lineage" "PASS" "nodes=$LG" || emit "M22-lineage" "FAIL" "nodes=$LG" || emit "M22-lineage" "FAIL" "nodes=$LG"
 
 RESULTS+="]"
 echo "{\"total\":$((PASS_CNT+FAIL_CNT)),\"pass\":$PASS_CNT,\"fail\":$FAIL_CNT,\"results\":$RESULTS}"
